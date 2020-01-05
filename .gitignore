@@ -1,3 +1,5 @@
+.*
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -22,7 +24,5 @@ tmp/
 
 # Delv debug artifact
 debug
-__debug_bin
-
 # Debug main for experiments
 test/main.go
