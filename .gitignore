@@ -26,3 +26,5 @@ tmp/
 debug
 # Debug main for experiments
 test/main.go
+# Build binary
+cloud-builder-cli
