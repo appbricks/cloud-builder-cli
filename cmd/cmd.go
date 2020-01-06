@@ -48,13 +48,15 @@ var rootCmd = &cobra.Command{
 
 	Short: "Use the cli to launch secure services in the cloud.",
 	Long: `
-The Cloud Builder CLI can be used to install personal application
-services to your public cloud account. These services can be secured
-behind a VPN service launched using the same method. Once the VPN has
-been established all traffic from your local workstation to other 
-personal application services as well as the internet will pass
-through the encrypted VPN tunnel ensuring all network traffic will be
-secured as it traverses the public provider networks.
+The Cloud Builder CLI can be used to install applications and
+services to a virtual network sandbox in your public cloud account.
+This cloud space is secured behind a VPN service created when
+launching this sandbox in a public cloud region. Once the VPN has
+been established, all traffic from your devices to applications and
+services within the sandbox as well as the internet will pass through
+this encrypted tunnel. This ensures all network traffic from your
+personal devices, the sandbox and the internet is secured and
+anonymized as it traverses the public provider networks.
 `,
 
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
