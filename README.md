@@ -50,9 +50,9 @@
    │    │         also show help for all the recipe inputs including defaults that can
    │    │         be provided to customzie the deployment of the recipe.
    │    │
-   │    ├─ import - Import cloud recipes from Github or a downloaded zip archive. This
-   │    │           command allows you extend your personal cloud sandbox with additional
-   │    │           application and services securely.
+   │    ├─ **import - Import cloud recipes from Github or a downloaded zip archive. This
+   │    │             command allows you extend your personal cloud sandbox with additional
+   │    │             application and services securely.
    │    │
    │    └─ configure - Recipes are parameterized to accomodate different configurations in
    │                   the cloud. This command can be used to create a standard template
@@ -82,20 +82,22 @@
         │
         ├─ launch - Deploys a quick launch target or re-applies any configuration updates.
         │
-        ├─ ssh - SSH to the target environment. This is for advance users as well as 
-        │        for troubleshooting any configuration errors at the target. If the 
-        │        target consists of more than one instance this will create a secure
-        │        shell to primary instance identified by the cloud recipe of the 
-        │        target.
+        ├─ **ssh - SSH to the target environment. This is for advance users as well as 
+        │          for troubleshooting any configuration errors at the target. If the 
+        │          target consists of more than one instance this will create a secure
+        │          shell to primary instance identified by the cloud recipe of the 
+        │          target.
         │
-        ├─ suspend - Suspends all resources deployed to a target.
+        ├─ **suspend - Suspends all resources deployed to a target.
         │
-        ├─ resume - Resumes hibernated resources at a deployed target.
+        ├─ **resume - Resumes hibernated resources at a deployed target.
         │
-        ├─ migrate - Migrates services at a given target to different target.
+        ├─ **migrate - Migrates services at a given target to different target.
         │
-        ├─ share - Shares access to a target with another registered user.
+        ├─ **share - Shares access to a target with another registered user.
         │
         └─ delete - Deletes a deployed target.
 
 ```
+
+> ** Sub-command still to be implemented
