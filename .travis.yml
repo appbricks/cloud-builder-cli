@@ -6,6 +6,11 @@ env:
   - COOKBOOK_REPO_PATH=https://github.com/appbricks/vpn-server/cloud/recipes
   - COOKBOOK_VERSION=0.0.5
 script:
+- git clone --branch=master https://github.com/mevansam/termtables.git ${GOPATH}/src/github.com/mevansam/termtables
+- git clone --branch=master https://github.com/mevansam/goutils.git ${GOPATH}/src/github.com/mevansam/goutils
+- git clone --branch=master https://github.com/mevansam/goforms.git ${GOPATH}/src/github.com/mevansam/goforms
+- git clone --branch=master https://github.com/mevansam/gocloud.git ${GOPATH}/src/github.com/mevansam/gocloud
+- git clone --branch=master https://github.com/appbricks/cloud-builder.git ${GOPATH}/src/github.com/appbricks/cloud-builder
 - scripts/run-ci-build.sh
 deploy:
   provider: releases
