@@ -61,6 +61,27 @@ anonymized as it traverses the public provider networks.
 
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 
+		if !cbcli_config.Config.EULAAccepted() {
+			fmt.Println(`
+Before you can deploy Cloud Builder recipes you need to review and
+accept the AppBricks, Inc. Software End User Agreement. The terms of
+the agreement can be found at the following link.
+
+` + term.BLUE + `https://appbricks.io/legal/
+` + term.NC)
+
+			response := cbcli_utils.GetUserInputFromList(
+				"Do you agree to the terms: ",
+				"yes",
+				[]string{"no", "yes"},
+			)
+			if response == "yes" {
+				cbcli_config.Config.SetEULAAccepted()
+			} else {
+				cbcli_utils.ShowErrorAndExit("You need to accept the EULA to use the Cloud Builder CLI.")
+			}
+		}
+
 		if cmd != initialize.InitCommand && !cbcli_config.Config.Initialized() {
 			fmt.Println(
 				term.YELLOW + term.HIGHLIGHT +
