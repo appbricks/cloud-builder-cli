@@ -12,7 +12,8 @@ if [[ ! -e $build_cookbook ]]; then
 fi
 
 # install packrv2
-go get -u github.com/gobuffalo/packr/v2/packr2
+[[ -e ${GOPATH}/bin/packr2 ]] || \
+  go get -u github.com/gobuffalo/packr/v2/packr2
 
 build_dir=${root_dir}/build
 if [[ $action == *:clean_all:* ]]; then
@@ -61,8 +62,10 @@ function build() {
 
   # build and package release binary
   mkdir -p ${release_dir}/${os}_${arch}
-  GOOS=$os GOARCH=$arch go build -o ${release_dir}/${os}_${arch}/cb ${root_dir}/cmd/cb
-  tar -cvzf ${release_dir}/cb_${os}_${arch}.tgz -C ${release_dir}/${os}_${arch}/ .
+  pushd ${release_dir}/${os}_${arch}
+  GOOS=$os GOARCH=$arch go build ${root_dir}/cmd/cb
+  zip -r ${release_dir}/cb_${os}_${arch}.zip .
+  popd
 }
 
 if [[ $action == *:dev:* ]]; then
@@ -74,7 +77,7 @@ if [[ $action == *:dev:* ]]; then
   build "$os" "$arch"
   ln -s ${release_dir}/${os}_${arch}/cb $GOPATH/bin/cb
 
-elif [[ -z $action || $action == *:release:* ]]; then
+else
   # build release binaries for all supported architectures
   build "darwin" "amd64"
   build "linux" "amd64"

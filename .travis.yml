@@ -20,9 +20,9 @@ deploy:
   api_key:
     secure: CJEV6mQIW9+gh4SwbhGlvngo3lh5ykN6wzQGju2jlFBPYQjh8FiqW5FgXocKZ3z6+HHQRZPfdXhJ8bmpt0nzZ8jLu4wEddQ/XoBa0L9+ZSpJ+KINXiYKh5itMnHS6i6eAvkklgFti30OwRe8arvh6rVjbY331VDPUF/nJsYhrpCih2uyXJtH0TmWvY/tDolFPZ6ygJvmowiSxd5DR7Oc61IGAbdBmrHJgKiMphPxmZnTXZUZ15bjU9mk/oZGg+tabstrHjBwg8V9/KTWmqu7tsVoGNOJ+NY/gentmYD8Vy40EwZpFn7Ski6z0wmusl1u3JNobPvL+3eDbOU4VljKsvWQvEzOlNwdltidQ5xMVozkthksj0UCa6MZsX9+K7/41Jx8akr5pVPn8XsZGaV0iMrzte7drY6d7nnvfn+blTKodxfI2BFZD62C5lueLvelWnrSLXmi2g8ZRhnkEVAPjMzsjPizbmL7HuCYhX0xLaocWlB8BD5toTOfxAhmGX55pJIsvxPRL94kN63bW45XAIQta1XR2ntakKLjcC8+YULiMk9rXG8lAhR9BYlGN6lnEUn1mDQM5DKfcaoFxFvfS+L+dxjtKq5Lu9+6ZZ8g9Na0KxJNtruQqzBRkAQ2MrGj2gr83ChYFxKpKDi3yrnOppB3AMV1eMSXOiHC1Z7oHU8=
   file:
-  - build/releases/cb_darwin_amd64.tgz
-  - build/releases/cb_linux_amd64.tgz
-  - build/releases/cb_windows_amd64.tgz
+  - build/releases/cb_darwin_amd64.zip
+  - build/releases/cb_linux_amd64.zip
+  - build/releases/cb_windows_amd64.zip
   #--[requires edge] release_notes_file: doc/release-notes.md
   body: To install, download the correct file for you system and extract the binary to the system path or any path that is mapped to the system's PATH variable.
   skip_cleanup: true
