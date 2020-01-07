@@ -7,7 +7,6 @@ env:
   - COOKBOOK_REPO_PATH=https://github.com/appbricks/vpn-server/cloud/recipes
   - COOKBOOK_VERSION=0.0.5
 install:
-- go get -u github.com/gobuffalo/packr/v2/packr2
 - git clone --branch=master https://github.com/mevansam/termtables.git ${GOPATH}/src/github.com/mevansam/termtables
 - git clone --branch=master https://github.com/mevansam/goutils.git ${GOPATH}/src/github.com/mevansam/goutils
 - git clone --branch=master https://github.com/mevansam/goforms.git ${GOPATH}/src/github.com/mevansam/goforms

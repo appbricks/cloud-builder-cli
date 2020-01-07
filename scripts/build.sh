@@ -11,6 +11,9 @@ if [[ ! -e $build_cookbook ]]; then
   exit 1
 fi
 
+# install packrv2
+go get -u github.com/gobuffalo/packr/v2/packr2
+
 build_dir=${root_dir}/build
 if [[ $action == *:clean_all:* ]]; then
   # remove all build artifacts
