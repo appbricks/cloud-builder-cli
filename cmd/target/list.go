@@ -2,6 +2,7 @@ package target
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
@@ -56,11 +57,13 @@ func ListTargets() {
 		color.OpBold.Render("Region"),
 		color.OpBold.Render("Deployment Name"),
 		color.OpBold.Render("Status"),
+		color.OpBold.Render("#"),
 	)
 
+	targetIndex := 1
 	targets := config.Config.Context().TargetSet()
 
-	tableRow := make([]interface{}, 5)
+	tableRow := make([]interface{}, 6)
 	for i, recipe := range recipes {
 		tableRow[0] = recipe.Name
 
@@ -79,6 +82,7 @@ func ListTargets() {
 
 				if len(targets) > 0 {
 					tableRow[2] = region.Name
+					tableRow[5] = strconv.Itoa(targetIndex)
 
 					for _, tgt := range targets {
 						tableRow[3] = tgt.DeploymentName()
@@ -108,6 +112,8 @@ func ListTargets() {
 						tableRow[0] = ""
 						tableRow[1] = ""
 						tableRow[2] = ""
+
+						targetIndex++
 					}
 					hasTargets = true
 				}
@@ -117,6 +123,7 @@ func ListTargets() {
 				tableRow[2] = ""
 				tableRow[3] = ""
 				tableRow[4] = color.OpFuzzy.Render("not configured")
+				tableRow[5] = ""
 				table.AddRow(tableRow...)
 
 				tableRow[0] = ""
