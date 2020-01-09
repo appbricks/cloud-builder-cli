@@ -54,7 +54,7 @@ func ShowCloud(name string) {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
 		textForm.ShowInputReference(ux.DescAndDefaults, 0, 2, 80)
-		fmt.Println("\n")
+		fmt.Print("\n\n")
 		return
 	}
 

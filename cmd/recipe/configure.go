@@ -53,7 +53,7 @@ func ConfigureRecipe(name, cloud string) {
 		}
 
 		config.Config.Context().SaveCookbookRecipe(recipe)
-		fmt.Println("\nConfiguration input saved\n")
+		fmt.Print("\nConfiguration input saved\n\n")
 		return
 	}
 
