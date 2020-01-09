@@ -118,7 +118,7 @@ func showInputFormData(title string, inputForm forms.InputForm) {
 			"target-undeployed", "target-deployed",
 		)
 	}
-	fmt.Println("\n")
+	fmt.Print("\n\n")
 }
 
 func init() {
