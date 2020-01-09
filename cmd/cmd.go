@@ -85,7 +85,7 @@ the agreement can be found at the following link.
 		if cmd != initialize.InitCommand && !cbcli_config.Config.Initialized() {
 			fmt.Println(
 				term.YELLOW + term.HIGHLIGHT +
-					">> Please initialize the Cloud Builder client to secure configuration settings." +
+					"\n>> Please initialize the Cloud Builder client to secure configuration settings." +
 					term.NC,
 			)
 		}
