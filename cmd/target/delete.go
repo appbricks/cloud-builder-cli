@@ -68,6 +68,7 @@ func DeleteTarget(recipe, cloud, region, deploymentName string) {
 				if err = bldr.Delete(); err != nil {
 					cbcli_utils.ShowErrorAndExit(err.Error())
 				}
+				tgt.Output = nil
 			}
 			if !deleteFlags.keep {
 				targets.DeleteTarget(tgt.Key())
