@@ -23,7 +23,7 @@ var launchFlags = struct {
 var launchCommand = &cobra.Command{
 	Use: "launch [recipe] [cloud] [region] [deployment name]",
 
-	Short: "Create a launch target.",
+	Short: "Deploy a launch target to the cloud.",
 	Long: `
 Deploys a quick launch target or re-applies any configuration
 updates. Rebuild and Clean-rebuild options are complementary and

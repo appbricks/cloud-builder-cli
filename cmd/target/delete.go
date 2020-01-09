@@ -21,11 +21,12 @@ var deleteFlags = struct {
 var deleteCommand = &cobra.Command{
 	Use: "delete [recipe] [cloud] [region] [deployment name]",
 
-	Short: "Delete a launch target.",
+	Short: "Deletes a quick launch target deployment.",
 	Long: `
-Deletes a quick launch target configuration. This sub-command will
-destroy cloud resources if the target has been deployed and remove
-the launch configuration.
+This sub-command will destroy cloud resources if the target has been
+deployed and removes the launch configuration. If you wish to retain
+the configuration in order to re-launch the target at a latter date
+then provide the --keep flag.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
