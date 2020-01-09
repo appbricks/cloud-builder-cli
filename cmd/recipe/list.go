@@ -3,9 +3,9 @@ package recipe
 import (
 	"fmt"
 
+	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 
-	"github.com/mevansam/goutils/term"
 	"github.com/mevansam/goutils/utils"
 	"github.com/mevansam/termtables"
 
@@ -47,9 +47,9 @@ func ListRecipes() {
 
 	table := termtables.CreateTable()
 	table.AddHeaders(
-		term.BOLD+"Name"+term.NORMAL,
-		term.BOLD+"Description"+term.NORMAL,
-		term.BOLD+"Supported Clouds"+term.NORMAL,
+		color.OpBold.Render("Name"),
+		color.OpBold.Render("Description"),
+		color.OpBold.Render("Supported Clouds"),
 	)
 
 	tableRow := make([]interface{}, 3)
@@ -107,7 +107,7 @@ func ListRecipesForCloud(cloud string) {
 	recipes := config.Config.Context().Cookbook().RecipeList()
 
 	table := termtables.CreateTable()
-	table.AddHeaders(term.BOLD + "Recipe Name" + term.NORMAL)
+	table.AddHeaders(color.OpBold.Render("Recipe Name"))
 
 	numClouds := 0
 	for _, r := range recipes {

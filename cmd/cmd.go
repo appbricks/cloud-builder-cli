@@ -19,13 +19,13 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/gookit/color"
 	"github.com/peterh/liner"
 	"github.com/spf13/cobra"
 
 	homedir "github.com/mitchellh/go-homedir"
 
 	"github.com/mevansam/goutils/logger"
-	"github.com/mevansam/goutils/term"
 
 	"github.com/appbricks/cloud-builder-cli/cmd/cloud"
 	"github.com/appbricks/cloud-builder-cli/cmd/initialize"
@@ -67,8 +67,7 @@ Before you can deploy Cloud Builder recipes you need to review and
 accept the AppBricks, Inc. Software End User Agreement. The terms of
 the agreement can be found at the following link.
 
-` + term.BLUE + `https://appbricks.io/legal/
-` + term.NC)
+` + color.FgBlue.Render(`https://appbricks.io/legal/`))
 
 			response := cbcli_utils.GetUserInputFromList(
 				"Do you agree to the terms: ",
@@ -84,9 +83,11 @@ the agreement can be found at the following link.
 
 		if cmd != initialize.InitCommand && !cbcli_config.Config.Initialized() {
 			fmt.Println(
-				term.YELLOW + term.HIGHLIGHT +
-					"\n>> Please initialize the Cloud Builder client to secure configuration settings." +
-					term.NC,
+				color.OpReverse.Render(
+					color.Yellow.Render(
+						"\n>> Please initialize the Cloud Builder client to secure configuration settings.",
+					),
+				),
 			)
 		}
 	},

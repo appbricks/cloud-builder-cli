@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mevansam/goutils/term"
+	"github.com/gookit/color"
 	"github.com/mevansam/goutils/utils"
 )
 
@@ -15,9 +15,9 @@ func ShowErrorAndExit(message string) {
 	)
 
 	if message[len(message)-1] == '.' {
-		format = term.RED + "\nError! %s\n" + term.NC
+		format = color.Red.Render("\nError! %s\n")
 	} else {
-		format = term.RED + "\nError! %s.\n" + term.NC
+		format = color.Red.Render("\nError! %s.\n")
 	}
 
 	fmt.Println(utils.FormatMessage(7, 80, false, true, format, message))

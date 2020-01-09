@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mevansam/goutils/term"
+	"github.com/gookit/color"
 	"github.com/peterh/liner"
 )
 
@@ -29,11 +29,7 @@ func GetUserInput(
 	); err != nil {
 
 		if err == liner.ErrPromptAborted {
-			fmt.Println(
-				term.RED +
-					"\nInput aborted.\n" +
-					term.NC,
-			)
+			fmt.Println(color.Red.Render("\nInput aborted.\n"))
 			os.Exit(1)
 		} else {
 			ShowErrorAndExit(err.Error())
@@ -68,11 +64,7 @@ func GetUserInputFromList(
 	); err != nil {
 
 		if err == liner.ErrPromptAborted {
-			fmt.Println(
-				term.RED +
-					"\nInput aborted.\n" +
-					term.NC,
-			)
+			fmt.Println(color.Red.Render("\nInput aborted.\n"))
 			os.Exit(1)
 		} else {
 			ShowErrorAndExit(err.Error())

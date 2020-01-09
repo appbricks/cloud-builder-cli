@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 
 	"github.com/mevansam/gocloud/backend"
 	"github.com/mevansam/gocloud/provider"
 	"github.com/mevansam/goforms/forms"
 	"github.com/mevansam/goforms/ux"
-	"github.com/mevansam/goutils/term"
 	"github.com/mevansam/goutils/utils"
 
 	"github.com/appbricks/cloud-builder-cli/config"
@@ -96,9 +96,17 @@ func configureTarget(tgt *target.Target, tags ...string) {
 	divider := strings.Repeat("+", 80)
 	fmt.Println()
 	fmt.Println(divider)
-	fmt.Print(term.BOLD)
-	fmt.Println(utils.FormatMessage(0, 80, true, false, "Configure Target %s", tgt.Description()))
-	fmt.Print(term.NC)
+	fmt.Println()
+	fmt.Println(
+		color.OpBold.Render(
+			utils.FormatMessage(
+				0, 80, true, false,
+				"Configure Target %s",
+				tgt.Description(),
+			),
+		),
+	)
+	fmt.Println()
 	fmt.Println(divider)
 	fmt.Println()
 
@@ -169,12 +177,12 @@ func configureTarget(tgt *target.Target, tags ...string) {
 		)
 
 		if len(response) > 0 && response != "yes" {
-			fmt.Printf(term.RED + "\nConfiguration for target was not saved.\n\n" + term.NC)
+			fmt.Print(color.Red.Render("\nConfiguration for target was not saved.\n\n"))
 			return
 		}
 	}
 	config.Config.Context().SaveTarget(targetKey, tgt)
-	fmt.Printf(term.GREEN + "\nConfiguration for target saved.\n\n" + term.NC)
+	fmt.Print(color.Green.Render("\nConfiguration for target saved.\n\n"))
 }
 
 func init() {

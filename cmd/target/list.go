@@ -3,10 +3,10 @@ package target
 import (
 	"fmt"
 
+	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 
 	"github.com/mevansam/goutils/logger"
-	"github.com/mevansam/goutils/term"
 	"github.com/mevansam/termtables"
 
 	"github.com/appbricks/cloud-builder-cli/config"
@@ -51,11 +51,11 @@ func ListTargets() {
 
 	table := termtables.CreateTable()
 	table.AddHeaders(
-		term.BOLD+"Recipe"+term.NORMAL,
-		term.BOLD+"Cloud"+term.NORMAL,
-		term.BOLD+"Region"+term.NORMAL,
-		term.BOLD+"Deployment Name"+term.NORMAL,
-		term.BOLD+"Status"+term.NORMAL,
+		color.OpBold.Render("Recipe"),
+		color.OpBold.Render("Cloud"),
+		color.OpBold.Render("Region"),
+		color.OpBold.Render("Deployment Name"),
+		color.OpBold.Render("Status"),
 	)
 
 	targets := config.Config.Context().TargetSet()
@@ -113,10 +113,10 @@ func ListTargets() {
 				}
 			}
 			if !hasTargets {
-				tableRow[1] = term.DIM + tableRow[1].(string) + term.NORMAL
+				tableRow[1] = color.OpFuzzy.Render(tableRow[1].(string))
 				tableRow[2] = ""
 				tableRow[3] = ""
-				tableRow[4] = term.DIM + "not configured" + term.NORMAL
+				tableRow[4] = color.OpFuzzy.Render("not configured")
 				table.AddRow(tableRow...)
 
 				tableRow[0] = ""

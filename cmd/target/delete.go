@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mevansam/goutils/term"
+	"github.com/gookit/color"
 	"github.com/mevansam/goutils/utils"
 	"github.com/spf13/cobra"
 
@@ -49,13 +49,17 @@ func DeleteTarget(recipe, cloud, region, deploymentName string) {
 	targetName := fmt.Sprintf("%s/%s/%s/%s", recipe, cloud, region, deploymentName)
 	if tgt = targets.GetTarget(targetName); tgt != nil {
 
-		fmt.Println(term.BOLD)
-		fmt.Print(utils.FormatMessage(
-			0, 80, false, true,
-			"Found %s.",
-			tgt.Description(),
-		))
-		fmt.Println(term.NC)
+		fmt.Println()
+		fmt.Print(
+			color.OpBold.Render(
+				utils.FormatMessage(
+					0, 80, false, true,
+					"Found %s.",
+					tgt.Description(),
+				),
+			),
+		)
+		fmt.Println()
 		response = cbcli_utils.GetUserInput(
 			"Confirm deletion by entering the deployment name: ",
 		)
@@ -73,9 +77,9 @@ func DeleteTarget(recipe, cloud, region, deploymentName string) {
 			if !deleteFlags.keep {
 				targets.DeleteTarget(tgt.Key())
 			}
-			fmt.Printf(term.GREEN + "\nTarget has been deleted.\n\n" + term.NC)
+			fmt.Print(color.Green.Render("\nTarget has been deleted.\n\n"))
 		} else {
-			fmt.Printf(term.RED + "\nTarget has not been deleted.\n\n" + term.NC)
+			fmt.Print(color.Red.Render("\nTarget has not been deleted.\n\n"))
 		}
 		return
 	}

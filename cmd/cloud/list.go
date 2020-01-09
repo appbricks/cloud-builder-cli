@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 
-	"github.com/mevansam/goutils/term"
 	"github.com/mevansam/termtables"
 
 	"github.com/appbricks/cloud-builder-cli/config"
@@ -42,9 +42,9 @@ func ListClouds() {
 
 	table := termtables.CreateTable()
 	table.AddHeaders(
-		term.BOLD+"Name"+term.NORMAL,
-		term.BOLD+"Description"+term.NORMAL,
-		term.BOLD+"Configured"+term.NORMAL,
+		color.OpBold.Render("Name"),
+		color.OpBold.Render("Description"),
+		color.OpBold.Render("Configured"),
 	)
 
 	for _, cp := range cloudList {
@@ -57,9 +57,9 @@ func ListClouds() {
 			)
 		} else {
 			table.AddRow(
-				term.DIM+cp.Name()+term.NORMAL,
-				term.DIM+cp.Description()+term.NORMAL,
-				term.DIM+"no"+term.NORMAL,
+				color.OpFuzzy.Render(cp.Name()),
+				color.OpFuzzy.Render(cp.Description()),
+				color.OpFuzzy.Render("no"),
 			)
 		}
 	}
@@ -78,8 +78,8 @@ func ListCloudsByRegion() {
 
 		table := termtables.CreateTable()
 		table.AddHeaders(
-			term.BOLD+"Region Name"+term.NORMAL,
-			term.BOLD+"Description"+term.NORMAL,
+			color.OpBold.Render("Region Name"),
+			color.OpBold.Render("Description"),
 		)
 
 		for _, r := range cp.GetRegions() {
@@ -87,7 +87,7 @@ func ListCloudsByRegion() {
 		}
 
 		fmt.Printf(
-			term.BOLD+"%s\n%s\n\n%s\n"+term.NORMAL,
+			color.OpBold.Render("%s\n%s\n\n%s\n"),
 			cp.Description(),
 			strings.Repeat("=", len(cp.Description())),
 			table.Render())
