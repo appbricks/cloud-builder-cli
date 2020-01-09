@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/mevansam/goutils/logger"
 	"github.com/mevansam/goutils/term"
 	"github.com/mevansam/termtables"
 
@@ -35,7 +36,7 @@ been configured for.
 func ListTargets() {
 
 	var (
-		// err error
+		err error
 
 		hasTargets bool
 		// target     *target.Target
@@ -81,17 +82,28 @@ func ListTargets() {
 
 					for _, tgt := range targets {
 						tableRow[3] = tgt.DeploymentName()
+						if err = tgt.LoadRemoteRefs(); err != nil {
+							logger.DebugMessage(
+								"Error loading target remote references for '%s': %s",
+								tgt.Key(), err.Error(),
+							)
+							tableRow[4] = "error!"
 
-						switch tgt.Status() {
-						case target.Undeployed:
-							tableRow[4] = "not deployed"
-						case target.Running:
-							tableRow[4] = "running"
-						case target.Shutdown:
-							tableRow[4] = "shutdown"
-						case target.Unknown:
-							tableRow[4] = "unknown"
+						} else {
+							switch tgt.Status() {
+							case target.Undeployed:
+								tableRow[4] = "not deployed"
+							case target.Running:
+								tableRow[4] = "running"
+							case target.Shutdown:
+								tableRow[4] = "shutdown"
+							case target.Pending:
+								tableRow[4] = "pending"
+							case target.Unknown:
+								tableRow[4] = "unknown"
+							}
 						}
+
 						table.AddRow(tableRow...)
 						tableRow[0] = ""
 						tableRow[1] = ""
