@@ -82,13 +82,13 @@
         │
         ├─ launch - Deploys a quick launch target or re-applies any configuration updates.
         │
-        ├─ **ssh - SSH to the target environment. This is for advance users as well as 
+        ├─ ssh - SSH to the target environment. This is for advance users as well as 
         │          for troubleshooting any configuration errors at the target. If the 
         │          target consists of more than one instance this will create a secure
         │          shell to primary instance identified by the cloud recipe of the 
         │          target.
         │
-        ├─ **suspend - Suspends all resources deployed to a target.
+        ├─ **suspend - Suspends all instance resources deployed to a target.
         │
         ├─ **resume - Resumes hibernated resources at a deployed target.
         │
