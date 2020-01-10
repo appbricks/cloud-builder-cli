@@ -16,7 +16,7 @@ fi
   go get -u github.com/gobuffalo/packr/v2/packr2
 
 build_dir=${root_dir}/build
-if [[ $action == *:clean_all:* ]]; then
+if [[ $action == *:clean-all:* ]]; then
   # remove all build artifacts
   # and do a full build
   rm -fr ${build_dir}
