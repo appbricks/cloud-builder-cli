@@ -124,7 +124,9 @@ func StartTerminal(client *utils.SSHClient, rootPassword string) error {
 
 	if sshFlags.sudo {
 		expectStream, stdinSender, stdoutSender = streams.NewExpectStream(
-			os.Stdin, os.Stdout, nil,
+			os.Stdin, os.Stdout, func() {
+				client.Close()
+			},
 		)
 		defer expectStream.Close()
 
@@ -143,8 +145,7 @@ func StartTerminal(client *utils.SSHClient, rootPassword string) error {
 			},
 			true,
 		)
-		expectStream.SetShellExitCommand("exit\n")
-		expectStream.Start()
+		expectStream.StartAsShell()
 
 		if err := client.
 			Terminal(sshTermConfig).
