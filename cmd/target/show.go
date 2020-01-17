@@ -2,11 +2,16 @@ package target
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 
+	"github.com/mevansam/gocloud/cloud"
 	"github.com/mevansam/goforms/forms"
 	"github.com/mevansam/goforms/ux"
+	"github.com/mevansam/goutils/term"
+	"github.com/mevansam/goutils/utils"
 
 	"github.com/appbricks/cloud-builder-cli/config"
 	"github.com/appbricks/cloud-builder/target"
@@ -15,7 +20,8 @@ import (
 )
 
 var showFlags = struct {
-	all bool
+	config bool
+	all    bool
 }{}
 
 var showCommand = &cobra.Command{
@@ -40,40 +46,48 @@ func ShowRecipe(recipe, cloud, region, deploymentName string) {
 	var (
 		err error
 
-		target    *target.Target
+		tgt       *target.Target
 		inputForm forms.InputForm
 	)
 
 	targetName := fmt.Sprintf("%s/%s/%s/%s", recipe, cloud, region, deploymentName)
-	if target, err = config.Config.Context().GetTarget(targetName); err == nil && target != nil {
+	if tgt, err = config.Config.Context().GetTarget(targetName); err == nil && tgt != nil {
 
-		if inputForm, err = target.Provider.InputForm(); err != nil {
-			// if this happens there is an internal
-			// error and it is most likely a bug
+		if err = tgt.LoadRemoteRefs(); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
-		showInputFormData(
-			fmt.Sprintf("Provider Configuration for Target \"%s\"", targetName),
-			inputForm,
-		)
-		if inputForm, err = target.Recipe.InputForm(); err != nil {
-			// if this happens there is an internal
-			// error and it is most likely a bug
-			cbcli_utils.ShowErrorAndExit(err.Error())
+		showNodeInfo(tgt)
+
+		if showFlags.config || showFlags.all {
+			if inputForm, err = tgt.Provider.InputForm(); err != nil {
+				// if this happens there is an internal
+				// error and it is most likely a bug
+				cbcli_utils.ShowErrorAndExit(err.Error())
+			}
+			showInputFormData(
+				fmt.Sprintf("\nProvider Configuration for Target \"%s\"", targetName),
+				inputForm,
+			)
+			if inputForm, err = tgt.Recipe.InputForm(); err != nil {
+				// if this happens there is an internal
+				// error and it is most likely a bug
+				cbcli_utils.ShowErrorAndExit(err.Error())
+			}
+			showInputFormData(
+				fmt.Sprintf("Recipe Configuration for Target \"%s\"", targetName),
+				inputForm,
+			)
+			if inputForm, err = tgt.Backend.InputForm(); err != nil {
+				// if this happens there is an internal
+				// error and it is most likely a bug
+				cbcli_utils.ShowErrorAndExit(err.Error())
+			}
+			showInputFormData(
+				fmt.Sprintf("Backend Configuration for Target \"%s\"", targetName),
+				inputForm,
+			)
 		}
-		showInputFormData(
-			fmt.Sprintf("Recipe Configuration for Target \"%s\"", targetName),
-			inputForm,
-		)
-		if inputForm, err = target.Backend.InputForm(); err != nil {
-			// if this happens there is an internal
-			// error and it is most likely a bug
-			cbcli_utils.ShowErrorAndExit(err.Error())
-		}
-		showInputFormData(
-			fmt.Sprintf("Backend Configuration for Target \"%s\"", targetName),
-			inputForm,
-		)
+
 		return
 	}
 
@@ -87,6 +101,70 @@ func ShowRecipe(recipe, cloud, region, deploymentName string) {
 				targetName,
 			),
 		)
+	}
+}
+
+func showNodeInfo(tgt *target.Target) {
+
+	var (
+		err  error
+		l    int
+		text strings.Builder
+
+		state cloud.InstanceState
+	)
+
+	text.WriteString("\nDeployment: ")
+	text.WriteString(strings.ToUpper(tgt.DeploymentName()))
+	l = text.Len()
+	text.Write(term.LineFeedB)
+	utils.RepeatString("=", l, &text)
+	fmt.Println(color.OpBold.Render(text.String()))
+
+	fmt.Print("\nStatus: ")
+	fmt.Println(getTargetStatusName(tgt))
+
+	fmt.Println()
+	fmt.Print(tgt.Description())
+
+	for _, managedInstance := range tgt.ManagedInstances() {
+
+		text.Reset()
+		text.WriteString("\nInstance: ")
+		text.WriteString(managedInstance.Name())
+		l = text.Len()
+		text.Write(term.LineFeedB)
+		utils.RepeatString("-", l, &text)
+		fmt.Println(color.OpBold.Render(text.String()))
+
+		fmt.Print("\nState: ")
+		if state, err = managedInstance.Instance.State(); err == nil {
+			switch state {
+			case cloud.StateRunning:
+				fmt.Println(
+					color.OpReverse.Render(
+						color.Green.Render("running"),
+					),
+				)
+			case cloud.StateStopped:
+				fmt.Println(
+					color.OpReverse.Render(
+						color.Red.Render("stopped"),
+					),
+				)
+			case cloud.StatePending:
+				fmt.Println(
+					color.OpReverse.Render(
+						color.Yellow.Render("pending"),
+					),
+				)
+			default:
+				fmt.Println("Unknown")
+			}
+		}
+
+		fmt.Println()
+		fmt.Print(managedInstance.Description())
 	}
 }
 
@@ -124,5 +202,6 @@ func showInputFormData(title string, inputForm forms.InputForm) {
 func init() {
 	flags := showCommand.Flags()
 	flags.SortFlags = false
+	flags.BoolVarP(&showFlags.all, "config", "c", false, "show required configuration data values")
 	flags.BoolVarP(&showFlags.all, "all", "a", false, "show all configuration data values")
 }

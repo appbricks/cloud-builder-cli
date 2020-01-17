@@ -94,18 +94,7 @@ func ListTargets() {
 							tableRow[4] = "error!"
 
 						} else {
-							switch tgt.Status() {
-							case target.Undeployed:
-								tableRow[4] = "not deployed"
-							case target.Running:
-								tableRow[4] = "running"
-							case target.Shutdown:
-								tableRow[4] = "shutdown"
-							case target.Pending:
-								tableRow[4] = "pending"
-							case target.Unknown:
-								tableRow[4] = "unknown"
-							}
+							tableRow[4] = getTargetStatusName(tgt)
 						}
 
 						table.AddRow(tableRow...)
@@ -138,6 +127,33 @@ func ListTargets() {
 	fmt.Printf(
 		"\nThe following recipe targets have been configured.\n\n%s\n",
 		table.Render())
+}
+
+func getTargetStatusName(tgt *target.Target) string {
+
+	var (
+		statusName string
+	)
+
+	switch tgt.Status() {
+	case target.Undeployed:
+		statusName = "not deployed"
+	case target.Running:
+		statusName = color.OpReverse.Render(
+			color.Green.Render("running"),
+		)
+	case target.Shutdown:
+		statusName = color.OpReverse.Render(
+			color.Red.Render("shutdown"),
+		)
+	case target.Pending:
+		statusName = color.OpReverse.Render(
+			color.Yellow.Render("pending"),
+		)
+	default:
+		statusName = color.OpFuzzy.Render("unknown")
+	}
+	return statusName
 }
 
 func init() {

@@ -101,6 +101,11 @@ func LaunchTarget(recipe, cloud, region, deploymentName string) {
 
 			tgt.Output = output
 			config.Config.Context().SaveTarget(tgt.Key(), tgt)
+
+			if err = tgt.LoadRemoteRefs(); err != nil {
+				cbcli_utils.ShowErrorAndExit(err.Error())
+			}
+			showNodeInfo(tgt)
 		}
 		return
 	}
