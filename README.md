@@ -88,9 +88,9 @@
         │        shell to primary instance identified by the cloud recipe of the 
         │        target.
         │
-        ├─ **suspend - Suspends all instance resources deployed to a target.
+        ├─ suspend - Suspends all instance resources deployed to a target.
         │
-        ├─ **resume - Resumes hibernated resources at a deployed target.
+        ├─ resume - Resumes hibernated resources at a deployed target.
         │
         ├─ **migrate - Migrates services at a given target to different target.
         │

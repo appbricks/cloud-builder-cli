@@ -24,5 +24,7 @@ func init() {
 	TargetCommands.AddCommand(configureCommand)
 	TargetCommands.AddCommand(launchCommand)
 	TargetCommands.AddCommand(deleteCommand)
+	TargetCommands.AddCommand(suspendCommand)
+	TargetCommands.AddCommand(resumeCommand)
 	TargetCommands.AddCommand(sshCommand)
 }
