@@ -56,6 +56,7 @@ func ListTargets() {
 		color.OpBold.Render("Cloud"),
 		color.OpBold.Render("Region"),
 		color.OpBold.Render("Deployment Name"),
+		color.OpBold.Render("Version"),
 		color.OpBold.Render("Status"),
 		color.OpBold.Render("#"),
 	)
@@ -63,7 +64,7 @@ func ListTargets() {
 	targetIndex := 1
 	targets := config.Config.Context().TargetSet()
 
-	tableRow := make([]interface{}, 6)
+	tableRow := make([]interface{}, 7)
 	for i, recipe := range recipes {
 		tableRow[0] = recipe.Name
 
@@ -82,20 +83,22 @@ func ListTargets() {
 
 				if len(targets) > 0 {
 					tableRow[2] = region.Name
-					tableRow[5] = strconv.Itoa(targetIndex)
+					tableRow[6] = strconv.Itoa(targetIndex)
 
 					for _, tgt := range targets {
 						tableRow[3] = tgt.DeploymentName()
+
 						if err = tgt.LoadRemoteRefs(); err != nil {
 							logger.DebugMessage(
 								"Error loading target remote references for '%s': %s",
 								tgt.Key(), err.Error(),
 							)
-							tableRow[4] = "error!"
+							tableRow[5] = "error!"
 
 						} else {
-							tableRow[4] = getTargetStatusName(tgt)
+							tableRow[5] = getTargetStatusName(tgt)
 						}
+						tableRow[4] = tgt.Version()
 
 						table.AddRow(tableRow...)
 						tableRow[0] = ""
@@ -111,8 +114,9 @@ func ListTargets() {
 				tableRow[1] = color.OpFuzzy.Render(tableRow[1].(string))
 				tableRow[2] = ""
 				tableRow[3] = ""
-				tableRow[4] = color.OpFuzzy.Render("not configured")
-				tableRow[5] = ""
+				tableRow[4] = ""
+				tableRow[5] = color.OpFuzzy.Render("not configured")
+				tableRow[6] = ""
 				table.AddRow(tableRow...)
 
 				tableRow[0] = ""
