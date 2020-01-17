@@ -58,7 +58,8 @@ func LaunchTarget(recipe, cloud, region, deploymentName string) {
 			// are created
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
-		if launchFlags.init {
+		if launchFlags.init ||
+			tgt.CookbookTimestamp != tgt.Recipe.CookbookTimestamp() {
 			// force re-initializing
 			if err = bldr.Initialize(); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
@@ -100,6 +101,8 @@ func LaunchTarget(recipe, cloud, region, deploymentName string) {
 			logger.TraceMessage("Launch output: %# v", output)
 
 			tgt.Output = output
+			tgt.CookbookTimestamp = tgt.Recipe.CookbookTimestamp()
+
 			config.Config.Context().SaveTarget(tgt.Key(), tgt)
 
 			if err = tgt.LoadRemoteRefs(); err != nil {
