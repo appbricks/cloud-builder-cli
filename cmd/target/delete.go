@@ -35,7 +35,7 @@ then provide the --keep flag.
 	Args: cobra.ExactArgs(4),
 }
 
-func DeleteTarget(recipe, cloud, region, deploymentName string) {
+func DeleteTarget(recipe, iaas, region, deploymentName string) {
 
 	var (
 		err error
@@ -47,7 +47,7 @@ func DeleteTarget(recipe, cloud, region, deploymentName string) {
 	)
 
 	targets := config.Config.Context().TargetSet()
-	targetName := fmt.Sprintf("%s/%s/%s/%s", recipe, cloud, region, deploymentName)
+	targetName := fmt.Sprintf("%s/%s/%s/%s", recipe, iaas, region, deploymentName)
 	if tgt = targets.GetTarget(targetName); tgt != nil {
 
 		fmt.Println()

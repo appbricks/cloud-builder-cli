@@ -36,7 +36,7 @@ clean-rebuild takes precedence.
 	Args: cobra.ExactArgs(4),
 }
 
-func LaunchTarget(recipe, cloud, region, deploymentName string) {
+func LaunchTarget(recipe, iaas, region, deploymentName string) {
 
 	var (
 		err error
@@ -45,7 +45,7 @@ func LaunchTarget(recipe, cloud, region, deploymentName string) {
 		bldr *target.Builder
 	)
 
-	targetName := fmt.Sprintf("%s/%s/%s/%s", recipe, cloud, region, deploymentName)
+	targetName := fmt.Sprintf("%s/%s/%s/%s", recipe, iaas, region, deploymentName)
 	if tgt, err = config.Config.Context().GetTarget(targetName); err == nil && tgt != nil {
 
 		if bldr, err = tgt.NewBuilder(os.Stdout, os.Stderr); err != nil {

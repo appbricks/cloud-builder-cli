@@ -39,7 +39,7 @@ been launched.
 	Args: cobra.ExactArgs(4),
 }
 
-func ConfigureTarget(recipe, cloud, region, deploymentName string) {
+func ConfigureTarget(recipe, iaas, region, deploymentName string) {
 
 	var (
 		err error
@@ -47,7 +47,7 @@ func ConfigureTarget(recipe, cloud, region, deploymentName string) {
 		tgt *target.Target
 	)
 
-	targetName := fmt.Sprintf("%s/%s/%s/%s", recipe, cloud, region, deploymentName)
+	targetName := fmt.Sprintf("%s/%s/%s/%s", recipe, iaas, region, deploymentName)
 	if tgt, err = config.Config.Context().GetTarget(targetName); err == nil && tgt != nil {
 
 		if tgt.Status() == target.Undeployed {
