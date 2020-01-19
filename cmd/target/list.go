@@ -74,15 +74,11 @@ var targetSubCommands = []subCommand{
 		optionText: " - Resume",
 		subCommand: ResumeTarget,
 	},
-	subCommand{
-		optionText: " - SSH",
-		subCommand: SSHTarget,
-	},
 }
 
 var targetOptionsForState = map[target.TargetState][]int{
 	target.Undeployed: []int{1, 2},
-	target.Running:    []int{0, 1, 2, 3, 4, 6},
+	target.Running:    []int{0, 1, 2, 3, 4},
 	target.Shutdown:   []int{0, 1, 2, 3, 5},
 	target.Pending:    []int{0},
 	target.Unknown:    []int{0},
