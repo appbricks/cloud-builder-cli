@@ -36,12 +36,12 @@ targets.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		ShowRecipe(args[0], args[1], args[2], args[3])
+		ShowTarget(args[0], args[1], args[2], args[3])
 	},
 	Args: cobra.ExactArgs(4),
 }
 
-func ShowRecipe(recipe, cloud, region, deploymentName string) {
+func ShowTarget(recipe, cloud, region, deploymentName string) {
 
 	var (
 		err error
