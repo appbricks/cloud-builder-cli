@@ -1,5 +1,7 @@
 # Cloud Builder Automation Command Line Interface
 
+[![Build Status](https://travis-ci.org/appbricks/cloud-builder-cli.svg?branch=master)](https://travis-ci.org/appbricks/cloud-builder-cli)
+
 ## Overview
 
 [Cloud automation](https://github.com/appbricks/cloud-builder) recipes can be launched using this CLI which launches these recipes from within you local shell. The CLI allows you to securely save your cloud credentials and configurations locally or remotely. It will execute all recipes locally and save state remotely based on the recipe's specification unless it is configured explicitly to be saved locally.
