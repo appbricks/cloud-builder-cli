@@ -51,6 +51,10 @@ type subCommand struct {
 
 var targetSubCommands = []subCommand{
 	subCommand{
+		optionText: " - Show",
+		subCommand: ShowTarget,
+	},
+	subCommand{
 		optionText: " - Configure",
 		subCommand: ConfigureTarget,
 	},
@@ -77,11 +81,11 @@ var targetSubCommands = []subCommand{
 }
 
 var targetOptionsForState = map[target.TargetState][]int{
-	target.Undeployed: []int{0, 1},
-	target.Running:    []int{0, 1, 2, 3, 5},
-	target.Shutdown:   []int{0, 1, 2, 4},
-	target.Pending:    []int{},
-	target.Unknown:    []int{},
+	target.Undeployed: []int{1, 2},
+	target.Running:    []int{0, 1, 2, 3, 4, 6},
+	target.Shutdown:   []int{0, 1, 2, 3, 5},
+	target.Pending:    []int{0},
+	target.Unknown:    []int{0},
 }
 
 var hasOption = func(enabledOptions []int, option int) bool {
