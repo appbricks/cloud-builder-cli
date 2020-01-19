@@ -2,6 +2,7 @@ package target
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -58,6 +59,10 @@ func ResumeTarget(recipe, iaas, region, deploymentName string) {
 					if state == cloud.StateStopped {
 						fmt.Printf("Starting instance \"%s\"...", name)
 					} else {
+						for !instance.CanConnect(443) {
+							fmt.Print(".")
+							time.Sleep(time.Second * 5)
+						}
 						fmt.Println("done")
 					}
 				},
