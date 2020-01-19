@@ -102,7 +102,7 @@ func configureTarget(tgt *target.Target, tags ...string) {
 			utils.FormatMessage(
 				0, 80, true, false,
 				"Configure Target %s",
-				tgt.Description(),
+				tgt.Name(),
 			),
 		),
 	)
@@ -168,7 +168,7 @@ func configureTarget(tgt *target.Target, tags ...string) {
 	// save target
 	if config.Config.Context().HasTarget(tgt.Key()) {
 
-		fmt.Print(utils.FormatMessage(7, 80, false, true, tgt.Description()))
+		fmt.Print(utils.FormatMessage(7, 80, false, true, tgt.Name()))
 		fmt.Println(" exists.")
 		response = cbcli_utils.GetUserInputFromList(
 			"Do you wish to overwrite it (yes/no)? ",

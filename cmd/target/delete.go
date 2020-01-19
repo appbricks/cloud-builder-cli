@@ -56,7 +56,7 @@ func DeleteTarget(recipe, iaas, region, deploymentName string) {
 				utils.FormatMessage(
 					0, 80, false, true,
 					"Found %s.",
-					tgt.Description(),
+					tgt.Name(),
 				),
 			),
 		)
