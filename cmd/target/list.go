@@ -2,12 +2,14 @@ package target
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 
 	"github.com/mevansam/goutils/logger"
+	"github.com/mevansam/goutils/utils"
 	"github.com/mevansam/termtables"
 
 	"github.com/appbricks/cloud-builder-cli/config"
@@ -97,6 +99,7 @@ func ListTargets() {
 
 	var (
 		err error
+		msg string
 
 		hasTargets bool
 
@@ -108,6 +111,7 @@ func ListTargets() {
 		targetIndex,
 		subCommandIndex int
 	)
+	fmt.Println()
 
 	recipes := config.Config.Context().Cookbook().RecipeList()
 	lastRecipeIndex = len(recipes) - 1
@@ -150,6 +154,10 @@ func ListTargets() {
 					tableRow[2] = region.Name
 
 					for _, tgt := range targets {
+
+						msg = fmt.Sprintf("\rQuerying %s...", tgt.Name())
+						fmt.Print(msg)
+
 						if err = tgt.LoadRemoteRefs(); err != nil {
 							logger.DebugMessage(
 								"Error loading target remote references for '%s': %s",
@@ -180,6 +188,9 @@ func ListTargets() {
 						tableRow[0] = ""
 						tableRow[1] = ""
 						tableRow[2] = ""
+
+						fmt.Print("\r")
+						utils.RepeatString(" ", len(msg), os.Stdout)
 					}
 					hasTargets = true
 				}
@@ -203,7 +214,7 @@ func ListTargets() {
 	}
 
 	fmt.Printf(
-		"\nThe following recipe targets have been configured.\n\n%s\n",
+		"\rThe following recipe targets have been configured.\n\n%s\n",
 		table.Render())
 
 	numTargets := len(targetSubCommandArgs)
