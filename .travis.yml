@@ -5,7 +5,7 @@ go:
 env:
   global:
   - COOKBOOK_REPO_PATH=https://github.com/appbricks/vpn-server/cloud/recipes
-  - COOKBOOK_VERSION=0.0.6
+  - COOKBOOK_VERSION=0.0.8
 install:
 - git clone --branch=master https://github.com/mevansam/termtables.git ${GOPATH}/src/github.com/mevansam/termtables
 - git clone --branch=master https://github.com/mevansam/goutils.git ${GOPATH}/src/github.com/mevansam/goutils
