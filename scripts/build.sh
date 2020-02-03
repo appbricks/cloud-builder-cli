@@ -105,6 +105,26 @@ if [[ $action == *:dev:* ]]; then
   ln -s ${release_dir}/${os}_${arch}/cb $GOPATH/bin/cb
 
 else
+  # set version
+  build_version=${TRAVIS_TAG:-0.0.2}
+  build_timestamp=$(date +'%B %d, %Y at %H:%M %Z')
+
+  if [[ `go env GOOS` == darwin ]]; then
+    sed -i '' \
+      "s|^const VERSION = \`.*\`$|const VERSION = \`$build_version\`|" \
+      ${root_dir}/cmd/version.go
+    sed -i '' \
+      "s|^const BUILD_TIMESTAMP = \`.*\`$|const BUILD_TIMESTAMP = \`$build_timestamp\`|" \
+      ${root_dir}/cmd/version.go
+  else
+    sed -i \
+      "s|^const VERSION = \`.*\`$|const VERSION = \`$build_version\`|" \
+      ${root_dir}/cmd/version.go
+    sed -i \
+      "s|^const BUILD_TIMESTAMP = \`.*\`$|const BUILD_TIMESTAMP = \`$build_timestamp\`|" \
+      ${root_dir}/cmd/version.go
+  fi
+
   # build release binaries for all supported architectures
   build "darwin" "amd64"
   build "linux" "amd64"

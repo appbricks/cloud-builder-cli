@@ -199,6 +199,7 @@ func getPassphrase() string {
 
 // adds commands to the root
 func addCommands() {
+	rootCmd.AddCommand(versionCommand)
 	rootCmd.AddCommand(initialize.InitCommand)
 	rootCmd.AddCommand(cloud.CloudCommands)
 	rootCmd.AddCommand(recipe.RecipeCommands)
