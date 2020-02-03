@@ -19,7 +19,7 @@ configuration status.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("\nVersion:     %s\n", VERSION)
-		fmt.Printf("Build date:  %s\n", BUILD_TIMESTAMP)
+		fmt.Printf("\nVersion:    %s\n", VERSION)
+		fmt.Printf("Build date: %s\n", BUILD_TIMESTAMP)
 	},
 }
