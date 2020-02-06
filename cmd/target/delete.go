@@ -70,6 +70,12 @@ func DeleteTarget(recipe, iaas, region, deploymentName string) {
 				if bldr, err = tgt.NewBuilder(os.Stdout, os.Stderr); err != nil {
 					cbcli_utils.ShowErrorAndExit(err.Error())
 				}
+				if tgt.CookbookTimestamp != tgt.Recipe.CookbookTimestamp() {
+					// force re-initializing
+					if err = bldr.Initialize(); err != nil {
+						cbcli_utils.ShowErrorAndExit(err.Error())
+					}
+				}
 				if err = bldr.Delete(); err != nil {
 					cbcli_utils.ShowErrorAndExit(err.Error())
 				}
