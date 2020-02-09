@@ -91,18 +91,21 @@ func LaunchTarget(recipe, iaas, region, deploymentName string) {
 			if err = bldr.ShowLaunchPlan(); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
+			tgt.CookbookTimestamp = tgt.Recipe.CookbookTimestamp()
+			config.Config.Context().SaveTarget(tgt.Key(), tgt)
+
 		} else {
 			// deploy target recipe to cloud
 			if err = bldr.Launch(); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
 
+			// retrieve the output of the deployment
 			output := bldr.Output()
 			logger.TraceMessage("Launch output: %# v", output)
 
 			tgt.Output = output
 			tgt.CookbookTimestamp = tgt.Recipe.CookbookTimestamp()
-
 			config.Config.Context().SaveTarget(tgt.Key(), tgt)
 
 			if err = tgt.LoadRemoteRefs(); err != nil {
