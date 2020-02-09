@@ -4,9 +4,37 @@
 
 ## Overview
 
-[Cloud automation](https://github.com/appbricks/cloud-builder) recipes can be launched using this CLI which launches these recipes from within you local shell. The CLI allows you to securely save your cloud credentials and configurations locally or remotely. It will execute all recipes locally and save state remotely based on the recipe's specification unless it is configured explicitly to be saved locally.
+This CLI allows you to launch [Cloud automation](https://github.com/appbricks/cloud-builder) recipes from within your local shell. It saves your cloud credentials and configurations locally and will execute recipes saving their deployment state remotely based on the recipe's specification. Cloud credentials are encrypted and saved locally using a key you provide at initialization. Once recipes have been deployed the CLI can be used to managed the life-cycle of the deployed services. 
 
-## Command Tree
+Future iterations of the CLI will included a registration requirement, which will Single Sign-On (SSO) with the [AppBricks.io](https://appbricks.io) domain. This will require you maintain a subscription account in order to access advance features such as a cost optimization engine, the ability to view telemetry on deployed services, and be alerted on events that might impact the cost, performance and security of services in your sandbox. The subscription will provide a free tier which will allow you to launch and run basic services such as the VPN in your sandbox.
+
+## Installation
+
+The CLI is available for 64 bit versions of [Apple macOS](https://en.wikipedia.org/wiki/MacOS), [Microsoft Windows](https://en.wikipedia.org/wiki/Microsoft_Windows) and [Linux](https://en.wikipedia.org/wiki/Linux). You can download the [zip](https://en.wikipedia.org/wiki/Zip_(file_format)) archive of the appropriate binary for you operating system from the [releases](https://github.com/appbricks/cloud-builder-cli/releases) page of this repository.
+
+Once downloaded unzip the downloaded archive and copy the binary file named `cb` to a system path location. Copying the file to the following system paths will make the binary available globally within any shell in your system. You will need to provide root or admin privileges to copy the CLI binary to these paths.
+
+|Operating System     |Path              |
+|---------------------|------------------|
+| Apple MacOS         | `C:\Windows`     |
+| Microsoft Windows   | `/usr/local/bin` |
+| Linux (i.e. Ubuntu) | `/usr/local/bin` |
+
+Alternatively copy the CLI binary to a user directory and add it to the system path environment variable.
+
+## Creating you Public Cloud Accounts
+
+### Amazon Web Services
+
+https://aws.amazon.com/premiumsupport/knowledge-center/create-and-activate-aws-account/
+
+### Microsoft Azure
+
+### Google Cloud Platform
+
+## Usage
+
+## Command Reference Tree
 
 ```
   cb
