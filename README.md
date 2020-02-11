@@ -24,13 +24,11 @@ Alternatively copy the CLI binary to a user directory and add it to the system p
 
 ## Creating you Public Cloud Accounts
 
-### Amazon Web Services
+In order to deploy your sandbox in one of the public cloud regions you need to have an active account in all or one of the following cloud providers. 
 
-https://aws.amazon.com/premiumsupport/knowledge-center/create-and-activate-aws-account/
-
-### Microsoft Azure
-
-### Google Cloud Platform
+* [Amazon Web Services (AWS)](doc/aws.md)
+* [Microsft Azure](doc/azure.md)
+* [Google Cloud Platform (GCP)](doc/gcp.md)
 
 ## Usage
 
