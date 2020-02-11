@@ -18,4 +18,5 @@ In order to be able to deploy recipes you need to create an Azure AD application
 
   ![alt text](azure-add-role-assignment.png "Azure App Registration")
 
+
 * For API access make sure you create an [application secret](https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal#create-a-new-application-secret).
