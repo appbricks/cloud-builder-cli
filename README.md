@@ -28,7 +28,7 @@ In order to deploy your sandbox in one of the public cloud regions you need to h
 
 * [Amazon Web Services (AWS)](doc/aws.md)
 * [Microsft Azure](doc/azure.md)
-* [Google Cloud Platform (GCP)](doc/gcp.md)
+* [Google Cloud Platform (GCP)](doc/google.md)
 
 ## Usage
 
