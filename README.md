@@ -22,7 +22,7 @@ Once downloaded unzip the downloaded archive and copy the binary file named `cb`
 
 Alternatively copy the CLI binary to a user directory and add it to the system path environment variable.
 
-## Creating you Public Cloud Accounts
+## Creating your Public Cloud Accounts
 
 In order to deploy your sandbox in one of the public cloud regions you need to have an active account in all or one of the following cloud providers. 
 
