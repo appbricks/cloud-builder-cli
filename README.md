@@ -32,6 +32,10 @@ In order to deploy your sandbox in one of the public cloud regions you need to h
 
 ## Usage
 
+Once the Cloud Builder CLI has been downloaded and extracted into your system path you can invoke it from shell or command window from you home folder. You obtain help for any command or sub-command by adding the global option `--help` to any command. It is recommended that you run `cb init` before configuring the CLI as it will configure encryption of your cloud credentials and target state. 
+
+> The current release of the `cb` CLI does not ask you to register or associate with an [AppBricks.IO](https://appbricks.io) account when you run `init`. This may change in future releases.
+
 ## Command Reference Tree
 
 ```
