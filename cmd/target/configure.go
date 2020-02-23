@@ -141,7 +141,7 @@ func configureTarget(tgt *target.Target, tags ...string) {
 	if backendInputForm, err = tgt.Backend.InputForm(); err != nil {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}
-	if len(backendInputForm.EnabledInputs("target-undeployed")) > 0 {
+	if len(backendInputForm.EnabledInputs(true, "target-undeployed")) > 0 {
 
 		backend := tgt.Backend.(backend.CloudBackend)
 		if !backend.IsValid() {
