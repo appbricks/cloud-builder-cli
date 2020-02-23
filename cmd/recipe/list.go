@@ -54,7 +54,12 @@ func ListRecipes() {
 
 	tableRow := make([]interface{}, 3)
 	for i, r := range recipes {
-		tableRow[0] = r.Name
+
+		if r.IsBastion {
+			tableRow[0] = color.OpBold.Render(color.FgCyan.Render(r.Name))
+		} else {
+			tableRow[0] = r.Name
+		}
 
 		clouds = []string{}
 		for j, c := range r.IaaSList {

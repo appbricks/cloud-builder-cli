@@ -135,7 +135,12 @@ func ListTargets() {
 
 	tableRow := make([]interface{}, 7)
 	for i, recipe := range recipes {
-		tableRow[0] = recipe.Name
+
+		if recipe.IsBastion {
+			tableRow[0] = color.OpBold.Render(color.FgCyan.Render(recipe.Name))
+		} else {
+			tableRow[0] = recipe.Name
+		}
 
 		// flag to flag last row of the table which if not flagged
 		// will cause double separator lines at the end of the dable
