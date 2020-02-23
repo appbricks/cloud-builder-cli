@@ -79,7 +79,7 @@ var targetSubCommands = []subCommand{
 }
 
 var targetOptionsForState = map[target.TargetState][]int{
-	target.Undeployed: []int{1, 2},
+	target.Undeployed: []int{0, 1, 2},
 	target.Running:    []int{0, 1, 2, 3, 4},
 	target.Shutdown:   []int{0, 1, 2, 3, 5},
 	target.Pending:    []int{0},
