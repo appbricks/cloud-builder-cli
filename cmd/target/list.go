@@ -49,32 +49,41 @@ type subCommandArgs struct {
 type subCommand struct {
 	optionText string
 	subCommand func(string, string, string, string)
+	setFlags   func()
 }
 
 var targetSubCommands = []subCommand{
 	subCommand{
 		optionText: " - Show",
 		subCommand: ShowTarget,
+		setFlags:   func() {},
 	},
 	subCommand{
 		optionText: " - Configure",
 		subCommand: ConfigureTarget,
+		setFlags:   func() {},
 	},
 	subCommand{
 		optionText: " - Launch",
 		subCommand: LaunchTarget,
+		setFlags:   func() {},
 	},
 	subCommand{
 		optionText: " - Delete",
 		subCommand: DeleteTarget,
+		setFlags: func() {
+			deleteFlags.keep = true
+		},
 	},
 	subCommand{
 		optionText: " - Suspend",
 		subCommand: SuspendTarget,
+		setFlags:   func() {},
 	},
 	subCommand{
 		optionText: " - Resume",
 		subCommand: ResumeTarget,
+		setFlags:   func() {},
 	},
 }
 
@@ -280,7 +289,11 @@ func ListTargets() {
 
 		if subCommandIndex, err = strconv.Atoi(response); err == nil &&
 			hasOption(enabledOptions, subCommandIndex-1) {
-			targetSubCommands[subCommandIndex-1].subCommand(recipe, iaas, region, name)
+
+			targetSubCommand := targetSubCommands[subCommandIndex-1]
+			targetSubCommand.setFlags()
+			targetSubCommand.subCommand(recipe, iaas, region, name)
+
 		} else {
 			cbcli_utils.ShowErrorAndExit("invalid option provided")
 		}
