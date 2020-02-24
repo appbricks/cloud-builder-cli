@@ -65,7 +65,7 @@ func ShowTarget(recipe, cloud, region, deploymentName string) {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
 			showInputFormData(
-				fmt.Sprintf("\nProvider Configuration for Target \"%s\"", targetName),
+				fmt.Sprintf("Provider Configuration for Target \"%s\"", targetName),
 				inputForm,
 			)
 			if inputForm, err = tgt.Recipe.InputForm(); err != nil {
@@ -165,6 +165,7 @@ func showNodeInfo(tgt *target.Target) {
 
 		fmt.Println()
 		fmt.Print(managedInstance.Description())
+		fmt.Println()
 	}
 }
 
