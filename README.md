@@ -40,7 +40,7 @@ Once you have accepted the license and initialized the context you need configur
 
 ### Configuring Cloud Accounts
 
-Before you can begin launching your cloud targets you need to make sure the CLI is configured with your public cloud credentials. Each public cloud has its own specific credential 
+Before you can begin launching your cloud targets you need to make sure the CLI is configured with your public cloud credentials. Each public cloud has its own specific credential attributes that need to be provided.
 
 * To list the available public clouds that can be configured run the following.
 
@@ -77,15 +77,17 @@ Before you can begin launching your cloud targets you need to make sure the CLI 
   CONFIGURATION DATA INPUT REFERENCE
 
   * Access Key - The AWS account's access key id. It will be sourced from the
-                environment variable AWS_ACCESS_KEY_ID if not provided.
+                 environment variable AWS_ACCESS_KEY_ID if not provided.
   * Secret Key - The AWS account's secret key. It will be sourced from the
-                environment variable AWS_SECRET_ACCESS_KEY if not provided.
+                 environment variable AWS_SECRET_ACCESS_KEY if not provided.
   * Token      - AWS multi-factor authentication token. It will be sourced from
-                the environment variable AWS_SESSION_TOKEN if not provided.
+                 the environment variable AWS_SESSION_TOKEN if not provided.
   * Region     - The AWS region to create resources in. It will be sourced from
-                the environment variable AWS_DEFAULT_REGION if not provided.
-                (Default value = 'us-east-1')
+                 the environment variable AWS_DEFAULT_REGION if not provided.
+                 (Default value = 'us-east-1')
   ```
+
+  > For cloud configurations most inputs can source their values from environment variables if provided. Some inputs may be a path to a file, like the service key file for Google Cloud Platform (GCP).
 
 * To configure your cloud account run the following.
 
@@ -124,11 +126,13 @@ Before you can begin launching your cloud targets you need to make sure the CLI 
   Configuration input saved
   ```
 
-  > When you are prompted for a particular input the `TAB` key will let you to cycle through the list of possible inputs sourced from the environment or an input list of valid values (i.e. cloud regions).
+  > When you are prompted for a particular input the `TAB` key will let you cycle through the list of possible inputs sourced from the environment or an input list of valid values (i.e. cloud regions).
 
 ### Configuring Recipes
 
-Recipes like the default `sandbox` recipe come with pre-configured defaults. For example by default it will deploy a sandbox virtual private cloud (VPC) with an OpenVPN service which will route traffic between the DMZ, Admin network and Internet. Once logged in to the VPN it will tunnel all traffic to the internet from your device via the VPC's DMZ.
+Recipes like the default `sandbox` recipe come with pre-configured defaults. For example, by default it will deploy a sandbox virtual private cloud (VPC) with an OpenVPN service which will route traffic between the DMZ, Admin network and Internet. Once logged in to the VPN it will tunnel all traffic to the internet from your device via the VPC's DMZ.
+
+> The sandbox is a useful alternative to having your own dedicated free VPN server rather than subscribing to a hosted VPN provider like [ExpressVPN](https://www.expressvpn.com/). Having you own VPN server will ensure greater levels of privacy and anonymity as well as performance issues on overloaded servers that are being shared by many users concurrently. The 'ovpn-x' is a special deployment of an OpenVPN bastion instance that runs a proxy that will mask OpenVPN traffic to bypass DPI routers that block VPN traffic at your internet service provider.
 
 * To list the available recipes that can be deployed to your cloud account run the following command.
 
@@ -146,7 +150,7 @@ Recipes like the default `sandbox` recipe come with pre-configured defaults. For
   +---------+-----------------------------------------------+------------------+
   ```
 
-  > By default only the sandbox recipe is available. Additional recipes will need to be imported from the marketplace or a download archive of the recipe. 
+  > By default only the sandbox recipe is available. Additional recipes will need to be imported from the marketplace or a download archive of the recipe.
 
 * Recipes are preconfigured with default values. These values can be viewed or changed with the following commands.
 
