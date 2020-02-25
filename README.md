@@ -124,7 +124,7 @@ Before you can begin launching your cloud targets you need to make sure the CLI 
   Configuration input saved
   ```
 
-  > When you are prompted for a particular input the `TAB` key will let you to cycle through the list of possible inputs sourced from the environment or an input list of valid values (i.e. clopud regions).
+  > When you are prompted for a particular input the `TAB` key will let you to cycle through the list of possible inputs sourced from the environment or an input list of valid values (i.e. cloud regions).
 
 ### Configuring Recipes
 
@@ -148,7 +148,7 @@ Recipes like the default `sandbox` recipe come with pre-configured defaults. For
 
   > By default only the sandbox recipe is available. Additional recipes will need to be imported from the marketplace or a download archive of the recipe. 
 
-* Recipes are preconfigured with default values. This values can be viewed or changed with the following commands.
+* Recipes are preconfigured with default values. These values can be viewed or changed with the following commands.
 
   To view the recipe inputs and their default values for a particular cloud run.
 
@@ -194,7 +194,7 @@ Targets are recipes that have been configured to be launched to a particular clo
   cb target create sandbox aws
   ```
 
-  This command will cycle through a list of inputs similar to the cloud or recipe configurations. You can accept all the cloud and region specific defaults unless you want to customize DNS or instance type.
+  This command will cycle through a list of inputs similar to the cloud or recipe configurations. You can accept all the cloud and region specific defaults unless you want to customize for example the bastion instance type.
 
 * Once a target has been configured the target list will show the cloud and region a target has been configured for.
 
@@ -294,11 +294,11 @@ The `cb target ...` sub-commands are used to manage the lifecycle of configured 
     Password: ****
   ```
 
- You can run the following command to display a comprehensive list of the configuration attributes of the sandbox recipe used in the deployment along with the status show above.
+  You can run the following command to display a comprehensive list of the configuration attributes of the sandbox recipe used in the deployment along with the status show above.
 
- ```
- cb target show sandbox aws us-east-1 MyVPN -a
- ```
+  ```
+  cb target show sandbox aws us-east-1 MyVPN -a
+  ```
 
 * Run the following command to destroy all resources created by a launched target. You can provide the '-k' option if you want to ensure the target configuration is preserved.
 
