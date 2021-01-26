@@ -16,6 +16,7 @@ replace github.com/mevansam/termtables => ../../mevansam/termtables
 
 require (
 	github.com/appbricks/cloud-builder v0.0.0-00010101000000-000000000000
+	github.com/briandowns/spinner v1.12.0
 	github.com/gobuffalo/packr/v2 v2.7.1
 	github.com/gookit/color v1.2.1
 	github.com/mevansam/gocloud v0.0.0-00010101000000-000000000000
@@ -23,9 +24,8 @@ require (
 	github.com/mevansam/goutils v0.0.0-00010101000000-000000000000
 	github.com/mevansam/termtables v0.0.0-00010101000000-000000000000
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/onsi/ginkgo v1.11.0
-	github.com/onsi/gomega v1.8.1
 	github.com/peterh/liner v1.1.0
 	github.com/spf13/cobra v0.0.5
-	golang.org/x/crypto v0.0.0-20200109152110-61a87790db17
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/oauth2 v0.0.0-20210113205817-d3ed898aa8a3
 )

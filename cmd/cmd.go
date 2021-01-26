@@ -1,3 +1,5 @@
+package cmd
+
 // Copyright © 2019 Mevan Samaratunga
 //
 // This program is free software: you can redistribute it and/or modify
@@ -13,11 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package cmd
-
 import (
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/gookit/color"
 	"github.com/peterh/liner"
@@ -34,6 +36,7 @@ import (
 	"github.com/appbricks/cloud-builder/config"
 	"github.com/appbricks/cloud-builder/cookbook"
 
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_cookbook "github.com/appbricks/cloud-builder-cli/cookbook"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
@@ -81,6 +84,10 @@ the agreement can be found at the following link.
 			}
 		}
 
+		if err := cbcli_auth.Authenticate(cbcli_config.Config); err != nil {					
+			cbcli_utils.ShowErrorAndExit("My Cloud Space user authentication failed.")
+		}
+
 		if cmd != initialize.InitCommand && !cbcli_config.Config.Initialized() {
 			fmt.Println(
 				color.OpReverse.Render(
@@ -120,6 +127,9 @@ func init() {
 
 		home string
 	)
+
+	// handle ctrl+c
+	setupCloseHandler()
 
 	if systemPassphrase := os.Getenv("CBS_SYSTEM_PASSPHRASE"); len(systemPassphrase) > 0 {
 		config.SystemPassphrase = func() string {
@@ -195,6 +205,20 @@ func getPassphrase() string {
 		panic(err)
 	}
 	return passphrase
+}
+
+func setupCloseHandler() {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		fmt.Println(
+			color.Red.Render(
+				"\n\nCLI command execution has been interrupted.",
+			),
+		)
+		os.Exit(1)
+	}()
 }
 
 // adds commands to the root
