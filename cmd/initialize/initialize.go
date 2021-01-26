@@ -136,5 +136,9 @@ func initialize() {
 	}
 
 	config.Config.SetInitialized()
+
+	// reset auth token
+	config.Config.AuthContext().Reset()
+
 	fmt.Println()
 }
