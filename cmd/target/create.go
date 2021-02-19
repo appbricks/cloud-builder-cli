@@ -2,16 +2,25 @@ package target
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/appbricks/cloud-builder/target"
+	"github.com/gookit/color"
+	"github.com/mevansam/gocloud/provider"
+	"github.com/mevansam/goforms/config"
 	"github.com/mevansam/goforms/forms"
 	"github.com/mevansam/goforms/ux"
 	"github.com/mevansam/goutils/logger"
+	"github.com/mevansam/goutils/utils"
 	"github.com/spf13/cobra"
-	"github.com/appbricks/cloud-builder-cli/config"
-	"github.com/appbricks/cloud-builder/target"
 
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
+
+var createFlags = struct {
+	dependentTarget string
+}{}
 
 var createCommand = &cobra.Command{
 	Use: "create [recipe] [cloud]",
@@ -34,7 +43,10 @@ func CreateTarget(recipeName, iaasName string) {
 	var (
 		err error
 
-		tgt *target.Target
+		tgt, spaceTgt *target.Target
+		spaceTgtKey string
+
+		spaceTgtProvider config.Configurable
 
 		recipeInputForm,
 		providerInputForm forms.InputForm
@@ -42,8 +54,9 @@ func CreateTarget(recipeName, iaasName string) {
 		region      *string
 		regionField *forms.InputField
 	)
+	contect := cbcli_config.Config.Context()
 
-	if tgt, err = config.Config.Context().NewTarget(
+	if tgt, err = contect.NewTarget(
 		recipeName, iaasName,
 	); err == nil && tgt != nil {
 
@@ -65,15 +78,65 @@ func CreateTarget(recipeName, iaasName string) {
 		}
 
 		// new target so provider configuration needs to be completed
-		if err = ux.GetFormInput(providerInputForm,
-			fmt.Sprintf(
-				"Configure Cloud Provider \"%s\" for New Target",
-				tgt.RecipeIaas,
-			),
-			"CONFIGURATION DATA INPUT",
-			2, 80, "target-undeployed",
-		); err != nil {
-			cbcli_utils.ShowErrorAndExit(err.Error())
+		if tgt.Recipe.IsBastion() {
+			// bastion nodes build the space virtual private cloud network
+			// so their providers need to be configured individually
+			if err = ux.GetFormInput(providerInputForm,
+				fmt.Sprintf(
+					"Configure Cloud Provider \"%s\" for New Target",
+					tgt.RecipeIaas,
+				),
+				"CONFIGURATION DATA INPUT",
+				2, 80, "target-undeployed",
+			); err != nil {
+				cbcli_utils.ShowErrorAndExit(err.Error())
+			}
+
+		} else {
+			// non-bastion nodes install to a bastion node's space, 
+			// so need a target bastion node to deploy recipe to
+			targets := contect.TargetSet()
+
+			if len(createFlags.dependentTarget) == 0 {
+				fmt.Println()
+
+				spaceTargets := []string{}
+				for _, t := range targets.GetTargets() {
+					if t.Provider.Name() == iaasName && t.Recipe.IsBastion() {
+						spaceTargets = append(spaceTargets, t.Key())
+					}
+				}
+				if len(spaceTargets) == 0 {
+					fmt.Println(
+						color.Blue.Render(
+							utils.FormatMessage(
+								0, 80, false, false, 
+								"No space targets have been configured where application '%s' can be deployed to iaas '%s'.\n", 
+								recipeName, iaasName,
+							),
+						),
+					)
+					os.Exit(0)
+				}
+				spaceTgtKey = cbcli_utils.GetUserInputFromList(
+					"Please tab through to select the target space to deploy application to: ",
+					spaceTargets[0],
+					spaceTargets,
+				)
+			} else {
+				spaceTgtKey = createFlags.dependentTarget
+			}
+			if spaceTgt = targets.GetTarget(spaceTgtKey); spaceTgt == nil || !spaceTgt.Recipe.IsBastion() {
+				cbcli_utils.ShowErrorAndExit(fmt.Sprintf("Invalid space target key '%s'.", spaceTgtKey))
+			}
+			tgt.DependentTargets = []string{spaceTgtKey}
+			
+			// application target needs to have same provider configuration 
+			// as that of the space to which it will be deployed
+			if spaceTgtProvider, err = spaceTgt.Provider.Copy(); err != nil {
+				cbcli_utils.ShowErrorAndExit(err.Error())
+			}
+			tgt.Provider = spaceTgtProvider.(provider.CloudProvider)
 		}
 
 		// set the target's recipe region variable
@@ -84,15 +147,14 @@ func CreateTarget(recipeName, iaasName string) {
 					"Setting the recipe '%s' region value to: %s",
 					tgt.RecipeName, *region,
 				)
-				err = regionField.SetValue(region)
+				if err = regionField.SetValue(region);err != nil {
+					cbcli_utils.ShowErrorAndExit(err.Error())
+				}
 			} else {
 				logger.TraceMessage(
 					"Recipe '%s' does not have a region input.",
 					tgt.RecipeName,
 				)
-			}
-			if err != nil {
-				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
 		} else {
 			logger.TraceMessage(
@@ -119,6 +181,8 @@ func CreateTarget(recipeName, iaasName string) {
 }
 
 func init() {
-	flags := showCommand.Flags()
+	flags := createCommand.Flags()
 	flags.SortFlags = false
+	flags.StringVarP(&createFlags.dependentTarget, "space", "s", "", 
+		"space target key to deploy application to (format <recipe>/<cloud>/<region>/<name>)")
 }

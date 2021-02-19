@@ -15,11 +15,13 @@ import (
 )
 
 var deleteFlags = struct {
+	commonFlags
+
 	keep bool
 }{}
 
 var deleteCommand = &cobra.Command{
-	Use: "delete [recipe] [cloud] [region] [deployment name]",
+	Use: "delete [recipe] [cloud] [deployment name]",
 
 	Short: "Deletes a quick launch target deployment.",
 	Long: `
@@ -30,12 +32,12 @@ then provide the --keep flag.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		DeleteTarget(args[0], args[1], args[2], args[3])
+		DeleteTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(showFlags.commonFlags)))
 	},
-	Args: cobra.ExactArgs(4),
+	Args: cobra.ExactArgs(3),
 }
 
-func DeleteTarget(recipe, iaas, region, deploymentName string) {
+func DeleteTarget(targetKey string) {
 
 	var (
 		err error
@@ -46,9 +48,7 @@ func DeleteTarget(recipe, iaas, region, deploymentName string) {
 		response string
 	)
 
-	targets := config.Config.Context().TargetSet()
-	targetName := fmt.Sprintf("%s/%s/%s/%s", recipe, iaas, region, deploymentName)
-	if tgt = targets.GetTarget(targetName); tgt != nil {
+	if tgt, err = config.Config.Context().GetTarget(targetKey); err == nil && tgt != nil {
 
 		fmt.Println()
 		fmt.Print(
@@ -82,7 +82,7 @@ func DeleteTarget(recipe, iaas, region, deploymentName string) {
 				tgt.Output = nil
 			}
 			if !deleteFlags.keep {
-				targets.DeleteTarget(tgt.Key())
+				config.Config.Context().TargetSet().DeleteTarget(tgt.Key())
 			}
 			fmt.Print(color.Green.Render("\nTarget has been deleted.\n\n"))
 		} else {
@@ -91,21 +91,18 @@ func DeleteTarget(recipe, iaas, region, deploymentName string) {
 		return
 	}
 
-	if err != nil {
-		cbcli_utils.ShowErrorAndExit(err.Error())
-	} else {
-		cbcli_utils.ShowErrorAndExit(
-			fmt.Sprintf(
-				"Unknown target named \"%s\". Run 'cb target list' "+
-					"to list the currently configured targets",
-				targetName,
-			),
-		)
-	}
+	cbcli_utils.ShowErrorAndExit(
+		fmt.Sprintf(
+			"Target \"%s\" does not exist. Run 'cb target list' to list the currently configured targets",
+			targetKey,
+		),
+	)
 }
 
 func init() {
 	flags := deleteCommand.Flags()
 	flags.SortFlags = false
+	bindCommonFlags(flags, &(showFlags.commonFlags))
+
 	flags.BoolVarP(&deleteFlags.keep, "keep", "k", false, "destroy deployed resources if any but do not delete the configuration")
 }

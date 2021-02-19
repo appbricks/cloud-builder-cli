@@ -10,6 +10,7 @@ import (
 	"github.com/mevansam/termtables"
 
 	"github.com/appbricks/cloud-builder-cli/config"
+	"github.com/appbricks/cloud-builder/cookbook"
 )
 
 var listFlags = struct {
@@ -37,12 +38,46 @@ one of the supported public clouds.
 func ListRecipes() {
 
 	var (
-		clouds, descLines []string
+		spacesRecipes,
+		appsRecipes []cookbook.CookbookRecipeInfo
+	)
+
+	for _, r := range config.Config.Context().Cookbook().RecipeList() {
+		if r.IsBastion {
+			spacesRecipes = append(spacesRecipes, r)
+		} else {
+			appsRecipes = append(appsRecipes, r)
+		}
+	}
+
+	spacesTable := buildTableOutput(spacesRecipes)
+	appsTable := buildTableOutput(appsRecipes)
+
+	fmt.Println("\nThis Cloud Builder cookbook supports launching the following recipes.")
+	fmt.Println(color.OpBold.Render("\nSpaces\n======\n"))
+	if len(spacesRecipes) > 0 {
+		fmt.Println(spacesTable.Render())
+	} else {
+		fmt.Println(color.FgYellow.Render("No recipes loaded..."))
+	}
+	fmt.Println(color.OpBold.Render("Applications\n============\n"))
+	if len(appsRecipes) > 0 {
+		fmt.Println(appsTable.Render())
+	} else {
+		fmt.Println(color.FgYellow.Render("No recipes loaded..."))
+	}
+	fmt.Println()
+}
+
+func buildTableOutput(recipes []cookbook.CookbookRecipeInfo) *termtables.Table {
+
+	var (
+		clouds, 
+		descLines []string
 
 		numLines int
 	)
 
-	recipes := config.Config.Context().Cookbook().RecipeList()
 	lastRecipesIndex := len(recipes) - 1
 
 	table := termtables.CreateTable()
@@ -54,12 +89,7 @@ func ListRecipes() {
 
 	tableRow := make([]interface{}, 3)
 	for i, r := range recipes {
-
-		if r.IsBastion {
-			tableRow[0] = color.OpBold.Render(color.FgCyan.Render(r.Name))
-		} else {
-			tableRow[0] = r.Name
-		}
+		tableRow[0] = r.Name
 
 		clouds = []string{}
 		for j, c := range r.IaaSList {
@@ -97,14 +127,12 @@ func ListRecipes() {
 			table.AddRow(tableRow...)
 			tableRow[0] = ""
 		}
-		if i != lastRecipesIndex {
+		if i < lastRecipesIndex {
 			table.AddSeparator()
 		}
 	}
 
-	fmt.Printf(
-		"\nThis Cloud Builder cookbook supports launching the following recipes.\n\n%s\n",
-		table.Render())
+	return table
 }
 
 func ListRecipesForCloud(cloud string) {

@@ -26,6 +26,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/peterh/liner v1.1.0
 	github.com/spf13/cobra v0.0.5
+	github.com/spf13/pflag v1.0.3
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/oauth2 v0.0.0-20210113205817-d3ed898aa8a3
 )

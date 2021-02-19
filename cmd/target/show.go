@@ -20,12 +20,14 @@ import (
 )
 
 var showFlags = struct {
+	commonFlags
+
 	config bool
 	all    bool
 }{}
 
 var showCommand = &cobra.Command{
-	Use: "show [recipe] [cloud] [region] [deployment name]",
+	Use: "show [recipe] [cloud] [deployment name]",
 
 	Short: "Show configuration data for a target.",
 	Long: `
@@ -36,12 +38,12 @@ targets.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		ShowTarget(args[0], args[1], args[2], args[3])
+		ShowTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(showFlags.commonFlags)))
 	},
-	Args: cobra.ExactArgs(4),
+	Args: cobra.ExactArgs(3),
 }
 
-func ShowTarget(recipe, cloud, region, deploymentName string) {
+func ShowTarget(targetKey string) {
 
 	var (
 		err error
@@ -50,8 +52,7 @@ func ShowTarget(recipe, cloud, region, deploymentName string) {
 		inputForm forms.InputForm
 	)
 
-	targetName := fmt.Sprintf("%s/%s/%s/%s", recipe, cloud, region, deploymentName)
-	if tgt, err = config.Config.Context().GetTarget(targetName); err == nil && tgt != nil {
+	if tgt, err = config.Config.Context().GetTarget(targetKey); err == nil && tgt != nil {
 
 		if err = tgt.LoadRemoteRefs(); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
@@ -65,7 +66,7 @@ func ShowTarget(recipe, cloud, region, deploymentName string) {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
 			showInputFormData(
-				fmt.Sprintf("Provider Configuration for Target \"%s\"", targetName),
+				fmt.Sprintf("Provider Configuration for Target \"%s\"", tgt.DeploymentName()),
 				inputForm,
 			)
 			if inputForm, err = tgt.Recipe.InputForm(); err != nil {
@@ -74,7 +75,7 @@ func ShowTarget(recipe, cloud, region, deploymentName string) {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
 			showInputFormData(
-				fmt.Sprintf("Recipe Configuration for Target \"%s\"", targetName),
+				fmt.Sprintf("Recipe Configuration for Target \"%s\"", tgt.DeploymentName()),
 				inputForm,
 			)
 			if inputForm, err = tgt.Backend.InputForm(); err != nil {
@@ -83,7 +84,7 @@ func ShowTarget(recipe, cloud, region, deploymentName string) {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
 			showInputFormData(
-				fmt.Sprintf("Backend Configuration for Target \"%s\"", targetName),
+				fmt.Sprintf("Backend Configuration for Target \"%s\"", tgt.DeploymentName()),
 				inputForm,
 			)
 		}
@@ -91,17 +92,12 @@ func ShowTarget(recipe, cloud, region, deploymentName string) {
 		return
 	}
 
-	if err != nil {
-		cbcli_utils.ShowErrorAndExit(err.Error())
-	} else {
-		cbcli_utils.ShowErrorAndExit(
-			fmt.Sprintf(
-				"Unknown target named \"%s\". Run 'cb target list' "+
-					"to list the currently configured targets",
-				targetName,
-			),
-		)
-	}
+	cbcli_utils.ShowErrorAndExit(
+		fmt.Sprintf(
+			"Target \"%s\" does not exist. Run 'cb target list' to list the currently configured targets",
+			targetKey,
+		),
+	)
 }
 
 func showNodeInfo(tgt *target.Target) {
@@ -203,6 +199,10 @@ func showInputFormData(title string, inputForm forms.InputForm) {
 func init() {
 	flags := showCommand.Flags()
 	flags.SortFlags = false
-	flags.BoolVarP(&showFlags.all, "config", "c", false, "show required configuration data values")
-	flags.BoolVarP(&showFlags.all, "all", "a", false, "show all configuration data values")
+	bindCommonFlags(flags, &(showFlags.commonFlags))	
+
+	flags.BoolVarP(&showFlags.config, "config", "c", false, 
+		"show required configuration data values")
+	flags.BoolVarP(&showFlags.all, "all", "a", false, 
+		"show all configuration data values")
 }

@@ -11,21 +11,24 @@ import (
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/terminal"
 
+	"github.com/appbricks/cloud-builder-cli/config"
 	"github.com/appbricks/cloud-builder/target"
 	"github.com/mevansam/gocloud/cloud"
+	"github.com/mevansam/goutils/logger"
 	"github.com/mevansam/goutils/streams"
 	"github.com/mevansam/goutils/utils"
 
-	"github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
 var sshFlags = struct {
+	commonFlags
+
 	sudo bool
 }{}
 
 var sshCommand = &cobra.Command{
-	Use: "ssh [recipe] [cloud] [region] [deployment name]",
+	Use: "ssh [recipe] [cloud] [deployment name]",
 
 	Short: "SSH to a launch target's resource.",
 	Long: `
@@ -39,12 +42,12 @@ the cloud space sandbox VPN has been establised.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		SSHTarget(args[0], args[1], args[2], args[3])
+		SSHTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(showFlags.commonFlags)))
 	},
-	Args: cobra.ExactArgs(4),
+	Args: cobra.ExactArgs(3),
 }
 
-func SSHTarget(recipe, iaas, region, deploymentName string) {
+func SSHTarget(targetKey string) {
 
 	var (
 		err error
@@ -60,8 +63,7 @@ func SSHTarget(recipe, iaas, region, deploymentName string) {
 	)
 
 	targets := config.Config.Context().TargetSet()
-	targetName := fmt.Sprintf("%s/%s/%s/%s", recipe, iaas, region, deploymentName)
-	if tgt = targets.GetTarget(targetName); tgt != nil {
+	if tgt = targets.GetTarget(targetKey); tgt != nil {
 
 		if err = tgt.LoadRemoteRefs(); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
@@ -73,7 +75,7 @@ func SSHTarget(recipe, iaas, region, deploymentName string) {
 
 			options := make([]string, numInstances)
 
-			fmt.Println("\nTarget is running more than one managed instance given below.\n")
+			fmt.Print("\nTarget is running more than one managed instance given below.\n\n")
 			for i, mi := range managedInstances {
 				option := strconv.Itoa(i + 1)
 				fmt.Print(color.Green.Render(option))
@@ -141,7 +143,13 @@ func StartTerminal(client *utils.SSHClient, rootPassword string) error {
 		if origTermState, err = terminal.MakeRaw(osStdinFd); err != nil {
 			return err
 		}
-		defer terminal.Restore(osStdinFd, origTermState)
+		defer func() {
+			if err = terminal.Restore(osStdinFd, origTermState); err != nil {
+				logger.TraceMessage(
+					"Error restoring streams: %s", err.Error(),
+				)
+			}
+		}()
 
 		if termWidth, termHeight, err = terminal.GetSize(osStdinFd); err != nil {
 			return err
@@ -185,13 +193,15 @@ func StartTerminal(client *utils.SSHClient, rootPassword string) error {
 			},
 			true,
 		)
-		expectStream.AddExpectOutTrigger(
-			&streams.Expect{
-				StartPattern: `password for [a-z_][a-z0-9_-]*`,
-				Command:      rootPassword + "\n",
-			},
-			true,
-		)
+		if len(rootPassword) > 0 {
+			expectStream.AddExpectOutTrigger(
+				&streams.Expect{
+					StartPattern: `password for [a-z_][a-z0-9_-]*`,
+					Command:      rootPassword + "\n",
+				},
+				true,
+			)	
+		}
 		expectStream.StartAsShell()
 
 		if err := client.
@@ -218,5 +228,8 @@ func StartTerminal(client *utils.SSHClient, rootPassword string) error {
 func init() {
 	flags := sshCommand.Flags()
 	flags.SortFlags = false
-	flags.BoolVarP(&sshFlags.sudo, "sudo", "s", false, "sudo to root shell after establishing the SSH session")
+	bindCommonFlags(flags, &(showFlags.commonFlags))
+
+	flags.BoolVarP(&sshFlags.sudo, "sudo", "u", false, 
+		"sudo to root shell after establishing the SSH session")
 }

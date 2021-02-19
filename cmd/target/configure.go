@@ -20,11 +20,13 @@ import (
 )
 
 var configureFlags = struct {
+	commonFlags
+
 	all bool
 }{}
 
 var configureCommand = &cobra.Command{
-	Use: "configure [recipe] [cloud] [region] [deployment name]",
+	Use: "configure [recipe] [cloud] [deployment name]",
 
 	Short: "Configure an existing target.",
 	Long: `
@@ -34,12 +36,12 @@ been launched.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		ConfigureTarget(args[0], args[1], args[2], args[3])
+		ConfigureTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(showFlags.commonFlags)))
 	},
-	Args: cobra.ExactArgs(4),
+	Args: cobra.ExactArgs(3),
 }
 
-func ConfigureTarget(recipe, iaas, region, deploymentName string) {
+func ConfigureTarget(targetKey string) {
 
 	var (
 		err error
@@ -47,8 +49,7 @@ func ConfigureTarget(recipe, iaas, region, deploymentName string) {
 		tgt *target.Target
 	)
 
-	targetName := fmt.Sprintf("%s/%s/%s/%s", recipe, iaas, region, deploymentName)
-	if tgt, err = config.Config.Context().GetTarget(targetName); err == nil && tgt != nil {
+	if tgt, err = config.Config.Context().GetTarget(targetKey); err == nil && tgt != nil {
 
 		if tgt.Status() == target.Undeployed {
 			if configureFlags.all {
@@ -66,17 +67,12 @@ func ConfigureTarget(recipe, iaas, region, deploymentName string) {
 		return
 	}
 
-	if err != nil {
-		cbcli_utils.ShowErrorAndExit(err.Error())
-	} else {
-		cbcli_utils.ShowErrorAndExit(
-			fmt.Sprintf(
-				"Unknown target named \"%s\". Run 'cb target list' "+
-					"to list the currently configured targets",
-				targetName,
-			),
-		)
-	}
+	cbcli_utils.ShowErrorAndExit(
+		fmt.Sprintf(
+			"Target \"%s\" does not exist. Run 'cb target list' to list the currently configured targets",
+			targetKey,
+		),
+	)
 }
 
 func configureTarget(tgt *target.Target, tags ...string) {
@@ -188,5 +184,8 @@ func configureTarget(tgt *target.Target, tags ...string) {
 func init() {
 	flags := configureCommand.Flags()
 	flags.SortFlags = false
-	flags.BoolVarP(&configureFlags.all, "all", "a", false, "configure all possible configuration data values")
+	bindCommonFlags(flags, &(showFlags.commonFlags))
+
+	flags.BoolVarP(&configureFlags.all, "all", "a", false, 
+		"configure all possible configuration data values")
 }

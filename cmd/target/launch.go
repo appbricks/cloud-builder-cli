@@ -14,6 +14,8 @@ import (
 )
 
 var launchFlags = struct {
+	commonFlags
+
 	init         bool
 	rebuild      bool
 	cleanRebuild bool
@@ -21,7 +23,7 @@ var launchFlags = struct {
 }{}
 
 var launchCommand = &cobra.Command{
-	Use: "launch [recipe] [cloud] [region] [deployment name]",
+	Use: "launch [recipe] [cloud] [deployment name]",
 
 	Short: "Deploy a launch target to the cloud.",
 	Long: `
@@ -31,22 +33,32 @@ clean-rebuild takes precedence.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		LaunchTarget(args[0], args[1], args[2], args[3])
+		LaunchTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(showFlags.commonFlags)))
 	},
-	Args: cobra.ExactArgs(4),
+	Args: cobra.ExactArgs(3),
 }
 
-func LaunchTarget(recipe, iaas, region, deploymentName string) {
+func LaunchTarget(targetKey string) {
 
 	var (
 		err error
 
-		tgt  *target.Target
-		bldr *target.Builder
+		tgt, spaceTgt *target.Target
+		bldr          *target.Builder
 	)
+	context := config.Config.Context()
 
-	targetName := fmt.Sprintf("%s/%s/%s/%s", recipe, iaas, region, deploymentName)
-	if tgt, err = config.Config.Context().GetTarget(targetName); err == nil && tgt != nil {
+	if tgt, err = context.GetTarget(targetKey); err == nil && tgt != nil {
+
+		// ensure any dependencies have been deployed
+		if len(showFlags.commonFlags.space) > 0 {
+			if spaceTgt, err = context.GetTarget(showFlags.commonFlags.space); err != nil {
+				cbcli_utils.ShowErrorAndExit(err.Error())
+			}
+			if spaceTgt.Status() == target.Undeployed {
+				cbcli_utils.ShowErrorAndExit("Space target to launch application in has not been deployed.")
+			}
+		}
 
 		if bldr, err = tgt.NewBuilder(os.Stdout, os.Stderr); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
@@ -92,7 +104,7 @@ func LaunchTarget(recipe, iaas, region, deploymentName string) {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
 			tgt.CookbookTimestamp = tgt.Recipe.CookbookTimestamp()
-			config.Config.Context().SaveTarget(tgt.Key(), tgt)
+			context.SaveTarget(tgt.Key(), tgt)
 
 		} else {
 			// deploy target recipe to cloud
@@ -106,7 +118,7 @@ func LaunchTarget(recipe, iaas, region, deploymentName string) {
 
 			tgt.Output = output
 			tgt.CookbookTimestamp = tgt.Recipe.CookbookTimestamp()
-			config.Config.Context().SaveTarget(tgt.Key(), tgt)
+			context.SaveTarget(tgt.Key(), tgt)
 
 			if err = tgt.LoadRemoteRefs(); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
@@ -116,25 +128,22 @@ func LaunchTarget(recipe, iaas, region, deploymentName string) {
 		return
 	}
 
-	if err != nil {
-		cbcli_utils.ShowErrorAndExit(err.Error())
-	} else {
-		cbcli_utils.ShowErrorAndExit(
-			fmt.Sprintf(
-				"Unknown target named \"%s\". Run 'cb target list' "+
-					"to list the currently configured targets",
-				targetName,
-			),
-		)
-	}
+	cbcli_utils.ShowErrorAndExit(
+		fmt.Sprintf(
+			"Target \"%s\" does not exist. Run 'cb target list' to list the currently configured targets",
+			targetKey,
+		),
+	)
 }
 
 func init() {
 	flags := launchCommand.Flags()
 	flags.SortFlags = false
+	bindCommonFlags(flags, &(showFlags.commonFlags))
+
 	flags.BoolVarP(&launchFlags.init, "init", "i", false,
 		"re-initialize the launch context")
-	flags.BoolVarP(&launchFlags.rebuild, "rebuild", "r", false,
+	flags.BoolVarP(&launchFlags.rebuild, "rebuild", "b", false,
 		"re-build/upgrade the target instance resources using the most recent version")
 	flags.BoolVarP(&launchFlags.cleanRebuild, "clean-rebuild", "x", false,
 		"re-build all instances and attached storage created by the launch recipe")

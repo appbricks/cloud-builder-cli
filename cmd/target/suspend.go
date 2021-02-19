@@ -13,11 +13,13 @@ import (
 )
 
 var suspendFlags = struct {
+	commonFlags
+
 	instance string
 }{}
 
 var suspendCommand = &cobra.Command{
-	Use: "suspend [recipe] [cloud] [region] [deployment name]",
+	Use: "suspend [recipe] [cloud] [deployment name]",
 
 	Short: "Suspends a running target.",
 	Long: `
@@ -27,12 +29,12 @@ suspend a specific instance provide the instance name via the
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		SuspendTarget(args[0], args[1], args[2], args[3])
+		SuspendTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(showFlags.commonFlags)))
 	},
-	Args: cobra.ExactArgs(4),
+	Args: cobra.ExactArgs(3),
 }
 
-func SuspendTarget(recipe, iaas, region, deploymentName string) {
+func SuspendTarget(targetKey string) {
 
 	var (
 		err error
@@ -40,9 +42,7 @@ func SuspendTarget(recipe, iaas, region, deploymentName string) {
 		tgt *target.Target
 	)
 
-	targets := config.Config.Context().TargetSet()
-	targetName := fmt.Sprintf("%s/%s/%s/%s", recipe, iaas, region, deploymentName)
-	if tgt = targets.GetTarget(targetName); tgt != nil {
+	if tgt, err = config.Config.Context().GetTarget(targetKey); err == nil && tgt != nil {
 
 		if err = tgt.LoadRemoteRefs(); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
@@ -70,21 +70,18 @@ func SuspendTarget(recipe, iaas, region, deploymentName string) {
 		return
 	}
 
-	if err != nil {
-		cbcli_utils.ShowErrorAndExit(err.Error())
-	} else {
-		cbcli_utils.ShowErrorAndExit(
-			fmt.Sprintf(
-				"Unknown target named \"%s\". Run 'cb target list' "+
-					"to list the currently configured targets",
-				targetName,
-			),
-		)
-	}
+	cbcli_utils.ShowErrorAndExit(
+		fmt.Sprintf(
+			"Target \"%s\" does not exist. Run 'cb target list' to list the currently configured targets",
+			targetKey,
+		),
+	)
 }
 
 func init() {
 	flags := suspendCommand.Flags()
 	flags.SortFlags = false
+	bindCommonFlags(flags, &(showFlags.commonFlags))
+
 	flags.StringVarP(&suspendFlags.instance, "instance", "i", "", "name of the instance to suspend")
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/mevansam/termtables"
 
 	"github.com/appbricks/cloud-builder-cli/config"
+	"github.com/appbricks/cloud-builder/cookbook"
 	"github.com/appbricks/cloud-builder/target"
 
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
@@ -38,49 +39,45 @@ been configured for.
 }
 
 type subCommandArgs struct {
-	recipe,
-	iaas,
-	region,
-	name string
-
+	tgt   *target.Target
 	state target.TargetState
 }
 
 type subCommand struct {
 	optionText string
-	subCommand func(string, string, string, string)
+	subCommand func(string)
 	setFlags   func()
 }
 
 var targetSubCommands = []subCommand{
-	subCommand{
+	{
 		optionText: " - Show",
 		subCommand: ShowTarget,
 		setFlags:   func() {},
 	},
-	subCommand{
+	{
 		optionText: " - Configure",
 		subCommand: ConfigureTarget,
 		setFlags:   func() {},
 	},
-	subCommand{
+	{
 		optionText: " - Launch",
 		subCommand: LaunchTarget,
 		setFlags:   func() {},
 	},
-	subCommand{
+	{
 		optionText: " - Delete",
 		subCommand: DeleteTarget,
 		setFlags: func() {
 			deleteFlags.keep = true
 		},
 	},
-	subCommand{
+	{
 		optionText: " - Suspend",
 		subCommand: SuspendTarget,
 		setFlags:   func() {},
 	},
-	subCommand{
+	{
 		optionText: " - Resume",
 		subCommand: ResumeTarget,
 		setFlags:   func() {},
@@ -88,11 +85,11 @@ var targetSubCommands = []subCommand{
 }
 
 var targetOptionsForState = map[target.TargetState][]int{
-	target.Undeployed: []int{0, 1, 2},
-	target.Running:    []int{0, 1, 2, 3, 4},
-	target.Shutdown:   []int{0, 1, 2, 3, 5},
-	target.Pending:    []int{0},
-	target.Unknown:    []int{0},
+	target.Undeployed: {0, 1, 2},
+	target.Running:    {0, 1, 2, 3, 4},
+	target.Shutdown:   {0, 1, 2, 3, 5},
+	target.Pending:    {0},
+	target.Unknown:    {0},
 }
 
 var hasOption = func(enabledOptions []int, option int) bool {
@@ -108,21 +105,128 @@ func ListTargets() {
 
 	var (
 		err error
+
+		response string
+
+		targetIndex,
+		subCommandIndex int
+
+		spacesRecipes,
+		appsRecipes []cookbook.CookbookRecipeInfo
+	)
+	fmt.Println()
+	
+	for _, r := range config.Config.Context().Cookbook().RecipeList() {
+		if r.IsBastion {
+			spacesRecipes = append(spacesRecipes, r)
+		} else {
+			appsRecipes = append(appsRecipes, r)
+		}
+	}
+
+	targetIndex = 0
+	targetSubCommandArgs := []subCommandArgs{}
+
+	spacesTable := buildSpacesTable(spacesRecipes, &targetIndex, &targetSubCommandArgs)
+	appsTable := buildAppsTable(appsRecipes, &targetIndex, &targetSubCommandArgs)
+
+	fmt.Println("\nThe following targets have been configured.")
+	fmt.Println(color.OpBold.Render("\nMy Cloud Spaces\n===============\n"))
+	if len(spacesRecipes) > 0 {
+		fmt.Println(spacesTable.Render())
+	} else {
+		fmt.Println(color.FgYellow.Render("No space recipes found..."))
+	}
+	fmt.Println(color.OpBold.Render("My Applications\n===============\n"))
+	if len(appsRecipes) > 0 {
+		fmt.Println(appsTable.Render())
+	} else {
+		fmt.Println(color.FgYellow.Render("No application recipes found..."))
+	}
+	fmt.Println()
+
+	numTargets := len(targetSubCommandArgs)
+	if listFlags.actions && numTargets > 0 {
+
+		options := make([]string, targetIndex)
+		for i := 0; i < numTargets; i++ {
+			options[i] = strconv.Itoa(i + 1)
+		}
+		if response = cbcli_utils.GetUserInputFromList(
+			"Enter # of node to execute sub-command on or (q)uit: ",
+			"", options); response == "q" {
+			return
+		}
+		if targetIndex, err = strconv.Atoi(response); err != nil ||
+			targetIndex < 1 || targetIndex > numTargets {
+			cbcli_utils.ShowErrorAndExit("invalid option provided")
+		}
+
+		targetIndex--
+		tgt := targetSubCommandArgs[targetIndex].tgt
+
+		fmt.Println("\nSelect sub-command to execute on target.")
+		fmt.Print("\n  Recipe: ")
+		fmt.Println(color.OpBold.Render(tgt.RecipeName))
+		fmt.Print("  Cloud:  ")
+		fmt.Println(color.OpBold.Render(tgt.RecipeIaas))
+		fmt.Print("  Region: ")
+		fmt.Println(color.OpBold.Render(tgt.Provider.Region()))
+		fmt.Print("  Name:   ")
+		fmt.Println(color.OpBold.Render(tgt.DeploymentName()))
+		fmt.Println()
+
+		enabledOptions := targetOptionsForState[targetSubCommandArgs[targetIndex].state]
+		numEnabledOptions := len(enabledOptions)
+		for i, c := range targetSubCommands {
+			if hasOption(enabledOptions, i) {
+				fmt.Print(color.Green.Render(strconv.Itoa(i + 1)))
+				fmt.Println(c.optionText)
+			} else {
+				fmt.Println(color.OpFuzzy.Render(strconv.Itoa(i+1) + c.optionText))
+			}
+		}
+		fmt.Println()
+
+		options = make([]string, numEnabledOptions)
+		for i, o := range enabledOptions {
+			options[i] = strconv.Itoa(o + 1)
+		}
+		if response = cbcli_utils.GetUserInputFromList(
+			"Enter # of sub-command or (q)uit: ",
+			"", options); response == "q" {
+			return
+		}
+
+		if subCommandIndex, err = strconv.Atoi(response); err == nil &&
+			hasOption(enabledOptions, subCommandIndex-1) {
+
+			targetSubCommand := targetSubCommands[subCommandIndex-1]
+			targetSubCommand.setFlags()
+			targetSubCommand.subCommand(tgt.Key())
+
+		} else {
+			cbcli_utils.ShowErrorAndExit("invalid option provided")
+		}
+	}
+}
+
+func buildSpacesTable(
+	recipes []cookbook.CookbookRecipeInfo,
+	targetIndex *int,
+	targetSubCommandArgs *[]subCommandArgs,
+) *termtables.Table  {
+
+	var (
+		err error
 		msg string
 
 		hasTargets bool
 
 		lastRecipeIndex,
 		lastCloudIndex int
-
-		response string
-
-		targetIndex,
-		subCommandIndex int
 	)
-	fmt.Println()
 
-	recipes := config.Config.Context().Cookbook().RecipeList()
 	lastRecipeIndex = len(recipes) - 1
 	lastCloudIndex = -1
 
@@ -137,19 +241,11 @@ func ListTargets() {
 		color.OpBold.Render("#"),
 	)
 
-	targetIndex = 0
-	targetSubCommandArgs := []subCommandArgs{}
-
 	targets := config.Config.Context().TargetSet()
 
 	tableRow := make([]interface{}, 7)
 	for i, recipe := range recipes {
-
-		if recipe.IsBastion {
-			tableRow[0] = color.OpBold.Render(color.FgCyan.Render(recipe.Name))
-		} else {
-			tableRow[0] = recipe.Name
-		}
+		tableRow[0] = recipe.Name
 
 		// flag to flag last row of the table which if not flagged
 		// will cause double separator lines at the end of the dable
@@ -180,18 +276,15 @@ func ListTargets() {
 							tableRow[5] = "error!"
 
 						} else {
-							targetIndex++
+							*targetIndex++
 
 							tableRow[5] = getTargetStatusName(tgt)
-							tableRow[6] = strconv.Itoa(targetIndex)
+							tableRow[6] = strconv.Itoa(*targetIndex)
 
-							targetSubCommandArgs = append(targetSubCommandArgs,
+							*targetSubCommandArgs = append(*targetSubCommandArgs,
 								subCommandArgs{
-									recipe: recipe.Name,
-									iaas:   cloudProvider.Name(),
-									region: region.Name,
-									name:   tgt.DeploymentName(),
-									state:  tgt.Status(),
+									tgt:   tgt,
+									state: tgt.Status(),
 								},
 							)
 						}
@@ -227,77 +320,120 @@ func ListTargets() {
 		}
 	}
 
-	fmt.Printf(
-		"\rThe following recipe targets have been configured.\n\n%s\n",
-		table.Render())
+	return table
+}
 
-	numTargets := len(targetSubCommandArgs)
-	if listFlags.actions && numTargets > 0 {
+func buildAppsTable(
+	recipes []cookbook.CookbookRecipeInfo,
+	targetIndex *int,
+	targetSubCommandArgs *[]subCommandArgs,
+) *termtables.Table {
 
-		options := make([]string, targetIndex)
-		for i := 0; i < numTargets; i++ {
-			options[i] = strconv.Itoa(i + 1)
+	var (
+		err error
+		msg string
+
+		hasTargets bool
+
+		lastRecipeIndex,
+		lastCloudIndex int
+	)
+
+	lastRecipeIndex = len(recipes) - 1
+	lastCloudIndex = -1
+
+	table := termtables.CreateTable()
+	table.AddHeaders(
+		color.OpBold.Render("Name"),
+		color.OpBold.Render("Cloud"),
+		color.OpBold.Render("Attached to Targets"),
+		color.OpBold.Render("Deployed App Name"),
+		color.OpBold.Render("Version"),
+		color.OpBold.Render("Status"),
+		color.OpBold.Render("#"),
+	)
+
+	targets := config.Config.Context().TargetSet()
+
+	tableRow := make([]interface{}, 7)
+	for i, recipe := range recipes {
+		tableRow[0] = recipe.Name
+
+		// flag to flag last row of the table which if not flagged
+		// will cause double separator lines at the end of the dable
+		if i == lastRecipeIndex {
+			lastCloudIndex = len(recipe.IaaSList) - 1
 		}
-		if response = cbcli_utils.GetUserInputFromList(
-			"Enter # of node to execute sub-command on or (q)uit: ",
-			"", options); response == "q" {
-			return
-		}
-		if targetIndex, err = strconv.Atoi(response); err != nil ||
-			targetIndex < 1 || targetIndex > numTargets {
-			cbcli_utils.ShowErrorAndExit("invalid option provided")
-		}
 
-		targetIndex--
-		recipe := targetSubCommandArgs[targetIndex].recipe
-		iaas := targetSubCommandArgs[targetIndex].iaas
-		region := targetSubCommandArgs[targetIndex].region
-		name := targetSubCommandArgs[targetIndex].name
+		for j, cloudProvider := range recipe.IaaSList {
+			tableRow[1] = cloudProvider.Name()
 
-		fmt.Println("\nSelect sub-command to execute on target.")
-		fmt.Print("\n  Recipe: ")
-		fmt.Println(color.OpBold.Render(recipe))
-		fmt.Print("  Cloud:  ")
-		fmt.Println(color.OpBold.Render(iaas))
-		fmt.Print("  Region: ")
-		fmt.Println(color.OpBold.Render(region))
-		fmt.Print("  Name:   ")
-		fmt.Println(color.OpBold.Render(name))
-		fmt.Println()
+			hasTargets = false
+			targets := targets.Lookup(recipe.Name, cloudProvider.Name())
 
-		enabledOptions := targetOptionsForState[targetSubCommandArgs[targetIndex].state]
-		numEnabledOptions := len(enabledOptions)
-		for i, c := range targetSubCommands {
-			if hasOption(enabledOptions, i) {
-				fmt.Print(color.Green.Render(strconv.Itoa(i + 1)))
-				fmt.Println(c.optionText)
-			} else {
-				fmt.Println(color.OpFuzzy.Render(strconv.Itoa(i+1) + c.optionText))
+			if len(targets) > 0 {
+				for _, tgt := range targets {
+
+					msg = fmt.Sprintf("\rQuerying %s...", tgt.Name())
+					fmt.Print(msg)
+
+					if err = tgt.LoadRemoteRefs(); err != nil {
+						logger.DebugMessage(
+							"Error loading target remote references for '%s': %s",
+							tgt.Key(), err.Error(),
+						)
+						tableRow[5] = "error!"
+
+					} else {
+						*targetIndex++
+
+						tableRow[5] = getTargetStatusName(tgt)
+						tableRow[6] = strconv.Itoa(*targetIndex)
+
+						*targetSubCommandArgs = append(*targetSubCommandArgs,
+							subCommandArgs{
+								tgt:   tgt,
+								state: tgt.Status(),
+							},
+						)
+					}
+					tableRow[3] = tgt.DeploymentName()
+					tableRow[4] = tgt.Version()
+
+					// show target dependencies
+					for _, dtgt := range tgt.Dependencies() {
+						tableRow[2] = dtgt.Key()
+
+						table.AddRow(tableRow...)
+						tableRow[4] = ""
+						tableRow[5] = ""
+						tableRow[6] = ""
+					}
+					tableRow[0] = ""
+					tableRow[1] = ""
+
+					fmt.Print("\r")
+					utils.RepeatString(" ", len(msg), os.Stdout)
+				}
+				hasTargets = true
+			}			
+			if !hasTargets {
+				tableRow[1] = color.OpFuzzy.Render(tableRow[1].(string))
+				tableRow[2] = ""
+				tableRow[3] = ""
+				tableRow[4] = ""
+				tableRow[5] = color.OpFuzzy.Render("not configured")
+				tableRow[6] = ""
+				table.AddRow(tableRow...)
 			}
-		}
-		fmt.Println()
 
-		options = make([]string, numEnabledOptions)
-		for i, o := range enabledOptions {
-			options[i] = strconv.Itoa(o + 1)
-		}
-		if response = cbcli_utils.GetUserInputFromList(
-			"Enter # of sub-command or (q)uit: ",
-			"", options); response == "q" {
-			return
-		}
-
-		if subCommandIndex, err = strconv.Atoi(response); err == nil &&
-			hasOption(enabledOptions, subCommandIndex-1) {
-
-			targetSubCommand := targetSubCommands[subCommandIndex-1]
-			targetSubCommand.setFlags()
-			targetSubCommand.subCommand(recipe, iaas, region, name)
-
-		} else {
-			cbcli_utils.ShowErrorAndExit("invalid option provided")
+			if j != lastCloudIndex {
+				table.AddSeparator()
+			}
+			tableRow[0] = ""
 		}
 	}
+	return table
 }
 
 func getTargetStatusName(tgt *target.Target) string {

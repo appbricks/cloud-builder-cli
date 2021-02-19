@@ -53,6 +53,7 @@ func initialize() {
 	)
 
 	line := liner.NewLiner()
+	line.SetCtrlCAborts(true)
 	defer func() {
 		line.Close()
 		if err := recover(); err != nil {
@@ -66,7 +67,6 @@ func initialize() {
 		}
 	}()
 
-	line.SetCtrlCAborts(true)
 	fmt.Println("\nInitializing Encryption\n=======================")
 
 	resetPassphrase = "y"

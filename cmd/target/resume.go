@@ -14,11 +14,13 @@ import (
 )
 
 var resumeFlags = struct {
+	commonFlags
+
 	instance string
 }{}
 
 var resumeCommand = &cobra.Command{
-	Use: "resume [recipe] [cloud] [region] [deployment name]",
+	Use: "resume [recipe] [cloud] [deployment name]",
 
 	Short: "Resumes a suspended target.",
 	Long: `
@@ -28,12 +30,12 @@ resume a specific instance provide the instance name via the
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		ResumeTarget(args[0], args[1], args[2], args[3])
+		ResumeTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(showFlags.commonFlags)))
 	},
-	Args: cobra.ExactArgs(4),
+	Args: cobra.ExactArgs(3),
 }
 
-func ResumeTarget(recipe, iaas, region, deploymentName string) {
+func ResumeTarget(targetKey string) {
 
 	var (
 		err error
@@ -41,9 +43,7 @@ func ResumeTarget(recipe, iaas, region, deploymentName string) {
 		tgt *target.Target
 	)
 
-	targets := config.Config.Context().TargetSet()
-	targetName := fmt.Sprintf("%s/%s/%s/%s", recipe, iaas, region, deploymentName)
-	if tgt = targets.GetTarget(targetName); tgt != nil {
+	if tgt, err = config.Config.Context().GetTarget(targetKey); err == nil && tgt != nil {
 
 		if err = tgt.LoadRemoteRefs(); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
@@ -58,11 +58,13 @@ func ResumeTarget(recipe, iaas, region, deploymentName string) {
 					state, _ := instance.State()
 					if state == cloud.StateStopped {
 						fmt.Printf("Starting instance \"%s\"...", name)
-					} else {
-						for !instance.CanConnect(443) {
+					} else if len(instance.PublicIP()) > 0 {
+						for !instance.CanConnect(22) {
 							fmt.Print(".")
 							time.Sleep(time.Second * 5)
 						}
+						fmt.Println("done")
+					} else {
 						fmt.Println("done")
 					}
 				},
@@ -75,21 +77,18 @@ func ResumeTarget(recipe, iaas, region, deploymentName string) {
 		return
 	}
 
-	if err != nil {
-		cbcli_utils.ShowErrorAndExit(err.Error())
-	} else {
-		cbcli_utils.ShowErrorAndExit(
-			fmt.Sprintf(
-				"Unknown target named \"%s\". Run 'cb target list' "+
-					"to list the currently configured targets",
-				targetName,
-			),
-		)
-	}
+	cbcli_utils.ShowErrorAndExit(
+		fmt.Sprintf(
+			"Target \"%s\" does not exist. Run 'cb target list' to list the currently configured targets",
+			targetKey,
+		),
+	)
 }
 
 func init() {
 	flags := resumeCommand.Flags()
 	flags.SortFlags = false
+	bindCommonFlags(flags, &(showFlags.commonFlags))
+
 	flags.StringVarP(&resumeFlags.instance, "instance", "i", "", "name of the instance to resume")
 }
