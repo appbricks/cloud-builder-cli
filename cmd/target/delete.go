@@ -47,8 +47,9 @@ func DeleteTarget(targetKey string) {
 
 		response string
 	)
+	context := config.Config.Context()
 
-	if tgt, err = config.Config.Context().GetTarget(targetKey); err == nil && tgt != nil {
+	if tgt, err = context.GetTarget(targetKey); err == nil && tgt != nil {
 
 		fmt.Println()
 		fmt.Print(
@@ -80,9 +81,10 @@ func DeleteTarget(targetKey string) {
 					cbcli_utils.ShowErrorAndExit(err.Error())
 				}
 				tgt.Output = nil
+				context.SaveTarget(tgt.Key(), tgt)
 			}
 			if !deleteFlags.keep {
-				config.Config.Context().TargetSet().DeleteTarget(tgt.Key())
+				context.TargetSet().DeleteTarget(tgt.Key())
 			}
 			fmt.Print(color.Green.Render("\nTarget has been deleted.\n\n"))
 		} else {
