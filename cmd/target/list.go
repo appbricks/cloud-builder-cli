@@ -274,6 +274,7 @@ func buildSpacesTable(
 								tgt.Key(), err.Error(),
 							)
 							tableRow[5] = "error!"
+							tableRow[6] = ""
 
 						} else {
 							*targetIndex++
@@ -383,6 +384,7 @@ func buildAppsTable(
 							tgt.Key(), err.Error(),
 						)
 						tableRow[5] = "error!"
+						tableRow[6] = ""
 
 					} else {
 						*targetIndex++
