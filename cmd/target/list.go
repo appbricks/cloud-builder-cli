@@ -61,7 +61,7 @@ var targetSubCommands = []subCommand{
 		setFlags:   func() {},
 	},
 	{
-		optionText: " - Launch",
+		optionText: " - Launch/Update",
 		subCommand: LaunchTarget,
 		setFlags:   func() {},
 	},
@@ -171,7 +171,7 @@ func ListTargets() {
 		fmt.Print("  Cloud:  ")
 		fmt.Println(color.OpBold.Render(tgt.RecipeIaas))
 		fmt.Print("  Region: ")
-		fmt.Println(color.OpBold.Render(tgt.Provider.Region()))
+		fmt.Println(color.OpBold.Render(*tgt.Provider.Region()))
 		fmt.Print("  Name:   ")
 		fmt.Println(color.OpBold.Render(tgt.DeploymentName()))
 		fmt.Println()
