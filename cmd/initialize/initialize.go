@@ -3,18 +3,19 @@ package initialize
 import (
 	"fmt"
 	"os"
-	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
+	"github.com/gookit/color"
 	"github.com/peterh/liner"
 	"github.com/spf13/cobra"
 
 	"github.com/mevansam/goutils/logger"
 	"github.com/mevansam/goutils/utils"
 
-	"github.com/appbricks/cloud-builder-cli/config"
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
+	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
 var InitCommand = &cobra.Command{
@@ -44,13 +45,19 @@ func initialize() {
 	var (
 		err error
 
-		resetPassphrase,
+		awsAuth *cbcli_auth.AWSCognitoJWT
+
+		resetConfig,
+		resetPassphrase bool
+		
 		passphrase,
 		verifyPassphrase,
 		unlockTimeout string
 
 		timeout int
 	)
+
+	config := cbcli_config.Config
 
 	line := liner.NewLiner()
 	line.SetCtrlCAborts(true)
@@ -67,40 +74,91 @@ func initialize() {
 		}
 	}()
 
-	fmt.Println("\nInitializing Encryption\n=======================")
+	fmt.Println("\nInitializing Configuration Context\n==================================")
 
-	resetPassphrase = "y"
-	if config.Config.Initialized() {
+	if config.Initialized() {
 		fmt.Println("\nConfiguration has already been intialized.")
+	}
 
-		line.SetCompleter(func(line string) []string {
-			return []string{"yes", "no"}
-		})
-		if resetPassphrase, err = line.PromptWithSuggestion("Do you wish to reset the passphrase : ", "no", -1); err != nil {
+	resetConfig = true
+	if curPrimaryUser, isSet := config.Context().GetPrimaryUser(); isSet {
+		fmt.Println()
+		if resetConfig, err = cbcli_utils.GetYesNoUserInput("Do you wish to reset the primary user : ", false); err != nil {
 			panic(err)
 		}
-		line.SetCompleter(nil)
+		if resetConfig {
+			fmt.Println()
+			fmt.Println(
+				color.Red.Render(
+					color.OpBold.Render(
+						utils.FormatMultilineString(
+							"DANGER! Resetting the primary user will also reset any saved configurations. " + 
+							"If the current primary user has deployed cloud spaces and applications their " + 
+							"configurations will be lost and may not be able to be recovered. Before proceding " + 
+							"please ensure that you have exported the current configuration, in case you need " + 
+							"to recover deployments associated with the current configuration.",
+							8, 80, false, false),
+					),
+				),
+			)
 
-		resetPassphrase = strings.ToLower(resetPassphrase)
-		if match, err := regexp.Match(`^((y(es)?)|(no?))$`, []byte(resetPassphrase)); !match || err != nil {
-			fmt.Println("\nUnrecognized response.")
-			os.Exit(1)
+			fmt.Println()
+			curPrimaryUserCheck, err := line.Prompt("Enter the name of current primary user whose configuration will be overwritten : ")
+			if err != nil {
+				panic(err)
+			}
+			if curPrimaryUserCheck != curPrimaryUser {
+				cbcli_utils.ShowErrorAndExit("In order to reset the current configuration you need to enter the primary user of the current configuration.")
+			}
+			if err = config.Reset(); err != nil {
+				panic(err)
+			}
+		}
+	}
+	if resetConfig {
+		fmt.Println(
+`
+Please login as the primary user that will be configured as the owner of this
+configuration context. Once configured this user will own all spaces and 
+applications launched via the CB CLI with this configuration context. You need
+to re-initialize the CLI to change the primary user which also reset any saved
+configuration.`,
+		)
+		config.AuthContext().Reset()
+		if err = cbcli_auth.Authenticate(cbcli_config.Config); err != nil {					
+			cbcli_utils.ShowErrorAndExit("My Cloud Space user authentication failed.")
+		}
+
+		if awsAuth, err = cbcli_auth.NewAWSCognitoJWT(config); err != nil {
+			cbcli_utils.ShowErrorAndExit(err.Error())
+		}
+		if err = awsAuth.ParseJWT(config.AuthContext().GetToken()); err != nil {
+			cbcli_utils.ShowErrorAndExit(err.Error())
+		}
+		if err = config.Context().SetPrimaryUser(awsAuth.Username()); err != nil {
+			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
 	}
 
-	if resetPassphrase == "y" || resetPassphrase == "yes" {
-		fmt.Println()
-		if passphrase, err = line.PasswordPrompt("Please enter the encryption passphrase : "); err != nil {
+	resetPassphrase = true
+	if config.Initialized() {		
+		if resetPassphrase, err = cbcli_utils.GetYesNoUserInput("Do you wish to reset the passphrase : ", false); err != nil {
 			panic(err)
 		}
-		if verifyPassphrase, err = line.PasswordPrompt("Please verify the encryption passphrase : "); err != nil {
+	}
+	if resetPassphrase {
+		fmt.Println()
+		if passphrase, err = line.PasswordPrompt("Enter the encryption passphrase : "); err != nil {
+			panic(err)
+		}
+		if verifyPassphrase, err = line.PasswordPrompt("Verify the encryption passphrase : "); err != nil {
 			panic(err)
 		}
 		if passphrase != verifyPassphrase {
 			fmt.Println("\nPassphrases do not match.")
 			os.Exit(1)
 		}
-		config.Config.SetPassphrase(passphrase)
+		config.SetPassphrase(passphrase)
 	}
 
 	fmt.Println()
@@ -120,25 +178,21 @@ func initialize() {
 		switch unlockTimeout[l-1] {
 		case 'h':
 			logger.DebugMessage("Setting unlock timeout to %d hours.", timeout)
-			config.Config.SetKeyTimeout(time.Duration(timeout) * time.Hour)
+			config.SetKeyTimeout(time.Duration(timeout) * time.Hour)
 		case 'm':
 			logger.DebugMessage("Setting unlock timeout to %d minutes.", timeout)
-			config.Config.SetKeyTimeout(time.Duration(timeout) * time.Minute)
+			config.SetKeyTimeout(time.Duration(timeout) * time.Minute)
 		case 's':
 			logger.DebugMessage("Setting unlock timeout to %d seconds.", timeout)
-			config.Config.SetKeyTimeout(time.Duration(timeout) * time.Second)
+			config.SetKeyTimeout(time.Duration(timeout) * time.Second)
 		default:
 			fmt.Println("\nUnable to determine time format.")
 			os.Exit(1)
 		}
 	} else {
-		config.Config.SetKeyTimeout(0)
+		config.SetKeyTimeout(0)
 	}
 
-	config.Config.SetInitialized()
-
-	// reset auth token
-	config.Config.AuthContext().Reset()
-
+	config.SetInitialized()
 	fmt.Println()
 }

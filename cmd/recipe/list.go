@@ -6,11 +6,12 @@ import (
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 
+	"github.com/appbricks/cloud-builder/cookbook"
 	"github.com/mevansam/goutils/utils"
 	"github.com/mevansam/termtables"
 
-	"github.com/appbricks/cloud-builder-cli/config"
-	"github.com/appbricks/cloud-builder/cookbook"
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
+	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
 var listFlags = struct {
@@ -42,7 +43,7 @@ func ListRecipes() {
 		appsRecipes []cookbook.CookbookRecipeInfo
 	)
 
-	for _, r := range config.Config.Context().Cookbook().RecipeList() {
+	for _, r := range cbcli_config.Config.Context().Cookbook().RecipeList() {
 		if r.IsBastion {
 			spacesRecipes = append(spacesRecipes, r)
 		} else {
@@ -58,13 +59,13 @@ func ListRecipes() {
 	if len(spacesRecipes) > 0 {
 		fmt.Println(spacesTable.Render())
 	} else {
-		fmt.Println(color.FgYellow.Render("No recipes loaded..."))
+		cbcli_utils.ShowInfoMessage("No space recipes found...")
 	}
 	fmt.Println(color.OpBold.Render("Applications\n============\n"))
 	if len(appsRecipes) > 0 {
 		fmt.Println(appsTable.Render())
 	} else {
-		fmt.Println(color.FgYellow.Render("No recipes loaded..."))
+		cbcli_utils.ShowInfoMessage("No application recipes found...")
 	}
 	fmt.Println()
 }
@@ -98,9 +99,9 @@ func buildTableOutput(recipes []cookbook.CookbookRecipeInfo) *termtables.Table {
 				// get description of first recipe/iaas. it
 				// is assumed all iaas specific recipes will
 				// have the same description
-				recipe := config.Config.Context().
+				recipe := cbcli_config.Config.Context().
 					Cookbook().GetRecipe(r.Name, c.Name())
-				descLines = utils.SplitString(recipe.Description(), 0, 50, false)
+				descLines = utils.SplitString(recipe.Description(), 0, 50)
 			}
 			clouds = append(clouds, c.Name())
 		}
@@ -137,7 +138,7 @@ func buildTableOutput(recipes []cookbook.CookbookRecipeInfo) *termtables.Table {
 
 func ListRecipesForCloud(cloud string) {
 
-	recipes := config.Config.Context().Cookbook().RecipeList()
+	recipes := cbcli_config.Config.Context().Cookbook().RecipeList()
 
 	table := termtables.CreateTable()
 	table.AddHeaders(color.OpBold.Render("Recipe Name"))

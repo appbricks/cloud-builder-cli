@@ -5,13 +5,11 @@ import (
 	"os"
 
 	"github.com/appbricks/cloud-builder/target"
-	"github.com/gookit/color"
 	"github.com/mevansam/gocloud/provider"
 	"github.com/mevansam/goforms/config"
 	"github.com/mevansam/goforms/forms"
 	"github.com/mevansam/goforms/ux"
 	"github.com/mevansam/goutils/logger"
-	"github.com/mevansam/goutils/utils"
 	"github.com/spf13/cobra"
 
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
@@ -107,14 +105,9 @@ func CreateTarget(recipeName, iaasName string) {
 					}
 				}
 				if len(spaceTargets) == 0 {
-					fmt.Println(
-						color.Blue.Render(
-							utils.FormatMessage(
-								0, 80, false, false, 
-								"No space targets have been configured where application '%s' can be deployed to iaas '%s'.\n", 
-								recipeName, iaasName,
-							),
-						),
+					cbcli_utils.ShowInfoMessage( 
+						"No space targets have been configured where application '%s' can be deployed to iaas '%s'.\n", 
+						recipeName, iaasName,
 					)
 					os.Exit(0)
 				}

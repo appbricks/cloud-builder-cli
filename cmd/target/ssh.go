@@ -9,15 +9,15 @@ import (
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 
-	"github.com/appbricks/cloud-builder-cli/config"
 	"github.com/appbricks/cloud-builder/target"
 	"github.com/mevansam/gocloud/cloud"
 	"github.com/mevansam/goutils/logger"
 	"github.com/mevansam/goutils/streams"
 	"github.com/mevansam/goutils/utils"
 
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
@@ -62,7 +62,7 @@ func SSHTarget(targetKey string) {
 		instanceIndex   int
 	)
 
-	targets := config.Config.Context().TargetSet()
+	targets := cbcli_config.Config.Context().TargetSet()
 	if tgt = targets.GetTarget(targetKey); tgt != nil {
 
 		if err = tgt.LoadRemoteRefs(); err != nil {
@@ -119,7 +119,16 @@ func SSHTarget(targetKey string) {
 		} else {
 			cbcli_utils.ShowErrorAndExit("instance is not running")
 		}
+	
+		return
 	}
+
+	cbcli_utils.ShowErrorAndExit(
+		fmt.Sprintf(
+			"Target \"%s\" does not exist. Run 'cb target list' to list the currently configured targets",
+			targetKey,
+		),
+	)
 }
 
 func StartTerminal(client *utils.SSHClient, rootPassword string) error {
@@ -128,7 +137,7 @@ func StartTerminal(client *utils.SSHClient, rootPassword string) error {
 		err error
 
 		osStdinFd             int
-		origTermState         *terminal.State
+		origTermState         *term.State
 		termWidth, termHeight int
 
 		sshTermConfig *utils.SSHTerminalConfig
@@ -139,19 +148,19 @@ func StartTerminal(client *utils.SSHClient, rootPassword string) error {
 	)
 
 	osStdinFd = int(os.Stdin.Fd())
-	if terminal.IsTerminal(osStdinFd) {
-		if origTermState, err = terminal.MakeRaw(osStdinFd); err != nil {
+	if term.IsTerminal(osStdinFd) {
+		if origTermState, err = term.MakeRaw(osStdinFd); err != nil {
 			return err
 		}
 		defer func() {
-			if err = terminal.Restore(osStdinFd, origTermState); err != nil {
+			if err = term.Restore(osStdinFd, origTermState); err != nil {
 				logger.TraceMessage(
 					"Error restoring streams: %s", err.Error(),
 				)
 			}
 		}()
 
-		if termWidth, termHeight, err = terminal.GetSize(osStdinFd); err != nil {
+		if termWidth, termHeight, err = term.GetSize(osStdinFd); err != nil {
 			return err
 		}
 		sshTermConfig = &utils.SSHTerminalConfig{

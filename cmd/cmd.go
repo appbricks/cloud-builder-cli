@@ -84,18 +84,23 @@ the agreement can be found at the following link.
 			}
 		}
 
-		if err := cbcli_auth.Authenticate(cbcli_config.Config); err != nil {					
-			cbcli_utils.ShowErrorAndExit("My Cloud Space user authentication failed.")
-		}
-
-		if cmd != initialize.InitCommand && !cbcli_config.Config.Initialized() {
-			fmt.Println(
-				color.OpReverse.Render(
-					color.Yellow.Render(
-						"\n>> Please initialize the Cloud Builder client to secure configuration settings.",
+		if cmd != initialize.InitCommand {
+			if !cbcli_config.Config.Initialized() {
+				fmt.Println(
+					color.OpReverse.Render(
+						color.Yellow.Render(
+							"\n>> Please initialize the Cloud Builder client to secure configuration settings.",
+						),
 					),
-				),
-			)
+				)	
+			} else {
+				if err := cbcli_auth.Authenticate(cbcli_config.Config); err != nil {					
+					cbcli_utils.ShowErrorAndExit("My Cloud Space user authentication failed.")
+				}
+				if err := cbcli_auth.ValidateAuthenticatedUser(cbcli_config.Config); err != nil {					
+					cbcli_utils.ShowErrorAndExit("My Cloud Space authenticated user validation failed.")
+				}
+			}
 		}
 	},
 }

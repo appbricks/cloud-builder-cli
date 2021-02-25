@@ -27,3 +27,27 @@ func ShowErrorAndExit(message string) {
 	)
 	os.Exit(1)
 }
+
+func ShowInfoMessage(message string, args ...interface{}) {
+	fmt.Println(
+		color.Info.Render(
+			utils.FormatMessage(
+				0, 80, false, false, 
+				message, 
+				args...,
+			),
+		),
+	)
+}
+
+func ShowWarningMessage(message string, args ...interface{}) {
+	fmt.Println(
+		color.Warn.Render(
+			utils.FormatMessage(
+				0, 80, false, false, 
+				message, 
+				args...,
+			),
+		),
+	)
+}

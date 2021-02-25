@@ -8,14 +8,13 @@ import (
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 
+	"github.com/appbricks/cloud-builder/cookbook"
+	"github.com/appbricks/cloud-builder/target"
 	"github.com/mevansam/goutils/logger"
 	"github.com/mevansam/goutils/utils"
 	"github.com/mevansam/termtables"
 
-	"github.com/appbricks/cloud-builder-cli/config"
-	"github.com/appbricks/cloud-builder/cookbook"
-	"github.com/appbricks/cloud-builder/target"
-
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
@@ -116,7 +115,7 @@ func ListTargets() {
 	)
 	fmt.Println()
 	
-	for _, r := range config.Config.Context().Cookbook().RecipeList() {
+	for _, r := range cbcli_config.Config.Context().Cookbook().RecipeList() {
 		if r.IsBastion {
 			spacesRecipes = append(spacesRecipes, r)
 		} else {
@@ -135,13 +134,13 @@ func ListTargets() {
 	if len(spacesRecipes) > 0 {
 		fmt.Println(spacesTable.Render())
 	} else {
-		fmt.Println(color.FgYellow.Render("No space recipes found..."))
+		cbcli_utils.ShowInfoMessage("No space recipes found...")
 	}
 	fmt.Println(color.OpBold.Render("My Applications\n===============\n"))
 	if len(appsRecipes) > 0 {
 		fmt.Println(appsTable.Render())
 	} else {
-		fmt.Println(color.FgYellow.Render("No application recipes found..."))
+		cbcli_utils.ShowInfoMessage("No application recipes found...")
 	}
 	fmt.Println()
 
@@ -241,7 +240,7 @@ func buildSpacesTable(
 		color.OpBold.Render("#"),
 	)
 
-	targets := config.Config.Context().TargetSet()
+	targets := cbcli_config.Config.Context().TargetSet()
 
 	tableRow := make([]interface{}, 7)
 	for i, recipe := range recipes {
@@ -354,7 +353,7 @@ func buildAppsTable(
 		color.OpBold.Render("#"),
 	)
 
-	targets := config.Config.Context().TargetSet()
+	targets := cbcli_config.Config.Context().TargetSet()
 
 	tableRow := make([]interface{}, 7)
 	for i, recipe := range recipes {

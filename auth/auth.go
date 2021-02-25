@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"os"
 	"os/exec"
 	"runtime"
 	"time"
@@ -21,6 +22,7 @@ const CLIENT_ID = `4edm63vj2lg5tdoogiq4c9fa5t`
 const CLIENT_SECRET = `qu7g80m9ietf8feachkktq2jlu6uhm1e1elq43tilg4i0rjq7i2`
 const AUTH_URL = `https://mycsdev.auth.us-east-1.amazoncognito.com/login`
 const TOKEN_URL = `https://mycsdev.auth.us-east-1.amazoncognito.com/oauth2/token`
+const USER_INFO_URL = `https://mycsdev.auth.us-east-1.amazoncognito.com/oauth2/userInfo`
 
 var callbackPorts = []int{9080, 19080, 29080, 39080, 49080, 59080}
 
@@ -64,9 +66,9 @@ func Authenticate(config config.Config) error {
 			fmt.Println(
 				color.Yellow.Render(
 `
-You need to open a browser window and navigate to the following URL
-in order to login to your My Cloud Space account. Once authenticated
-the CLI will be ready for use.
+You need to open a browser window and navigate to the following URL in order to
+login to your My Cloud Space account. Once authenticated the CLI will be ready
+for use.
 `,
 				),
 			)
@@ -76,9 +78,8 @@ the CLI will be ready for use.
 			fmt.Println(
 				color.Blue.Render(
 `
-You have been directed to a browser window from which you need to
-login to your My Cloud Space account. Once authenticated the CLI
-will be ready for use.
+You have been directed to a browser window from which you need to login to your
+My Cloud Space account. Once authenticated the CLI will be ready for use.
 `,
 				),
 			)
@@ -100,6 +101,7 @@ will be ready for use.
 		}
 		s.Stop()
 	}
+
 	return nil
 }
 
@@ -139,4 +141,49 @@ func openBrowser(url string) error {
 	default:
 		return fmt.Errorf("unsupported platform")
 	}
+}
+
+func ValidateAuthenticatedUser(config config.Config) error {
+
+	var (
+		err error
+
+		awsAuth *AWSCognitoJWT
+	)
+
+	// validate and parse JWT token
+	if awsAuth, err = NewAWSCognitoJWT(config); err != nil {
+		return err
+	}
+	if err = awsAuth.ParseJWT(config.AuthContext().GetToken()); err != nil {
+		return err
+	}
+	primaryUser, isSet := config.Context().GetPrimaryUser()
+	if !isSet {
+		fmt.Println(
+			color.Yellow.Render(
+`
+The Cloud Builder CLI has not been initialized with a primary user. You can do
+this by running the "cb init" command and logging in as the primary user that
+will own and have super user access to the cloud spaces and applications 
+deployed via the CLI.
+`,
+			),
+		)
+		os.Exit(1)
+	}
+	if primaryUser != awsAuth.Username() {
+		fmt.Println(
+			color.Yellow.Render(
+`
+Invalid user for the current configuration. The logged in user must be the same
+as the primary user configured in the current Cloud Builder configuration when
+"cb init" was run. If you wish to change users re-run the "cb init" command and
+reset the primary user.
+`,
+			),
+		)
+		os.Exit(1)
+	}
+	return nil
 }

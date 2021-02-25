@@ -3,6 +3,8 @@ package utils
 import (
 	"fmt"
 	"os"
+	"regexp"
+	"strings"
 
 	"github.com/gookit/color"
 	"github.com/peterh/liner"
@@ -71,4 +73,40 @@ func GetUserInputFromList(
 		}
 	}
 	return response
+}
+
+func GetYesNoUserInput(prompt string, defaultRespone bool) (bool, error) {
+
+	var(
+		err error
+
+		defaultInput,
+		input string
+	)
+	
+	line := liner.NewLiner()
+	line.SetCtrlCAborts(true)
+	line.SetCompleter(func(line string) []string {
+		return []string{"yes", "no"}
+	})
+	defer func() {
+		line.Close()
+	}()
+
+	if defaultRespone {
+		defaultInput = "yes"
+	} else {
+		defaultInput = "no"
+	}
+
+	if input, err = line.PromptWithSuggestion(prompt, defaultInput, -1); err != nil {
+		return defaultRespone, err
+	}
+	line.SetCompleter(nil)
+
+	input = strings.ToLower(input)
+	if match, err := regexp.Match(`^((y(es)?)|(no?))$`, []byte(input)); !match || err != nil {
+		return defaultRespone, fmt.Errorf("invalid input.")
+	}
+	return input == "yes" || input == "y", nil
 }
