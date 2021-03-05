@@ -237,7 +237,7 @@ func StartTerminal(client *utils.SSHClient, rootPassword string) error {
 func init() {
 	flags := sshCommand.Flags()
 	flags.SortFlags = false
-	bindCommonFlags(flags, &(showFlags.commonFlags))
+	bindCommonFlags(flags, &(sshFlags.commonFlags))
 
 	flags.BoolVarP(&sshFlags.sudo, "sudo", "u", false, 
 		"sudo to root shell after establishing the SSH session")

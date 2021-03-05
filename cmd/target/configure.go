@@ -184,7 +184,7 @@ func configureTarget(tgt *target.Target, tags ...string) {
 func init() {
 	flags := configureCommand.Flags()
 	flags.SortFlags = false
-	bindCommonFlags(flags, &(showFlags.commonFlags))
+	bindCommonFlags(flags, &(configureFlags.commonFlags))
 
 	flags.BoolVarP(&configureFlags.all, "all", "a", false, 
 		"configure all possible configuration data values")

@@ -88,7 +88,7 @@ func ResumeTarget(targetKey string) {
 func init() {
 	flags := resumeCommand.Flags()
 	flags.SortFlags = false
-	bindCommonFlags(flags, &(showFlags.commonFlags))
+	bindCommonFlags(flags, &(resumeFlags.commonFlags))
 
 	flags.StringVarP(&resumeFlags.instance, "instance", "i", "", "name of the instance to resume")
 }

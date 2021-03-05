@@ -81,7 +81,7 @@ func SuspendTarget(targetKey string) {
 func init() {
 	flags := suspendCommand.Flags()
 	flags.SortFlags = false
-	bindCommonFlags(flags, &(showFlags.commonFlags))
+	bindCommonFlags(flags, &(suspendFlags.commonFlags))
 
 	flags.StringVarP(&suspendFlags.instance, "instance", "i", "", "name of the instance to suspend")
 }

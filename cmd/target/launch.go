@@ -139,7 +139,7 @@ func LaunchTarget(targetKey string) {
 func init() {
 	flags := launchCommand.Flags()
 	flags.SortFlags = false
-	bindCommonFlags(flags, &(showFlags.commonFlags))
+	bindCommonFlags(flags, &(launchFlags.commonFlags))
 
 	flags.BoolVarP(&launchFlags.init, "init", "i", false,
 		"re-initialize the launch context")

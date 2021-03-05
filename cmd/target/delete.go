@@ -104,7 +104,7 @@ func DeleteTarget(targetKey string) {
 func init() {
 	flags := deleteCommand.Flags()
 	flags.SortFlags = false
-	bindCommonFlags(flags, &(showFlags.commonFlags))
+	bindCommonFlags(flags, &(deleteFlags.commonFlags))
 
 	flags.BoolVarP(&deleteFlags.keep, "keep", "k", false, "destroy deployed resources if any but do not delete the configuration")
 }
