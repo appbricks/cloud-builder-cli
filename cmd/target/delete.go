@@ -32,7 +32,7 @@ then provide the --keep flag.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		DeleteTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(showFlags.commonFlags)))
+		DeleteTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(deleteFlags.commonFlags)))
 	},
 	Args: cobra.ExactArgs(3),
 }

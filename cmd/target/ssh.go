@@ -42,7 +42,7 @@ the cloud space sandbox VPN has been establised.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		SSHTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(showFlags.commonFlags)))
+		SSHTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(sshFlags.commonFlags)))
 	},
 	Args: cobra.ExactArgs(3),
 }

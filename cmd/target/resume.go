@@ -30,7 +30,7 @@ resume a specific instance provide the instance name via the
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		ResumeTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(showFlags.commonFlags)))
+		ResumeTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(resumeFlags.commonFlags)))
 	},
 	Args: cobra.ExactArgs(3),
 }

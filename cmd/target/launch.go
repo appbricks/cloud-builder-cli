@@ -33,7 +33,7 @@ clean-rebuild takes precedence.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		LaunchTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(showFlags.commonFlags)))
+		LaunchTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(launchFlags.commonFlags)))
 	},
 	Args: cobra.ExactArgs(3),
 }
@@ -51,8 +51,8 @@ func LaunchTarget(targetKey string) {
 	if tgt, err = context.GetTarget(targetKey); err == nil && tgt != nil {
 
 		// ensure any dependencies have been deployed
-		if len(showFlags.commonFlags.space) > 0 {
-			if spaceTgt, err = context.GetTarget(showFlags.commonFlags.space); err != nil {
+		if len(launchFlags.commonFlags.space) > 0 {
+			if spaceTgt, err = context.GetTarget(launchFlags.commonFlags.space); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
 			if spaceTgt.Status() == target.Undeployed {

@@ -29,7 +29,7 @@ suspend a specific instance provide the instance name via the
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		SuspendTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(showFlags.commonFlags)))
+		SuspendTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(suspendFlags.commonFlags)))
 	},
 	Args: cobra.ExactArgs(3),
 }

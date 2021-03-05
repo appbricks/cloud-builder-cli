@@ -36,7 +36,7 @@ been launched.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		ConfigureTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(showFlags.commonFlags)))
+		ConfigureTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(configureFlags.commonFlags)))
 	},
 	Args: cobra.ExactArgs(3),
 }
