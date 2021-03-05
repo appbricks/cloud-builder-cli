@@ -1,6 +1,6 @@
 module github.com/appbricks/cloud-builder-cli
 
-go 1.13
+go 1.16
 
 replace github.com/appbricks/cloud-builder-cli => ./
 
