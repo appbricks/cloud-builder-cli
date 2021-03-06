@@ -31,6 +31,7 @@ func init() {
 	TargetCommands.AddCommand(deleteCommand)
 	TargetCommands.AddCommand(suspendCommand)
 	TargetCommands.AddCommand(resumeCommand)
+	TargetCommands.AddCommand(connectCommand)
 	TargetCommands.AddCommand(sshCommand)
 }
 
@@ -58,13 +59,13 @@ func getTargetKeyFromArgs(
 		targetKey string
 	)
 	
-	if len(showFlags.region) > 0 && len(showFlags.space) > 0 {
+	if len(commonFlags.region) > 0 && len(commonFlags.space) > 0 {
 		cbcli_utils.ShowErrorAndExit("Please provide only one of region or space options for target lookup.")
 	}
-	if len(showFlags.region) > 0 {
-		targetKey = target.CreateKey(recipe, iaas, showFlags.region, deploymentName)
-	} else if len(showFlags.space) > 0 {
-		targetKey = target.CreateKey(recipe, iaas, deploymentName, "<"+showFlags.space)
+	if len(commonFlags.region) > 0 {
+		targetKey = target.CreateKey(recipe, iaas, commonFlags.region, deploymentName)
+	} else if len(commonFlags.space) > 0 {
+		targetKey = target.CreateKey(recipe, iaas, deploymentName, "<"+commonFlags.space)
 	}
 	return targetKey
 }
