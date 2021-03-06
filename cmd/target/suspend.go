@@ -2,7 +2,9 @@ package target
 
 import (
 	"fmt"
+	"time"
 
+	"github.com/briandowns/spinner"
 	"github.com/mevansam/gocloud/cloud"
 	"github.com/spf13/cobra"
 
@@ -39,7 +41,8 @@ func SuspendTarget(targetKey string) {
 	var (
 		err error
 
-		tgt *target.Target
+		tgt *target.Target		
+		s   *spinner.Spinner
 	)
 
 	if tgt, err = config.Config.Context().GetTarget(targetKey); err == nil && tgt != nil {
@@ -55,10 +58,17 @@ func SuspendTarget(targetKey string) {
 			} else if err = tgt.Suspend(
 				func(name string, instance cloud.ComputeInstance) {
 					state, _ := instance.State()
-					if state == cloud.StateRunning {
-						fmt.Printf("Stopping instance \"%s\"...", name)
+					if state == cloud.StateRunning {						
+						s = spinner.New(
+							spinner.CharSets[39], 
+							100*time.Millisecond,
+							spinner.WithSuffix(fmt.Sprintf(" Stopping instance \"%s\".", name)),
+							spinner.WithFinalMSG(fmt.Sprintf("Instance \"%s\" stopped.\n", name)),
+							spinner.WithHiddenCursor(true),
+						)
+						s.Start()						
 					} else {
-						fmt.Println("done")
+						s.Stop()
 					}
 				},
 			); err != nil {

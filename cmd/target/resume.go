@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/briandowns/spinner"
 	"github.com/spf13/cobra"
 
 	"github.com/appbricks/cloud-builder-cli/config"
@@ -41,6 +42,7 @@ func ResumeTarget(targetKey string) {
 		err error
 
 		tgt *target.Target
+		s   *spinner.Spinner
 	)
 
 	if tgt, err = config.Config.Context().GetTarget(targetKey); err == nil && tgt != nil {
@@ -57,15 +59,22 @@ func ResumeTarget(targetKey string) {
 				func(name string, instance cloud.ComputeInstance) {
 					state, _ := instance.State()
 					if state == cloud.StateStopped {
-						fmt.Printf("Starting instance \"%s\"...", name)
+						s = spinner.New(
+							spinner.CharSets[39], 
+							100*time.Millisecond,
+							spinner.WithSuffix(fmt.Sprintf(" Starting instance \"%s\".", name)),
+							spinner.WithFinalMSG(fmt.Sprintf("Instance \"%s\" started.\n", name)),
+							spinner.WithHiddenCursor(true),
+						)
+						s.Start()	
+						
 					} else if len(instance.PublicIP()) > 0 {
 						for !instance.CanConnect(22) {
-							fmt.Print(".")
 							time.Sleep(time.Second * 5)
 						}
-						fmt.Println("done")
+						s.Stop()
 					} else {
-						fmt.Println("done")
+						s.Stop()
 					}
 				},
 			); err != nil {
