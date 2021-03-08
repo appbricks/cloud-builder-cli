@@ -28,6 +28,7 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 
 	"github.com/mevansam/goutils/logger"
+	"github.com/mevansam/goutils/run"
 
 	"github.com/appbricks/cloud-builder-cli/cmd/cloud"
 	"github.com/appbricks/cloud-builder-cli/cmd/initialize"
@@ -118,9 +119,13 @@ func Execute() {
 		os.Exit(1)
 	}
 
-	if cbcli_config.Config != nil {
-		if err = cbcli_config.Config.Save(); err != nil {
-			cbcli_utils.ShowErrorAndExit(err.Error())
+	if cbcli_config.Config != nil {		
+		if admin, _ := run.IsAdmin(); !admin {
+			if err = cbcli_config.Config.Save(); err != nil {
+				cbcli_utils.ShowErrorAndExit(err.Error())
+			}	
+		} else {
+			logger.TraceMessage("Config has not been saved as CLI was run as root or with elevated privileges.")
 		}
 	}
 }
