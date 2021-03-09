@@ -99,7 +99,7 @@ func ConnectTarget(targetKey string) {
 		if vpnConfig, err = vpn.NewConfigFromTarget(tgt, user, passwd); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
-
+		
 		if connectFlags.download {
 			home, _ := homedir.Dir()
 			downloadDir := filepath.Join(home, "Downloads")
