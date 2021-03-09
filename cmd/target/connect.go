@@ -97,7 +97,8 @@ func ConnectTarget(targetKey string) {
 			passwd = instance.NonRootPassword()
 		}
 		if vpnConfig, err = vpn.NewConfigFromTarget(tgt, user, passwd); err != nil {
-			cbcli_utils.ShowErrorAndExit(err.Error())
+			logger.DebugMessage("Error loading VPN configuration: %s", err.Error())
+			cbcli_utils.ShowErrorAndExit("Unable to retrieve VPN configuration. This could be because your VPN server is still starting up or in the process of shutting down. Please try again.")
 		}
 		
 		if connectFlags.download {
