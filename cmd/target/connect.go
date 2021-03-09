@@ -126,7 +126,7 @@ func ConnectTarget(targetKey string) {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
 			if !isAdmin {
-				cbcli_utils.ShowWarningMessage("\nStarting VPN connection with elevated privileges.")
+				cbcli_utils.ShowWarningMessage("\nPlease enter you password for admin priveleges required to update the network configuration, if requested.")
 				if err = run.RunAsAdmin(os.Stdout, os.Stderr); err != nil {
 					logger.DebugMessage(
 						"Execution of CLI command with elevated privileges failed with error: %s", 
@@ -136,6 +136,8 @@ func ConnectTarget(targetKey string) {
 				} else {
 					os.Exit(0)
 				}
+			} else {
+				cbcli_utils.ShowInfoMessage("\nStarting VPN connection.")
 			}
 
 			if vpnClient, err = vpnConfig.NewClient(); err != nil {
