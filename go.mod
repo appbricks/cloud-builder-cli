@@ -20,7 +20,7 @@ require (
 	github.com/appbricks/cloud-builder v0.0.0-00010101000000-000000000000
 	github.com/appbricks/mycloudspace-client v0.0.0-00010101000000-000000000000
 	github.com/briandowns/spinner v1.12.0
-	github.com/eiannone/keyboard v0.0.0-20200508000154-caf4b762e807 // indirect
+	github.com/eiannone/keyboard v0.0.0-20200508000154-caf4b762e807
 	github.com/gobuffalo/packr/v2 v2.7.1
 	github.com/gookit/color v1.2.1
 	github.com/lestrrat-go/jwx v1.1.3
