@@ -13,7 +13,7 @@ import (
 )
 
 const AWS_COGNITO_REGION = `us-east-1`
-const AWS_COGNITO_USER_POOL_ID = `us-east-1_eLvjGzCSB`
+const AWS_COGNITO_USER_POOL_ID = `us-east-1_hyOWP6bHf`
 
 type AWSCognitoJWT struct {
 	jwkSet    jwk.Set

@@ -18,8 +18,8 @@ import (
 	"github.com/mevansam/goutils/logger"
 )
 
-const CLIENT_ID = `4edm63vj2lg5tdoogiq4c9fa5t`
-const CLIENT_SECRET = `qu7g80m9ietf8feachkktq2jlu6uhm1e1elq43tilg4i0rjq7i2`
+const CLIENT_ID = `5anhhrck2mc9t5bbfd5nho4fij`
+const CLIENT_SECRET = `1tq5jc8j0esch2hojlnlfvad34siicirklao2065ad70ptcaquhf`
 const AUTH_URL = `https://mycsdev.auth.us-east-1.amazoncognito.com/login`
 const TOKEN_URL = `https://mycsdev.auth.us-east-1.amazoncognito.com/oauth2/token`
 const USER_INFO_URL = `https://mycsdev.auth.us-east-1.amazoncognito.com/oauth2/userInfo`
@@ -41,9 +41,7 @@ func Authenticate(config config.Config) error {
 			ClientID:     CLIENT_ID,
 			ClientSecret: CLIENT_SECRET,
 			Scopes:       []string{"openid", "profile"},
-			// This points to the test Authorization Server
-			// if our Client ID and Client Secret are valid
-			// it will attempt to authorize our user
+			
 			Endpoint: oauth2.Endpoint{
 				AuthURL:  AUTH_URL,
 				TokenURL: TOKEN_URL,
@@ -158,7 +156,7 @@ func ValidateAuthenticatedUser(config config.Config) error {
 	if err = awsAuth.ParseJWT(config.AuthContext().GetToken()); err != nil {
 		return err
 	}
-	primaryUser, isSet := config.Context().GetPrimaryUser()
+	primaryUser, isSet := config.DeviceContext().GetPrimaryUser()
 	if !isSet {
 		fmt.Println(
 			color.Yellow.Render(

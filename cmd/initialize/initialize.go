@@ -81,7 +81,7 @@ func initialize() {
 	}
 
 	resetConfig = true
-	if curPrimaryUser, isSet := config.Context().GetPrimaryUser(); isSet {
+	if curPrimaryUser, isSet := config.DeviceContext().GetPrimaryUser(); isSet {
 		fmt.Println()
 		if resetConfig, err = cbcli_utils.GetYesNoUserInput("Do you wish to reset the primary user : ", false); err != nil {
 			panic(err)
@@ -111,7 +111,7 @@ func initialize() {
 				cbcli_utils.ShowErrorAndExit("In order to reset the current configuration you need to enter the primary user of the current configuration.")
 			}
 			if err = config.Reset(); err != nil {
-				panic(err)
+				cbcli_utils.ShowErrorAndExit("Failed to reset current configuration.")
 			}
 		}
 	}
@@ -124,20 +124,16 @@ applications launched via the CB CLI with this configuration context. You need
 to re-initialize the CLI to change the primary user which also reset any saved
 configuration.`,
 		)
-		config.AuthContext().Reset()
 		if err = cbcli_auth.Authenticate(cbcli_config.Config); err != nil {					
 			cbcli_utils.ShowErrorAndExit("My Cloud Space user authentication failed.")
 		}
-
 		if awsAuth, err = cbcli_auth.NewAWSCognitoJWT(config); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
 		if err = awsAuth.ParseJWT(config.AuthContext().GetToken()); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
-		if err = config.Context().SetPrimaryUser(awsAuth.Username()); err != nil {
-			cbcli_utils.ShowErrorAndExit(err.Error())
-		}
+		config.DeviceContext().SetPrimaryUser(awsAuth.Username())
 	}
 
 	resetPassphrase = true

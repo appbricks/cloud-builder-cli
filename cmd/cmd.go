@@ -95,10 +95,12 @@ the agreement can be found at the following link.
 					),
 				)	
 			} else {
-				if err := cbcli_auth.Authenticate(cbcli_config.Config); err != nil {					
+				if err := cbcli_auth.Authenticate(cbcli_config.Config); err != nil {
+					logger.DebugMessage("Authentication returned error: ", err.Error())
 					cbcli_utils.ShowErrorAndExit("My Cloud Space user authentication failed.")
 				}
-				if err := cbcli_auth.ValidateAuthenticatedUser(cbcli_config.Config); err != nil {					
+				if err := cbcli_auth.ValidateAuthenticatedUser(cbcli_config.Config); err != nil {
+					logger.DebugMessage("Validating authenticated user returned error: ", err.Error())
 					cbcli_utils.ShowErrorAndExit("My Cloud Space authenticated user validation failed.")
 				}
 			}
