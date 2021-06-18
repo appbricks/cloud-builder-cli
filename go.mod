@@ -23,7 +23,8 @@ require (
 	github.com/eiannone/keyboard v0.0.0-20200508000154-caf4b762e807
 	github.com/gobuffalo/packr/v2 v2.7.1
 	github.com/gookit/color v1.2.1
-	github.com/lestrrat-go/jwx v1.1.3
+	github.com/hasura/go-graphql-client v0.2.0
+	github.com/lestrrat-go/jwx v1.2.1
 	github.com/mevansam/gocloud v0.0.0-00010101000000-000000000000
 	github.com/mevansam/goforms v0.0.0-00010101000000-000000000000
 	github.com/mevansam/goutils v0.0.0-00010101000000-000000000000
@@ -32,8 +33,7 @@ require (
 	github.com/peterh/liner v1.1.0
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
-	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
-	golang.org/x/oauth2 v0.0.0-20210113205817-d3ed898aa8a3
-	golang.org/x/sys v0.0.0-20210305230114-8fe3ee5dd75b // indirect
+	golang.org/x/crypto v0.0.0-20210503195802-e9a32991a82e
+	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1
 )

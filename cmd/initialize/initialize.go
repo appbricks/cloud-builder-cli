@@ -6,12 +6,14 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gookit/color"
+	"github.com/hasura/go-graphql-client"
 	"github.com/peterh/liner"
 	"github.com/spf13/cobra"
 
+	"github.com/appbricks/cloud-builder/userspace"
+	"github.com/appbricks/mycloudspace-client/api"
+	"github.com/appbricks/mycloudspace-client/mycscloud"
 	"github.com/mevansam/goutils/logger"
-	"github.com/mevansam/goutils/utils"
 
 	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
@@ -49,15 +51,30 @@ func initialize() {
 
 		resetConfig,
 		resetPassphrase bool
+
+		device *userspace.Device
+		owner *userspace.User
 		
+		hostName,
+		userID,
+		userName,
+		deviceIDKey,
+		deviceID,
+		deviceName,
+		oldDeviceID,
 		passphrase,
 		verifyPassphrase,
 		unlockTimeout string
 
 		timeout int
-	)
 
+		prevOwnerAPIClient, 
+		newOwnerAPIClient *graphql.Client
+
+		deviceAPI *mycscloud.DeviceAPI
+	)
 	config := cbcli_config.Config
+	deviceContext := config.DeviceContext()
 
 	line := liner.NewLiner()
 	line.SetCtrlCAborts(true)
@@ -68,8 +85,7 @@ func initialize() {
 				fmt.Println("\nInitialization aborted.")
 				os.Exit(1)
 			} else {
-				fmt.Println(utils.FormatMessage(7, 80, false, true, "\nError: %s.\n", err.(error).Error()))
-				os.Exit(1)
+				cbcli_utils.ShowErrorAndExit(err.(error).Error())
 			}
 		}
 	}()
@@ -77,63 +93,116 @@ func initialize() {
 	fmt.Println("\nInitializing Configuration Context\n==================================")
 
 	if config.Initialized() {
-		fmt.Println("\nConfiguration has already been intialized.")
+		fmt.Println()
+		cbcli_utils.ShowNoteMessage("Configuration has already been intialized.")
 	}
 
 	resetConfig = true
-	if curPrimaryUser, isSet := config.DeviceContext().GetPrimaryUser(); isSet {
+	if deviceOwner, isSet := deviceContext.GetOwnerUserName(); isSet {
 		fmt.Println()
 		if resetConfig, err = cbcli_utils.GetYesNoUserInput("Do you wish to reset the primary user : ", false); err != nil {
 			panic(err)
 		}
 		if resetConfig {
+			// confirm device owner by forcing user to re-login
 			fmt.Println()
-			fmt.Println(
-				color.Red.Render(
-					color.OpBold.Render(
-						utils.FormatMultilineString(
-							"DANGER! Resetting the primary user will also reset any saved configurations. " + 
-							"If the current primary user has deployed cloud spaces and applications their " + 
-							"configurations will be lost and may not be able to be recovered. Before proceding " + 
-							"please ensure that you have exported the current configuration, in case you need " + 
-							"to recover deployments associated with the current configuration.",
-							8, 80, false, false),
-					),
-				),
+			cbcli_utils.ShowDangerMessage(
+				"Resetting the primary user will also reset any saved configurations. If the current " +
+				"primary user has deployed cloud spaces and applications their configurations will be " +
+				"lost and may not be able to be recovered. Before proceding please ensure that you have " +
+				"exported the current configuration, in case you need to recover deployments associated " +
+				"with the current configuration.",
 			)
 
-			fmt.Println()
-			curPrimaryUserCheck, err := line.Prompt("Enter the name of current primary user whose configuration will be overwritten : ")
-			if err != nil {
-				panic(err)
+			if awsAuth, err = cbcli_auth.GetAuthenticatedToken(
+				config, true,
+				"To continue please authenticate as the current device owner whose configuration will be overwritten.",
+			); err != nil {
+				cbcli_utils.ShowErrorAndExit("Failed to authenticate primary user.")
 			}
-			if curPrimaryUserCheck != curPrimaryUser {
-				cbcli_utils.ShowErrorAndExit("In order to reset the current configuration you need to enter the primary user of the current configuration.")
-			}
+
+			// retrieve old device id which will be unregistered
+			oldDeviceID = deviceContext.GetDevice().DeviceID
+			// api client for current owner which will be
+			// used to unregister this device with that user
+			prevOwnerAPIClient = api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config)
+
+			// reset config context clearing all of current owner's 
+			// context data in preparation for a new owner
 			if err = config.Reset(); err != nil {
 				cbcli_utils.ShowErrorAndExit("Failed to reset current configuration.")
 			}
+		} else {
+			// retrieve auth token of logged in user
+			if awsAuth, err = cbcli_auth.GetAuthenticatedToken(
+				config, false, 
+				"You need to be logged in as the device owner to continue updating the CLI init settings.",
+			); err != nil {
+				cbcli_utils.ShowErrorAndExit("Failed to authenticate primary user.")
+			}
 		}
+		// ensure init updates are done only by the device owner
+		if awsAuth.Username() != deviceOwner {
+			cbcli_utils.ShowErrorAndExit("In order to re-initialize a configuration you need to be signed in as the current device owner.")
+		}
+		fmt.Println()
 	}
 	if resetConfig {
-		fmt.Println(
-`
-Please login as the primary user that will be configured as the owner of this
-configuration context. Once configured this user will own all spaces and 
-applications launched via the CB CLI with this configuration context. You need
-to re-initialize the CLI to change the primary user which also reset any saved
-configuration.`,
+		cbcli_utils.ShowNoteMessage(
+			"Please login as the primary user that will be configured as the owner of this device and " +
+			"configuration context.",
 		)
-		if err = cbcli_auth.Authenticate(cbcli_config.Config); err != nil {					
-			cbcli_utils.ShowErrorAndExit("My Cloud Space user authentication failed.")
+		fmt.Println()
+		cbcli_utils.ShowNoteMessage(
+			"Once configured this user will own all spaces and applications launched via this CB CLI " +
+			"device client. Guest users may be authorized by the primary user to use this device to connect " +
+			"to space resources they have access to, but they will not be able to create and administer " +
+			"spaces. If you want to change the primary user of the device you need to re-initialize the CLI.",
+		)
+
+		if awsAuth, err = cbcli_auth.GetAuthenticatedToken(config, false); err != nil {
+			cbcli_utils.ShowErrorAndExit("Failed to authenticate primary user.")
 		}
-		if awsAuth, err = cbcli_auth.NewAWSCognitoJWT(config); err != nil {
-			cbcli_utils.ShowErrorAndExit(err.Error())
+		userID = awsAuth.UserID()
+		userName = awsAuth.Username()
+
+		fmt.Println()
+		cbcli_utils.ShowNoteMessage(
+			"This client CLI will be given a unique device identity with the machine it is running on. " +
+			"This helps identify which clients or devices are connecting to your space along with the " +
+			"users that are connecting. If you use the Cloud Space client or CLI from another machine or " +
+			"device it will receive its own identity but your configuration context will remain the same. " +
+			"It is recommended that you give this device a name that will help you identify the it within " +
+			"your network.",
+		)
+		fmt.Println()
+
+		if hostName, err = os.Hostname(); err != nil {
+			panic(err)
 		}
-		if err = awsAuth.ParseJWT(config.AuthContext().GetToken()); err != nil {
-			cbcli_utils.ShowErrorAndExit(err.Error())
+		line.SetCompleter(func(line string) []string {
+			return []string{"", hostName}
+		})
+		if deviceName, err = line.PromptWithSuggestion(
+			"What is the name of this device : ", 
+			hostName, -1,
+		); err != nil {
+			panic(err)
 		}
-		config.DeviceContext().SetPrimaryUser(awsAuth.Username())
+		line.SetCompleter(nil)
+
+		// create device owner user
+		if owner, err = deviceContext.NewOwnerUser(userID, userName); err != nil {
+			panic(err)
+		}
+		// create new device
+		if device, err = deviceContext.NewDevice(); err != nil {
+			panic(err)
+		}
+
+		// api client for new owner which will be
+		// used to register this device with that user
+		newOwnerAPIClient = api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config)
 	}
 
 	resetPassphrase = true
@@ -187,6 +256,29 @@ configuration.`,
 		}
 	} else {
 		config.SetKeyTimeout(0)
+	}
+
+	// register device with MyCS account service with current 
+	// logged in user as owner. do this last to ensure all 
+	// other settings are accepted and valid before writing
+	// to the backend
+	if resetConfig {
+		// unregister this device using the prev owner's API client
+		deviceAPI = mycscloud.NewDeviceAPI(prevOwnerAPIClient)
+		if _, err = deviceAPI.UnRegisterDevice(oldDeviceID); err != nil {
+			panic(err)
+		}
+		// register this device using the new owner's API client
+		deviceAPI = mycscloud.NewDeviceAPI(newOwnerAPIClient)
+		if deviceIDKey, deviceID, err = deviceAPI.RegisterDevice(
+			deviceName, 
+			"", 
+			device.RSAPublicKey, 
+			owner.WGPublickKey,
+		); err != nil {
+			panic(err)
+		}
+		deviceContext.SetDeviceID(deviceIDKey, deviceID, deviceName)		
 	}
 
 	config.SetInitialized()

@@ -28,6 +28,65 @@ func ShowErrorAndExit(message string) {
 	os.Exit(1)
 }
 
+func ShowDangerMessage(message string, args ...interface{}) {
+
+	fmt.Println(
+		color.Danger.Render(
+			utils.FormatMessage(
+				8, 80, false, false, 
+				"DANGER! " + message, 
+				args...,
+			),
+		),
+	)
+}
+
+func ShowMessage(message string, args ...interface{}) {
+	fmt.Println(
+		utils.FormatMessage(
+			0, 80, false, false, 
+			message, 
+			args...,
+		),
+	)
+}
+
+func ShowNoteMessage(message string, args ...interface{}) {
+	fmt.Println(
+		color.Note.Render(
+			utils.FormatMessage(
+				0, 80, false, false, 
+				message, 
+				args...,
+			),
+		),
+	)
+}
+
+func ShowNoticeMessage(message string, args ...interface{}) {
+	fmt.Println(
+		color.Notice.Render(
+			utils.FormatMessage(
+				0, 80, false, false, 
+				message, 
+				args...,
+			),
+		),
+	)
+}
+
+func ShowCommentMessage(message string, args ...interface{}) {
+	fmt.Println(
+		color.Comment.Render(
+			utils.FormatMessage(
+				0, 80, false, false, 
+				message, 
+				args...,
+			),
+		),
+	)
+}
+
 func ShowInfoMessage(message string, args ...interface{}) {
 	fmt.Println(
 		color.Info.Render(

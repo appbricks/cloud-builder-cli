@@ -47,6 +47,15 @@ var (
 	cfgFile string
 )
 
+// commands that do not require
+// authenticated access
+var noauthCmds = map[string]bool{
+	"help": true,
+	"version": true,
+	"init": true,
+	"logout": true,
+}
+
 var rootCmd = &cobra.Command{
 	Use: "cb",
 
@@ -66,12 +75,14 @@ anonymized as it traverses the public provider networks.
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 
 		if !cbcli_config.Config.EULAAccepted() {
-			fmt.Println(`
-Before you can deploy Cloud Builder recipes you need to review and
-accept the AppBricks, Inc. Software End User Agreement. The terms of
-the agreement can be found at the following link.
-
-` + color.FgBlue.Render(`https://appbricks.io/legal/`))
+			fmt.Println()
+			cbcli_utils.ShowMessage(
+				"Before you can deploy Cloud Builder recipes you need to review and" +
+				"accept the AppBricks, Inc. Software End User Agreement. The terms of" +
+				"the agreement can be found at the following link.",
+			)
+			fmt.Println()
+			fmt.Println(color.FgBlue.Render(`https://appbricks.io/legal/`))
 
 			response := cbcli_utils.GetUserInputFromList(
 				"Do you agree to the terms: ",
@@ -85,7 +96,7 @@ the agreement can be found at the following link.
 			}
 		}
 
-		if cmd != initialize.InitCommand {
+		if _, noauth := noauthCmds[cmd.Name()]; !noauth {
 			if !cbcli_config.Config.Initialized() {
 				fmt.Println(
 					color.OpReverse.Render(
@@ -95,14 +106,26 @@ the agreement can be found at the following link.
 					),
 				)	
 			} else {
-				if err := cbcli_auth.Authenticate(cbcli_config.Config); err != nil {
-					logger.DebugMessage("Authentication returned error: ", err.Error())
+
+				var (
+					err error
+
+					awsAuth *cbcli_auth.AWSCognitoJWT
+				)
+				if awsAuth, err = cbcli_auth.GetAuthenticatedToken(cbcli_config.Config, false); err != nil {
+					logger.DebugMessage("Authentication returned error: %s", err.Error())
 					cbcli_utils.ShowErrorAndExit("My Cloud Space user authentication failed.")
 				}
-				if err := cbcli_auth.ValidateAuthenticatedUser(cbcli_config.Config); err != nil {
-					logger.DebugMessage("Validating authenticated user returned error: ", err.Error())
-					cbcli_utils.ShowErrorAndExit("My Cloud Space authenticated user validation failed.")
+				if err = cbcli_auth.AuthorizeDeviceAndUser(cbcli_config.Config); err != nil {
+					logger.DebugMessage("Authorizing logged in user on this device returned error: %s", err.Error())
+					cbcli_utils.ShowErrorAndExit("My Cloud Space device and user authorization failed.")
 				}
+				if !cbcli_config.Config.DeviceContext().IsAuthorizedUser(awsAuth.Username()) {
+					// reset command
+					cmd.Run = func(cmd *cobra.Command, args []string) {}
+				}
+				fmt.Println()
+				cbcli_utils.ShowNoticeMessage("You are logged in as \"%s\".", awsAuth.Username())
 			}
 		}
 	},
@@ -237,6 +260,7 @@ func setupCloseHandler() {
 func addCommands() {
 	rootCmd.AddCommand(versionCommand)
 	rootCmd.AddCommand(initialize.InitCommand)
+	rootCmd.AddCommand(logoutCommand)
 	rootCmd.AddCommand(cloud.CloudCommands)
 	rootCmd.AddCommand(recipe.RecipeCommands)
 	rootCmd.AddCommand(target.TargetCommands)
