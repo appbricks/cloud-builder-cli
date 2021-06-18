@@ -17,6 +17,7 @@ jobs:
 
     # Setup default environment for build
     env:
+      GOPATH: /home/runner/work/cloud-builder-cli/cloud-builder-cli/go
       COOKBOOK_REPO_PATH: https://github.com/appbricks/vpn-server/cloud/recipes
       COOKBOOK_VERSION: 0.0.10
 
