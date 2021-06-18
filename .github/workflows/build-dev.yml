@@ -30,37 +30,37 @@ jobs:
     - name: Checking out mycloudspace-client repository
       uses: actions/checkout@v2
       with:
-        repository: https://github.com/appbricks/mycloudspace-client.git
+        repository: appbricks/mycloudspace-client
         path: go/src/github.com/appbricks/mycloudspace-client
 
     - name: Checking out cloud-builder repository
       uses: actions/checkout@v2
       with:
-        repository: https://github.com/appbricks/cloud-builder.git
+        repository: appbricks/cloud-builder
         path: go/src/github.com/appbricks/cloud-builder
 
     - name: Checking out gocloud repository
       uses: actions/checkout@v2
       with:
-        repository: https://github.com/mevansam/gocloud.git
+        repository: mevansam/gocloud
         path: go/src/github.com/mevansam/gocloud
 
     - name: Checking out goforms repository
       uses: actions/checkout@v2    
       with:
-        repository: https://github.com/mevansam/goforms.git
+        repository: mevansam/goforms
         path: go/src/github.com/mevansam/goforms
 
     - name: Checking out goutils repository
       uses: actions/checkout@v2    
       with:
-        repository: https://github.com/mevansam/goutils.git
+        repository: mevansam/goutils
         path: go/src/github.com/mevansam/goutils
 
     - name: Checking out termtables repository
       uses: actions/checkout@v2    
       with:
-        repository: https://github.com/mevansam/termtables.git
+        repository: mevansam/termtables
         path: go/src/github.com/mevansam/termtables
 
     - name: Setup Go
@@ -72,6 +72,6 @@ jobs:
       run: |
         go version
         pwd
-        ls -al $(pwd)/go/src/github.com/mevansam
-        ls -al $(pwd)/go/src/github.com/appbricks
+        ls -al -R $(pwd)/go/src/github.com/mevansam
+        ls -al -R $(pwd)/go/src/github.com/appbricks
         
