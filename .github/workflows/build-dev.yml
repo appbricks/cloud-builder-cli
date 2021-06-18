@@ -71,6 +71,6 @@ jobs:
     - name: Setup Build Environment
       run: |
         go version
-        cd $(pws)/go/src/github.com/appbricks/cloud-builder-cli
+        cd $(pwd)/go/src/github.com/appbricks/cloud-builder-cli
         scripts/build.sh :dev:clean-all:
         
