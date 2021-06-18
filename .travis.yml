@@ -11,6 +11,7 @@ install:
 - git clone --branch=master https://github.com/mevansam/goutils.git ${GOPATH}/src/github.com/mevansam/goutils
 - git clone --branch=master https://github.com/mevansam/goforms.git ${GOPATH}/src/github.com/mevansam/goforms
 - git clone --branch=master https://github.com/mevansam/gocloud.git ${GOPATH}/src/github.com/mevansam/gocloud
+- git clone --branch=master https://github.com/appbricks/mycloudspace-client.git ${GOPATH}/src/github.com/appbricks/mycloudspace-client
 - git clone --branch=master https://github.com/appbricks/cloud-builder.git ${GOPATH}/src/github.com/appbricks/cloud-builder
 script:
 - scripts/run-ci-build.sh
