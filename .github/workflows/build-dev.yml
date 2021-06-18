@@ -21,7 +21,47 @@ jobs:
       COOKBOOK_VERSION: 0.0.10
 
     steps:
-    - uses: actions/checkout@v2
+
+    - name: Checking out cloud-builder-cli repository
+      uses: actions/checkout@v2
+      with:
+        path: go/src/github.com/appbricks/cloud-builder-cli
+        
+    - name: Checking out mycloudspace-client repository
+      uses: actions/checkout@v2
+      with:
+        repository: https://github.com/appbricks/mycloudspace-client.git
+        path: go/src/github.com/appbricks/mycloudspace-client
+
+    - name: Checking out cloud-builder repository
+      uses: actions/checkout@v2
+      with:
+        repository: https://github.com/appbricks/cloud-builder.git
+        path: go/src/github.com/appbricks/cloud-builder
+
+    - name: Checking out gocloud repository
+      uses: actions/checkout@v2
+      with:
+        repository: https://github.com/mevansam/gocloud.git
+        path: go/src/github.com/mevansam/gocloud
+
+    - name: Checking out goforms repository
+      uses: actions/checkout@v2    
+      with:
+        repository: https://github.com/mevansam/goforms.git
+        path: go/src/github.com/mevansam/goforms
+
+    - name: Checking out goutils repository
+      uses: actions/checkout@v2    
+      with:
+        repository: https://github.com/mevansam/goutils.git
+        path: go/src/github.com/mevansam/goutils
+
+    - name: Checking out termtables repository
+      uses: actions/checkout@v2    
+      with:
+        repository: https://github.com/mevansam/termtables.git
+        path: go/src/github.com/mevansam/termtables
 
     - name: Setup Go
       uses: actions/setup-go@v2
@@ -32,6 +72,6 @@ jobs:
       run: |
         go version
         pwd
-        ls -al
-        echo ${GOPATH}
+        ls -al $(pwd)/go/src/github.com/mevansam
+        ls -al $(pwd)/go/src/github.com/appbricks
         
