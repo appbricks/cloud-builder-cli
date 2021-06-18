@@ -31,5 +31,7 @@ jobs:
     - name: Setup Build Environment
       run: |
         go version
+        pwd
+        ls -al
         echo ${GOPATH}
         
