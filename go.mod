@@ -26,7 +26,6 @@ require (
 	github.com/gookit/color v1.2.1
 	github.com/hasura/go-graphql-client v0.2.0
 	github.com/karrick/godirwalk v1.16.1 // indirect
-	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
 	github.com/lestrrat-go/jwx v1.2.1
 	github.com/mevansam/gocloud v0.0.0-00010101000000-000000000000
 	github.com/mevansam/goforms v0.0.0-00010101000000-000000000000
