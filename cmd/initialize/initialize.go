@@ -263,11 +263,13 @@ func initialize() {
 	// other settings are accepted and valid before writing
 	// to the backend
 	if resetConfig {
-		// unregister this device using the prev owner's API client
-		deviceAPI = mycscloud.NewDeviceAPI(prevOwnerAPIClient)
-		if _, err = deviceAPI.UnRegisterDevice(oldDeviceID); err != nil {
-			panic(err)
-		}
+		if prevOwnerAPIClient != nil {
+			// unregister this device using the prev owner's API client
+			deviceAPI = mycscloud.NewDeviceAPI(prevOwnerAPIClient)
+			if _, err = deviceAPI.UnRegisterDevice(oldDeviceID); err != nil {
+				panic(err)
+			}
+		}		
 		// register this device using the new owner's API client
 		deviceAPI = mycscloud.NewDeviceAPI(newOwnerAPIClient)
 		if deviceIDKey, deviceID, err = deviceAPI.RegisterDevice(
