@@ -18,12 +18,13 @@ jobs:
     # Setup default environment for build
     env:
       GOPATH: ${{ github.workspace }}/go
+      CLI_SRC_PATH: ${{ github.workspace }}/go/src/github.com/appbricks/cloud-builder-cli
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: us-east-1
-      ENV: dev
       COOKBOOK_REPO_PATH: https://github.com/appbricks/vpn-server/cloud/recipes
       COOKBOOK_VERSION: 0.0.10
+      ENV: dev
 
     steps:
 
