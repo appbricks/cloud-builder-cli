@@ -85,7 +85,7 @@ jobs:
       run: |
         go version
         cd ${CLI_SRC_PATH}
-        scripts/get-aws-env.sh
+        scripts/get-aws-env.sh -e ${ENV}
         scripts/build.sh :clean-all:
 
     - name: Upload built binaries for publishing

@@ -84,7 +84,7 @@ jobs:
       run: |
         go version
         cd ${CLI_SRC_PATH}
-        scripts/get-aws-env.sh
+        scripts/get-aws-env.sh -e ${ENV}
         scripts/build.sh :clean-all:
 
     - name:  Upload dev binaries to S3
@@ -92,22 +92,3 @@ jobs:
         mkdir releases
         cp -r ${CLI_SRC_PATH}/build/releases/*.zip releases/
         aws s3 sync releases s3://mycs${ENV}-deploy-artifacts/releases
-
-    # - name: Stage Release
-    #   uses: softprops/action-gh-release@v1
-    #   if: startsWith(github.ref, 'refs/tags/')
-    #   with:
-    #     prerelease: true
-    #     body: |
-    #       To install, download the correct file for you system 
-    #       and extract the binary to the system path or any path 
-    #       that is mapped to the system's PATH variable.
-    #     body_path: doc/release-notes.md
-    #     files: |
-    #       build/releases/cb_darwin_amd64.zip
-    #       build/releases/cb_linux_amd64.zip
-    #       build/releases/cb_windows_amd64.zip
-    #       LICENSE
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #     GITHUB_REPOSITORY: appbricks/cloud-builder-cli
