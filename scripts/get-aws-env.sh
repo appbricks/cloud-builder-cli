@@ -90,3 +90,5 @@ const USER_INFO_URL = "https://${env_name}.auth.us-east-1.amazoncognito.com/oaut
 const AWS_APPSYNC_REGION = "${appsyncRegion}"
 const AWS_USERSPACE_API_URL = "${userSpaceApiUrl}"
 ---EOF
+
+git update-index --assume-unchanged ${home_dir}/config/aws.go
