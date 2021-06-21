@@ -150,11 +150,6 @@ jobs:
       with:
         tag_name: ${{ steps.release_tag.outputs.value }}
         prerelease: true
-        body: |
-          To install, download the correct binary for your
-          system and extract the binary to the system path
-          or any path that is mapped to the system's PATH
-          variable.
         body_path: doc/release-notes.md
         files: |
           build/releases/cb_linux_amd64.zip
