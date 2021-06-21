@@ -3,8 +3,9 @@ name: Build and stage Cloud Build CLI
 on:
   workflow_dispatch:
   push:
-    branches: [ dev ]
+    branches: [ master ]
     paths:
+    - 'docs/release-notes.md'
     - '**.go'
 
 jobs:
@@ -24,7 +25,7 @@ jobs:
       AWS_DEFAULT_REGION: us-east-1
       COOKBOOK_REPO_PATH: https://github.com/appbricks/vpn-server/cloud/recipes
       COOKBOOK_VERSION: 0.0.10
-      ENV: dev
+      ENV: prod
 
     steps:
 
@@ -87,27 +88,78 @@ jobs:
         scripts/get-aws-env.sh
         scripts/build.sh :clean-all:
 
-    - name:  Upload dev binaries to S3
-      run: |
-        mkdir releases
-        cp -r ${CLI_SRC_PATH}/build/releases/*.zip releases/
-        aws s3 sync releases s3://mycs${ENV}-deploy-artifacts/releases
+    - name: Upload built binaries for publishing
+      uses: actions/upload-artifact@master
+      with:
+        name: cli-build-artifacts
+        path: ${CLI_SRC_PATH}/
 
-    # - name: Stage Release
-    #   uses: softprops/action-gh-release@v1
-    #   if: startsWith(github.ref, 'refs/tags/')
-    #   with:
-    #     prerelease: true
-    #     body: |
-    #       To install, download the correct file for you system 
-    #       and extract the binary to the system path or any path 
-    #       that is mapped to the system's PATH variable.
-    #     body_path: doc/release-notes.md
-    #     files: |
-    #       build/releases/cb_darwin_amd64.zip
-    #       build/releases/cb_linux_amd64.zip
-    #       build/releases/cb_windows_amd64.zip
-    #       LICENSE
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #     GITHUB_REPOSITORY: appbricks/cloud-builder-cli
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    env:
+      VERSION: '0.0'
+
+    steps:
+
+    # Checkout the repository to the GitHub Actions runner
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    # Retrieve build results from previous job
+    - name: Download built binaries for release
+      uses: actions/download-artifact@master
+      with:
+        name: cli-build-artifacts
+
+    # Create and tag release
+    - name: Create release tag
+      id: release_tag
+      run: |
+        git config user.email "$(git log -1 --pretty=format:'%an')"
+        git config user.name "$(git log -1 --pretty=format:'%ae')"
+        git fetch --tags origin
+
+        set +e
+        last_tag=$(git for-each-ref \
+          --sort=-creatordate \
+          --format '%(refname)' refs/tags \
+          | grep "refs/tags/${VERSION}" \
+          | head -1)
+        set -e
+
+        build_number=$(basename "$last_tag" | cut -d '.' -f3)
+        [[ -n $build_number ]] || build_number=-1
+        release_tag=${VERSION}.$((build_number+1))
+        last_commit_msg=$(git log -1 --pretty=%B)
+
+        echo "Creating release tag ${release_tag}..."
+        git tag -a ${release_tag} -m "$last_commit_msg"
+        git push --follow-tags
+
+        echo "::set-output name=value::$(echo ${release_tag})"
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.release_tag.outputs.value }}
+        prerelease: true
+        body: |
+          To install, download the correct binary for your
+          system and extract the binary to the system path
+          or any path that is mapped to the system's PATH
+          variable.
+        body_path: doc/release-notes.md
+        files: |
+          build/releases/cb_linux_amd64.zip
+          build/releases/cb_darwin_amd64.zip
+          build/releases/cb_windows_amd64.zip
+          LICENSE
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_REPOSITORY: appbricks/cloud-builder-cli
