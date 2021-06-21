@@ -92,7 +92,7 @@ jobs:
       uses: actions/upload-artifact@master
       with:
         name: cli-build-artifacts
-        path: ${CLI_SRC_PATH}/
+        path: ${{ github.workspace }}/go/src/github.com/appbricks/cloud-builder-cli/
 
   release:
     needs: build
