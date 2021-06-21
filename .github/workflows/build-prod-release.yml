@@ -92,7 +92,7 @@ jobs:
       uses: actions/upload-artifact@master
       with:
         name: cli-build-artifacts
-        path: ${{ github.workspace }}/go/src/github.com/appbricks/cloud-builder-cli/
+        path: ${{ github.workspace }}/go/src/github.com/appbricks/cloud-builder-cli/build/releases/
 
   release:
     needs: build
@@ -116,6 +116,7 @@ jobs:
       uses: actions/download-artifact@master
       with:
         name: cli-build-artifacts
+        path: build/releases
 
     # Create and tag release
     - name: Create release tag
