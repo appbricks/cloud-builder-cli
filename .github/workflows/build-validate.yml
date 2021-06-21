@@ -79,5 +79,4 @@ jobs:
       run: |
         go version
         cd $(pwd)/go/src/github.com/appbricks/cloud-builder-cli
-        scripts/build.sh :dev:clean-all:
-        
+        scripts/build.sh :clean-all:
