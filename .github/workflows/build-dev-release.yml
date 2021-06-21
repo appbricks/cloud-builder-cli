@@ -1,4 +1,4 @@
-name: Build and stage Cloud Build CLI
+name: Build dev Cloud Build CLI release
 
 on:
   workflow_dispatch:
