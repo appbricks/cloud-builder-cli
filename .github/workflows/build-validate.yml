@@ -17,7 +17,8 @@ jobs:
 
     # Setup default environment for build
     env:
-      GOPATH: /home/runner/work/cloud-builder-cli/cloud-builder-cli/go
+      GOPATH: ${{ github.workspace }}/go
+      CLI_SRC_PATH: ${{ github.workspace }}/go/src/github.com/appbricks/cloud-builder-cli
       COOKBOOK_REPO_PATH: https://github.com/appbricks/vpn-server/cloud/recipes
       COOKBOOK_VERSION: 0.0.10
 
@@ -75,8 +76,8 @@ jobs:
       with:
         go-version: '^1.16.0'
 
-    - name: Run Dev Build
+    - name: Run build
       run: |
         go version
-        cd $(pwd)/go/src/github.com/appbricks/cloud-builder-cli
+        cd ${CLI_SRC_PATH}
         scripts/build.sh :clean-all:
