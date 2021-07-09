@@ -106,7 +106,8 @@ if [[ $action == *:dev:* ]]; then
 
 else
   # set version
-  build_version=${TRAVIS_TAG:-0.0.2}
+  tag=${GITHUB_REF/refs\/tags\//}
+  build_version=${tag:-0.0.0}
   build_timestamp=$(date +'%B %d, %Y at %H:%M %Z')
 
   if [[ `go env GOOS` == darwin ]]; then
