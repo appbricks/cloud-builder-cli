@@ -90,7 +90,11 @@ function build() {
   # build and package release binary
   mkdir -p ${release_dir}/${os}_${arch}
   pushd ${release_dir}/${os}_${arch}
-  GOOS=$os GOARCH=$arch go build ${root_dir}/cmd/cb
+  if [[ $action == *:dev:* ]]; then
+    GOOS=$os GOARCH=$arch go build ${root_dir}/cmd/cb
+  else
+    GOOS=$os GOARCH=$arch go build -ldflags "-s -w" ${root_dir}/cmd/cb
+  fi
   zip -r ${release_dir}/cb_${os}_${arch}.zip .
   popd
 }

@@ -16,6 +16,8 @@ replace github.com/mevansam/goutils => ../../mevansam/goutils
 
 replace github.com/mevansam/termtables => ../../mevansam/termtables
 
+replace tailscale.com => ../tailscale
+
 require (
 	github.com/appbricks/cloud-builder v0.0.0-00010101000000-000000000000
 	github.com/appbricks/mycloudspace-client v0.0.0-00010101000000-000000000000
