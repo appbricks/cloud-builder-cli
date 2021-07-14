@@ -5,6 +5,8 @@ import (
 	"os"
 
 	"github.com/appbricks/cloud-builder/target"
+	"github.com/appbricks/mycloudspace-client/api"
+	"github.com/appbricks/mycloudspace-client/mycscloud"
 	"github.com/mevansam/gocloud/provider"
 	"github.com/mevansam/goforms/config"
 	"github.com/mevansam/goforms/forms"
@@ -52,11 +54,16 @@ func CreateTarget(recipeName, iaasName string) {
 		region      *string
 		regionField *forms.InputField
 	)
-	contect := cbcli_config.Config.Context()
+	config := cbcli_config.Config
+	context := config.Context()
 
-	if tgt, err = contect.NewTarget(
+	if tgt, err = context.NewTarget(
 		recipeName, iaasName,
 	); err == nil && tgt != nil {
+
+		if _, err = tgt.UpdateKeys(); err != nil {
+			cbcli_utils.ShowErrorAndExit(err.Error())
+		}
 
 		if !tgt.Provider.IsValid() {
 			cbcli_utils.ShowErrorAndExit(
@@ -93,7 +100,7 @@ func CreateTarget(recipeName, iaasName string) {
 		} else {
 			// non-bastion nodes install to a bastion node's space, 
 			// so need a target bastion node to deploy recipe to
-			targets := contect.TargetSet()
+			targets := context.TargetSet()
 
 			if len(createFlags.dependentTarget) == 0 {
 				fmt.Println()
@@ -157,6 +164,12 @@ func CreateTarget(recipeName, iaasName string) {
 		}
 
 		configureTarget(tgt, "target-undeployed")
+
+		// add target to MyCS account
+		spaceAPI := mycscloud.NewSpaceAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
+		if err = spaceAPI.AddSpace(tgt, false); err != nil {
+			cbcli_utils.ShowErrorAndExit(err.Error())
+		}
 		return
 	}
 

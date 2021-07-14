@@ -8,9 +8,11 @@ import (
 	"github.com/mevansam/goutils/utils"
 	"github.com/spf13/cobra"
 
-	"github.com/appbricks/cloud-builder-cli/config"
 	"github.com/appbricks/cloud-builder/target"
+	"github.com/appbricks/mycloudspace-client/api"
+	"github.com/appbricks/mycloudspace-client/mycscloud"
 
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
@@ -47,7 +49,8 @@ func DeleteTarget(targetKey string) {
 
 		response string
 	)
-	context := config.Config.Context()
+	config := cbcli_config.Config
+	context := config.Context()
 
 	if tgt, err = context.GetTarget(targetKey); err == nil && tgt != nil {
 
@@ -85,7 +88,14 @@ func DeleteTarget(targetKey string) {
 			}
 			if !deleteFlags.keep {
 				context.TargetSet().DeleteTarget(tgt.Key())
+
+				// delete target to MyCS account
+				spaceAPI := mycscloud.NewSpaceAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
+				if _, err = spaceAPI.DeleteSpace(tgt); err != nil {
+					cbcli_utils.ShowErrorAndExit(err.Error())
+				}
 			}
+
 			fmt.Print(color.Green.Render("\nTarget has been deleted.\n\n"))
 		} else {
 			fmt.Print(color.Red.Render("\nTarget has not been deleted.\n\n"))
