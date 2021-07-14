@@ -22,12 +22,10 @@ require (
 	github.com/appbricks/cloud-builder v0.0.0-00010101000000-000000000000
 	github.com/appbricks/mycloudspace-client v0.0.0-00010101000000-000000000000
 	github.com/briandowns/spinner v1.12.0
-	github.com/coreos/etcd v3.3.13+incompatible // indirect
 	github.com/eiannone/keyboard v0.0.0-20200508000154-caf4b762e807
 	github.com/gobuffalo/logger v1.0.4 // indirect
 	github.com/gobuffalo/packr/v2 v2.8.1
 	github.com/gookit/color v1.2.1
-	github.com/hashicorp/terraform v0.12.18 // indirect
 	github.com/hasura/go-graphql-client v0.2.0
 	github.com/karrick/godirwalk v1.16.1 // indirect
 	github.com/lestrrat-go/jwx v1.2.1
