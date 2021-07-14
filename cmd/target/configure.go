@@ -7,8 +7,6 @@ import (
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 
-	"github.com/mevansam/gocloud/backend"
-	"github.com/mevansam/gocloud/provider"
 	"github.com/mevansam/goforms/forms"
 	"github.com/mevansam/goforms/ux"
 	"github.com/mevansam/goutils/utils"
@@ -139,10 +137,9 @@ func configureTarget(tgt *target.Target, tags ...string) {
 	}
 	if len(backendInputForm.EnabledInputs(true, "target-undeployed")) > 0 {
 
-		backend := tgt.Backend.(backend.CloudBackend)
-		if !backend.IsValid() {
-			if err = backend.Configure(
-				tgt.Provider.(provider.CloudProvider),
+		if !tgt.Backend.IsValid() {
+			if err = tgt.Backend.Configure(
+				tgt.Provider,
 				tgt.DeploymentName(), tgt.RecipeName,
 			); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
