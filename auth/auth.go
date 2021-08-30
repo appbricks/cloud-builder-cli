@@ -219,9 +219,7 @@ func AuthorizeDeviceAndUser(config config.Config) error {
 				cbcli_utils.ShowNoticeMessage("User \"%s\" is not authorized to use this device. A request to grant access to this device is still pending.", userName)
 			}
 			
-			fmt.Println()
 			return nil
-
 		} else {
 			return err
 		}

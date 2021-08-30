@@ -63,7 +63,7 @@ func ResumeTarget(targetKey string) {
 							spinner.CharSets[39], 
 							100*time.Millisecond,
 							spinner.WithSuffix(fmt.Sprintf(" Starting instance \"%s\".", name)),
-							spinner.WithFinalMSG(fmt.Sprintf("Instance \"%s\" started.\n", name)),
+							spinner.WithFinalMSG(fmt.Sprintf("Instance \"%s\" started.\n\n", name)),
 							spinner.WithHiddenCursor(true),
 						)
 						s.Start()	
