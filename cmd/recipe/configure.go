@@ -8,9 +8,10 @@ import (
 	"github.com/mevansam/goforms/forms"
 	"github.com/mevansam/goforms/ux"
 
-	"github.com/appbricks/cloud-builder-cli/config"
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/cookbook"
 
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
@@ -25,6 +26,9 @@ template which can be further customized when configuring a target.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
+		cbcli_utils.AssertAuthorized(cmd,
+			auth.NewRoleMask(auth.Admin).LoggedInUserHasRole(cbcli_config.Config.DeviceContext()))
+		
 		ConfigureRecipe(args[0], args[1])
 	},
 	Args: cobra.ExactArgs(2),
@@ -39,7 +43,7 @@ func ConfigureRecipe(name, cloud string) {
 		inputForm forms.InputForm
 	)
 
-	if recipe, err = config.Config.Context().GetCookbookRecipe(name, cloud); err == nil && recipe != nil {
+	if recipe, err = cbcli_config.Config.Context().GetCookbookRecipe(name, cloud); err == nil && recipe != nil {
 
 		if inputForm, err = recipe.InputForm(); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
@@ -52,7 +56,7 @@ func ConfigureRecipe(name, cloud string) {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
 
-		config.Config.Context().SaveCookbookRecipe(recipe)
+		cbcli_config.Config.Context().SaveCookbookRecipe(recipe)
 		fmt.Print("\nConfiguration input saved\n\n")
 		return
 	}

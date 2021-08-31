@@ -8,6 +8,7 @@ import (
 	"github.com/mevansam/goutils/utils"
 	"github.com/spf13/cobra"
 
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
 	"github.com/appbricks/mycloudspace-client/api"
 	"github.com/appbricks/mycloudspace-client/mycscloud"
@@ -34,6 +35,9 @@ then provide the --keep flag.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
+		cbcli_utils.AssertAuthorized(cmd,
+			auth.NewRoleMask(auth.Admin).LoggedInUserHasRole(cbcli_config.Config.DeviceContext()))
+
 		DeleteTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(deleteFlags.commonFlags)))
 	},
 	Args: cobra.ExactArgs(3),

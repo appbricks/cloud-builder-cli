@@ -7,9 +7,10 @@ import (
 	"github.com/mevansam/goutils/logger"
 	"github.com/spf13/cobra"
 
-	"github.com/appbricks/cloud-builder-cli/config"
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
 
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
@@ -33,6 +34,9 @@ clean-rebuild takes precedence.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
+		cbcli_utils.AssertAuthorized(cmd,
+			auth.NewRoleMask(auth.Admin).LoggedInUserHasRole(cbcli_config.Config.DeviceContext()))
+
 		LaunchTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(launchFlags.commonFlags)))
 	},
 	Args: cobra.ExactArgs(3),
@@ -46,7 +50,7 @@ func LaunchTarget(targetKey string) {
 		tgt, spaceTgt *target.Target
 		bldr          *target.Builder
 	)
-	context := config.Config.Context()
+	context := cbcli_config.Config.Context()
 
 	if tgt, err = context.GetTarget(targetKey); err == nil && tgt != nil {
 

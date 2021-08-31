@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
 	"github.com/appbricks/mycloudspace-client/api"
 	"github.com/appbricks/mycloudspace-client/mycscloud"
@@ -33,6 +34,9 @@ configured recipe template with a configured cloud template.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
+		cbcli_utils.AssertAuthorized(cmd,
+			auth.NewRoleMask(auth.Admin).LoggedInUserHasRole(cbcli_config.Config.DeviceContext()))
+
 		CreateTarget(args[0], args[1])
 	},
 	Args: cobra.ExactArgs(2),

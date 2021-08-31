@@ -11,9 +11,10 @@ import (
 	"github.com/mevansam/goforms/ux"
 	"github.com/mevansam/goutils/utils"
 
-	"github.com/appbricks/cloud-builder-cli/config"
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
 
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
@@ -34,6 +35,9 @@ been launched.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
+		cbcli_utils.AssertAuthorized(cmd,
+			auth.NewRoleMask(auth.Admin).LoggedInUserHasRole(cbcli_config.Config.DeviceContext()))
+
 		ConfigureTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(configureFlags.commonFlags)))
 	},
 	Args: cobra.ExactArgs(3),
@@ -47,7 +51,7 @@ func ConfigureTarget(targetKey string) {
 		tgt *target.Target
 	)
 
-	if tgt, err = config.Config.Context().GetTarget(targetKey); err == nil && tgt != nil {
+	if tgt, err = cbcli_config.Config.Context().GetTarget(targetKey); err == nil && tgt != nil {
 
 		if tgt.Status() == target.Undeployed {
 			if configureFlags.all {
@@ -159,7 +163,7 @@ func configureTarget(tgt *target.Target, tags ...string) {
 	}
 
 	// save target
-	if config.Config.Context().HasTarget(tgt.Key()) {
+	if cbcli_config.Config.Context().HasTarget(tgt.Key()) {
 
 		fmt.Print(utils.FormatMessage(7, 80, false, true, tgt.Name()))
 		fmt.Println(" exists.")
@@ -174,7 +178,7 @@ func configureTarget(tgt *target.Target, tags ...string) {
 			return
 		}
 	}
-	config.Config.Context().SaveTarget(targetKey, tgt)
+	cbcli_config.Config.Context().SaveTarget(targetKey, tgt)
 	fmt.Print(color.Green.Render("\nConfiguration for target saved.\n\n"))
 }
 

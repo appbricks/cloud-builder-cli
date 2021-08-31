@@ -9,8 +9,9 @@ import (
 	"github.com/mevansam/goforms/forms"
 	"github.com/mevansam/goforms/ux"
 
-	"github.com/appbricks/cloud-builder-cli/config"
+	"github.com/appbricks/cloud-builder/auth"
 
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
@@ -27,6 +28,9 @@ environments you wish to target.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
+		cbcli_utils.AssertAuthorized(cmd,
+			auth.NewRoleMask(auth.Admin).LoggedInUserHasRole(cbcli_config.Config.DeviceContext()))
+		
 		ConfigureCloud(args[0])
 	},
 	Args: cobra.ExactArgs(1),
@@ -41,7 +45,7 @@ func ConfigureCloud(name string) {
 		inputForm forms.InputForm
 	)
 
-	if provider, err = config.Config.Context().GetCloudProvider(name); err == nil && provider != nil {
+	if provider, err = cbcli_config.Config.Context().GetCloudProvider(name); err == nil && provider != nil {
 
 		if inputForm, err = provider.InputForm(); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
@@ -54,7 +58,7 @@ func ConfigureCloud(name string) {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
 
-		config.Config.Context().SaveCloudProvider(provider)
+		cbcli_config.Config.Context().SaveCloudProvider(provider)
 		fmt.Print("\nConfiguration input saved\n\n")
 		return
 	}

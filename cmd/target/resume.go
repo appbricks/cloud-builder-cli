@@ -7,10 +7,11 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/spf13/cobra"
 
-	"github.com/appbricks/cloud-builder-cli/config"
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
 	"github.com/mevansam/gocloud/cloud"
 
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
@@ -31,6 +32,9 @@ resume a specific instance provide the instance name via the
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
+		cbcli_utils.AssertAuthorized(cmd,
+			auth.NewRoleMask(auth.Admin).LoggedInUserHasRole(cbcli_config.Config.DeviceContext()))
+
 		ResumeTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(resumeFlags.commonFlags)))
 	},
 	Args: cobra.ExactArgs(3),
@@ -45,7 +49,7 @@ func ResumeTarget(targetKey string) {
 		s   *spinner.Spinner
 	)
 
-	if tgt, err = config.Config.Context().GetTarget(targetKey); err == nil && tgt != nil {
+	if tgt, err = cbcli_config.Config.Context().GetTarget(targetKey); err == nil && tgt != nil {
 
 		if err = tgt.LoadRemoteRefs(); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())

@@ -8,9 +8,10 @@ import (
 	"github.com/mevansam/gocloud/cloud"
 	"github.com/spf13/cobra"
 
-	"github.com/appbricks/cloud-builder-cli/config"
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
 
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
@@ -31,6 +32,9 @@ suspend a specific instance provide the instance name via the
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
+		cbcli_utils.AssertAuthorized(cmd,
+			auth.NewRoleMask(auth.Admin).LoggedInUserHasRole(cbcli_config.Config.DeviceContext()))
+
 		SuspendTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(suspendFlags.commonFlags)))
 	},
 	Args: cobra.ExactArgs(3),
@@ -45,7 +49,7 @@ func SuspendTarget(targetKey string) {
 		s   *spinner.Spinner
 	)
 
-	if tgt, err = config.Config.Context().GetTarget(targetKey); err == nil && tgt != nil {
+	if tgt, err = cbcli_config.Config.Context().GetTarget(targetKey); err == nil && tgt != nil {
 
 		if err = tgt.LoadRemoteRefs(); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())

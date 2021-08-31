@@ -9,7 +9,10 @@ import (
 
 	"github.com/mevansam/termtables"
 
-	"github.com/appbricks/cloud-builder-cli/config"
+	"github.com/appbricks/cloud-builder/auth"
+
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
+	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
 var listFlags = struct {
@@ -28,6 +31,9 @@ the correct permissions.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
+		cbcli_utils.AssertAuthorized(cmd,
+			auth.NewRoleMask(auth.Admin).LoggedInUserHasRole(cbcli_config.Config.DeviceContext()))
+
 		if listFlags.region {
 			ListCloudsByRegion()
 		} else {
@@ -38,7 +44,7 @@ the correct permissions.
 
 func ListClouds() {
 
-	cloudList := config.Config.Context().CloudProviderTemplates()
+	cloudList := cbcli_config.Config.Context().CloudProviderTemplates()
 
 	table := termtables.CreateTable()
 	table.AddHeaders(
@@ -71,7 +77,7 @@ func ListClouds() {
 
 func ListCloudsByRegion() {
 
-	cloudList := config.Config.Context().CloudProviderTemplates()
+	cloudList := cbcli_config.Config.Context().CloudProviderTemplates()
 
 	fmt.Printf("\nThis Cloud Builder cookbook supports launching recipes in the public cloud regions listed below.\n\n")
 	for _, cp := range cloudList {

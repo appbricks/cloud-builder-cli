@@ -6,6 +6,7 @@ import (
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/cookbook"
 	"github.com/mevansam/goutils/utils"
 	"github.com/mevansam/termtables"
@@ -28,6 +29,9 @@ one of the supported public clouds.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
+		cbcli_utils.AssertAuthorized(cmd,
+			auth.NewRoleMask(auth.Admin).LoggedInUserHasRole(cbcli_config.Config.DeviceContext()))
+		
 		if len(listFlags.cloud) > 0 {
 			ListRecipesForCloud(listFlags.cloud)
 		} else {

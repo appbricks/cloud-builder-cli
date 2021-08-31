@@ -7,15 +7,14 @@ import (
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 
+	"github.com/appbricks/cloud-builder/target"
 	"github.com/mevansam/gocloud/cloud"
 	"github.com/mevansam/goforms/forms"
 	"github.com/mevansam/goforms/ux"
 	"github.com/mevansam/goutils/term"
 	"github.com/mevansam/goutils/utils"
 
-	"github.com/appbricks/cloud-builder-cli/config"
-	"github.com/appbricks/cloud-builder/target"
-
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
@@ -52,7 +51,7 @@ func ShowTarget(targetKey string) {
 		inputForm forms.InputForm
 	)
 
-	if tgt, err = config.Config.Context().GetTarget(targetKey); err == nil && tgt != nil {
+	if tgt, err = cbcli_config.Config.Context().GetTarget(targetKey); err == nil && tgt != nil {
 
 		if err = tgt.LoadRemoteRefs(); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())

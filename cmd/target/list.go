@@ -113,7 +113,6 @@ func ListTargets() {
 		spacesRecipes,
 		appsRecipes []cookbook.CookbookRecipeInfo
 	)
-	fmt.Println()
 	
 	for _, r := range cbcli_config.Config.Context().Cookbook().RecipeList() {
 		if r.IsBastion {
@@ -142,7 +141,6 @@ func ListTargets() {
 	} else {
 		cbcli_utils.ShowInfoMessage("No application recipes found...")
 	}
-	fmt.Println()
 
 	numTargets := len(targetSubCommandArgs)
 	if listFlags.actions && numTargets > 0 {
@@ -154,6 +152,7 @@ func ListTargets() {
 		if response = cbcli_utils.GetUserInputFromList(
 			"Enter # of node to execute sub-command on or (q)uit: ",
 			"", options); response == "q" {
+			fmt.Println()
 			return
 		}
 		if targetIndex, err = strconv.Atoi(response); err != nil ||
@@ -194,6 +193,7 @@ func ListTargets() {
 		if response = cbcli_utils.GetUserInputFromList(
 			"Enter # of sub-command or (q)uit: ",
 			"", options); response == "q" {
+			fmt.Println()
 			return
 		}
 
