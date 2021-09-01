@@ -19,6 +19,7 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/gookit/color"
 	"github.com/mevansam/goutils/logger"
+	"github.com/spf13/cobra"
 
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
@@ -238,4 +239,27 @@ func AuthorizeDeviceAndUser(config config.Config) error {
 	}
 
 	return nil
+}
+
+func AssertAuthorized(cmd *cobra.Command, args []string) {
+
+	if !auth.NewRoleMask(auth.Admin).LoggedInUserHasRole(cbcli_config.Config.DeviceContext()) {
+		if cmd.Parent() != nil {
+			cbcli_utils.ShowNoteMessage(
+				fmt.Sprintf(
+					"Only device admins can invoke command 'cb %s %s ...'\n", 
+					cmd.Parent().Name(), cmd.Name(),
+				),
+			)		
+		} else {
+			cbcli_utils.ShowNoteMessage(
+				fmt.Sprintf(
+					"Only device admins can to invoke command 'cb %s'.\n", 
+					cmd.Name(),
+				),
+			)
+		}
+		// reset command
+		cmd.Run = func(cmd *cobra.Command, args []string) {}			
+	}
 }

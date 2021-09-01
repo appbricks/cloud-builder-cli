@@ -5,10 +5,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/appbricks/cloud-builder/auth"
 	"github.com/mevansam/goforms/forms"
 	"github.com/mevansam/goforms/ux"
 
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
@@ -23,10 +23,9 @@ will show help for the recipe inputs including defaults that can be
 provided to customize the deployment of the recipe.
 `,
 
+	PreRun: cbcli_auth.AssertAuthorized,
+
 	Run: func(cmd *cobra.Command, args []string) {
-		cbcli_utils.AssertAuthorized(cmd,
-			auth.NewRoleMask(auth.Admin).LoggedInUserHasRole(cbcli_config.Config.DeviceContext()))
-		
 		ShowRecipe(args[0], args[1])
 	},
 	Args: cobra.ExactArgs(2),

@@ -11,13 +11,13 @@ import (
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/term"
 
-	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
 	"github.com/mevansam/gocloud/cloud"
 	"github.com/mevansam/goutils/logger"
 	"github.com/mevansam/goutils/streams"
 	"github.com/mevansam/goutils/utils"
 
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
@@ -42,10 +42,9 @@ internal then this command can only be run once the VPN connection to
 the cloud space sandbox VPN has been establised.
 `,
 
-	Run: func(cmd *cobra.Command, args []string) {
-		cbcli_utils.AssertAuthorized(cmd,
-			auth.NewRoleMask(auth.Admin).LoggedInUserHasRole(cbcli_config.Config.DeviceContext()))
+	PreRun: cbcli_auth.AssertAuthorized,
 
+	Run: func(cmd *cobra.Command, args []string) {
 		SSHTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(sshFlags.commonFlags)))
 	},
 	Args: cobra.ExactArgs(3),

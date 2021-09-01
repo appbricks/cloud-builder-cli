@@ -6,7 +6,6 @@ import (
 
 	"github.com/gookit/color"
 	"github.com/mevansam/goutils/utils"
-	"github.com/spf13/cobra"
 )
 
 func ShowErrorAndExit(message string) {
@@ -110,17 +109,4 @@ func ShowWarningMessage(message string, args ...interface{}) {
 			),
 		),
 	)
-}
-
-
-func AssertAuthorized(cmd *cobra.Command, authorized bool) {
-
-	if !authorized {
-		if cmd.Parent() != nil {
-			ShowNoteMessage(fmt.Sprintf("Only device admins can invoke command 'cb %s %s ...'\n", cmd.Parent().Name(), cmd.Name()))		
-		} else {
-			ShowNoteMessage(fmt.Sprintf("Only device admins can to invoke command 'cb %s'.\n", cmd.Name()))		
-		}	
-		os.Exit(1)
-	}
 }

@@ -9,10 +9,8 @@ import (
 
 	"github.com/mevansam/termtables"
 
-	"github.com/appbricks/cloud-builder/auth"
-
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
-	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
 var listFlags = struct {
@@ -30,10 +28,9 @@ need ensure your public account credentials have been configured with
 the correct permissions.
 `,
 
-	Run: func(cmd *cobra.Command, args []string) {
-		cbcli_utils.AssertAuthorized(cmd,
-			auth.NewRoleMask(auth.Admin).LoggedInUserHasRole(cbcli_config.Config.DeviceContext()))
+	PreRun: cbcli_auth.AssertAuthorized,
 
+	Run: func(cmd *cobra.Command, args []string) {
 		if listFlags.region {
 			ListCloudsByRegion()
 		} else {
