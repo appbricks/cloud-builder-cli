@@ -53,7 +53,7 @@ func DeleteTarget(targetKey string) {
 		response string
 	)
 	config := cbcli_config.Config
-	context := config.Context()
+	context := config.TargetContext()
 
 	if tgt, err = context.GetTarget(targetKey); err == nil && tgt != nil {
 

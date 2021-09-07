@@ -49,7 +49,7 @@ func LaunchTarget(targetKey string) {
 		tgt, spaceTgt *target.Target
 		bldr          *target.Builder
 	)
-	context := cbcli_config.Config.Context()
+	context := cbcli_config.Config.TargetContext()
 
 	if tgt, err = context.GetTarget(targetKey); err == nil && tgt != nil {
 

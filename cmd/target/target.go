@@ -23,15 +23,16 @@ view the status targets.
 }
 
 func init() {
+	TargetCommands.AddCommand(createCommand)
 	TargetCommands.AddCommand(listCommand)
 	TargetCommands.AddCommand(showCommand)
-	TargetCommands.AddCommand(createCommand)
+	TargetCommands.AddCommand(connectCommand)
+	TargetCommands.AddCommand(manageCommand)
 	TargetCommands.AddCommand(configureCommand)
 	TargetCommands.AddCommand(launchCommand)
 	TargetCommands.AddCommand(deleteCommand)
 	TargetCommands.AddCommand(suspendCommand)
 	TargetCommands.AddCommand(resumeCommand)
-	TargetCommands.AddCommand(connectCommand)
 	TargetCommands.AddCommand(sshCommand)
 }
 

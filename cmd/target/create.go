@@ -58,7 +58,7 @@ func CreateTarget(recipeName, iaasName string) {
 		regionField *forms.InputField
 	)
 	config := cbcli_config.Config
-	context := config.Context()
+	context := config.TargetContext()
 
 	if tgt, err = context.NewTarget(
 		recipeName, iaasName,

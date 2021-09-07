@@ -65,7 +65,7 @@ func SSHTarget(targetKey string) {
 		instanceIndex   int
 	)
 
-	targets := cbcli_config.Config.Context().TargetSet()
+	targets := cbcli_config.Config.TargetContext().TargetSet()
 	if tgt = targets.GetTarget(targetKey); tgt != nil {
 
 		if err = tgt.LoadRemoteRefs(); err != nil {

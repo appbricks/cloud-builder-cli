@@ -50,7 +50,7 @@ func ConfigureTarget(targetKey string) {
 		tgt *target.Target
 	)
 
-	if tgt, err = cbcli_config.Config.Context().GetTarget(targetKey); err == nil && tgt != nil {
+	if tgt, err = cbcli_config.Config.TargetContext().GetTarget(targetKey); err == nil && tgt != nil {
 
 		if tgt.Status() == target.Undeployed {
 			if configureFlags.all {
@@ -162,7 +162,7 @@ func configureTarget(tgt *target.Target, tags ...string) {
 	}
 
 	// save target
-	if cbcli_config.Config.Context().HasTarget(tgt.Key()) {
+	if cbcli_config.Config.TargetContext().HasTarget(tgt.Key()) {
 
 		fmt.Print(utils.FormatMessage(7, 80, false, true, tgt.Name()))
 		fmt.Println(" exists.")
@@ -177,7 +177,7 @@ func configureTarget(tgt *target.Target, tags ...string) {
 			return
 		}
 	}
-	cbcli_config.Config.Context().SaveTarget(targetKey, tgt)
+	cbcli_config.Config.TargetContext().SaveTarget(targetKey, tgt)
 	fmt.Print(color.Green.Render("\nConfiguration for target saved.\n\n"))
 }
 

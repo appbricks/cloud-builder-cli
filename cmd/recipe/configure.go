@@ -42,7 +42,7 @@ func ConfigureRecipe(name, cloud string) {
 		inputForm forms.InputForm
 	)
 
-	if recipe, err = cbcli_config.Config.Context().GetCookbookRecipe(name, cloud); err == nil && recipe != nil {
+	if recipe, err = cbcli_config.Config.TargetContext().GetCookbookRecipe(name, cloud); err == nil && recipe != nil {
 
 		if inputForm, err = recipe.InputForm(); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
@@ -55,7 +55,7 @@ func ConfigureRecipe(name, cloud string) {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
 
-		cbcli_config.Config.Context().SaveCookbookRecipe(recipe)
+		cbcli_config.Config.TargetContext().SaveCookbookRecipe(recipe)
 		fmt.Print("\nConfiguration input saved\n\n")
 		return
 	}

@@ -40,7 +40,7 @@ func ShowRecipe(name, cloud string) {
 		textForm  *ux.TextForm
 	)
 
-	cookbook := cbcli_config.Config.Context().Cookbook()
+	cookbook := cbcli_config.Config.TargetContext().Cookbook()
 	recipes := cookbook.RecipeList()
 
 	for _, r := range recipes {

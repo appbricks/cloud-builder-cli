@@ -41,7 +41,7 @@ func ShowCloud(name string) {
 		textForm  *ux.TextForm
 	)
 
-	if provider, err := config.Config.Context().GetCloudProvider(name); err == nil && provider != nil {
+	if provider, err := config.Config.TargetContext().GetCloudProvider(name); err == nil && provider != nil {
 
 		if inputForm, err = provider.InputForm(); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())

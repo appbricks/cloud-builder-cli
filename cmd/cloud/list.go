@@ -41,7 +41,7 @@ the correct permissions.
 
 func ListClouds() {
 
-	cloudList := cbcli_config.Config.Context().CloudProviderTemplates()
+	cloudList := cbcli_config.Config.TargetContext().CloudProviderTemplates()
 
 	table := termtables.CreateTable()
 	table.AddHeaders(
@@ -74,7 +74,7 @@ func ListClouds() {
 
 func ListCloudsByRegion() {
 
-	cloudList := cbcli_config.Config.Context().CloudProviderTemplates()
+	cloudList := cbcli_config.Config.TargetContext().CloudProviderTemplates()
 
 	fmt.Printf("\nThis Cloud Builder cookbook supports launching recipes in the public cloud regions listed below.\n\n")
 	for _, cp := range cloudList {

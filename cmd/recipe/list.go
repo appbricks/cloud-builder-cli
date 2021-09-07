@@ -46,7 +46,7 @@ func ListRecipes() {
 		appsRecipes []cookbook.CookbookRecipeInfo
 	)
 
-	for _, r := range cbcli_config.Config.Context().Cookbook().RecipeList() {
+	for _, r := range cbcli_config.Config.TargetContext().Cookbook().RecipeList() {
 		if r.IsBastion {
 			spacesRecipes = append(spacesRecipes, r)
 		} else {
@@ -102,7 +102,7 @@ func buildTableOutput(recipes []cookbook.CookbookRecipeInfo) *termtables.Table {
 				// get description of first recipe/iaas. it
 				// is assumed all iaas specific recipes will
 				// have the same description
-				recipe := cbcli_config.Config.Context().
+				recipe := cbcli_config.Config.TargetContext().
 					Cookbook().GetRecipe(r.Name, c.Name())
 				descLines = utils.SplitString(recipe.Description(), 0, 50)
 			}
@@ -141,7 +141,7 @@ func buildTableOutput(recipes []cookbook.CookbookRecipeInfo) *termtables.Table {
 
 func ListRecipesForCloud(cloud string) {
 
-	recipes := cbcli_config.Config.Context().Cookbook().RecipeList()
+	recipes := cbcli_config.Config.TargetContext().Cookbook().RecipeList()
 
 	table := termtables.CreateTable()
 	table.AddHeaders(color.OpBold.Render("Recipe Name"))

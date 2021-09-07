@@ -43,7 +43,7 @@ func ConfigureCloud(name string) {
 		inputForm forms.InputForm
 	)
 
-	if provider, err = cbcli_config.Config.Context().GetCloudProvider(name); err == nil && provider != nil {
+	if provider, err = cbcli_config.Config.TargetContext().GetCloudProvider(name); err == nil && provider != nil {
 
 		if inputForm, err = provider.InputForm(); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
@@ -56,7 +56,7 @@ func ConfigureCloud(name string) {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
 
-		cbcli_config.Config.Context().SaveCloudProvider(provider)
+		cbcli_config.Config.TargetContext().SaveCloudProvider(provider)
 		fmt.Print("\nConfiguration input saved\n\n")
 		return
 	}
