@@ -1,11 +1,14 @@
 package target
 
 import (
+	"github.com/mevansam/goutils/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
 	"github.com/appbricks/cloud-builder/target"
+	"github.com/appbricks/mycloudspace-client/mycscloud"
 
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
@@ -49,6 +52,20 @@ func bindCommonFlags(
 		"space target's region")
 	flags.StringVarP(&commonFlags.space, "space", "s", "", 
 		"application's attached space target\n(format <recipe>/<cloud>/<region>/<name>)")	
+}
+
+func getSpaceNodes() *mycscloud.SpaceNodes {
+
+	var (
+		err error
+
+		spaceNodes *mycscloud.SpaceNodes
+	)
+	if spaceNodes, err = mycscloud.GetSpaceNodes(cbcli_config.AWS_USERSPACE_API_URL, cbcli_config.Config); err != nil {
+		logger.DebugMessage("Failed to load and merge remote space nodes with local targets: %s", err.Error())
+		cbcli_utils.ShowErrorAndExit("Failed to load user's space nodes.")
+	}
+	return spaceNodes
 }
 
 func getTargetKeyFromArgs(

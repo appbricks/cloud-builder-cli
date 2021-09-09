@@ -8,6 +8,7 @@ import (
 	"github.com/mevansam/goutils/utils"
 	"github.com/spf13/cobra"
 
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
 	"github.com/appbricks/mycloudspace-client/api"
 	"github.com/appbricks/mycloudspace-client/mycscloud"
@@ -34,7 +35,7 @@ the configuration in order to re-launch the target at a latter date
 then provide the --keep flag.
 `,
 
-	PreRun: cbcli_auth.AssertAuthorized,
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin)),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		DeleteTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(deleteFlags.commonFlags)))

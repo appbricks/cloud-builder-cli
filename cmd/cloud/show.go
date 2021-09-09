@@ -9,6 +9,7 @@ import (
 	"github.com/mevansam/goforms/ux"
 
 	"github.com/appbricks/cloud-builder-cli/config"
+	"github.com/appbricks/cloud-builder/auth"
 
 	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
@@ -24,7 +25,7 @@ will also show help for the configuration data required for the given
 cloud.
 `,
 
-	PreRun: cbcli_auth.AssertAuthorized,
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin)),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		ShowCloud(args[0])

@@ -7,6 +7,7 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/spf13/cobra"
 
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
 	"github.com/mevansam/gocloud/cloud"
 
@@ -31,7 +32,7 @@ resume a specific instance provide the instance name via the
 '-i|--instance' option.
 `,
 
-	PreRun: cbcli_auth.AssertAuthorized,
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin)),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		ResumeTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(resumeFlags.commonFlags)))

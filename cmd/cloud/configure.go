@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/mevansam/gocloud/provider"
 	"github.com/mevansam/goforms/forms"
 	"github.com/mevansam/goforms/ux"
@@ -26,7 +27,7 @@ can be used to configure your cloud credentials for the cloud
 environments you wish to target.
 `,
 
-	PreRun: cbcli_auth.AssertAuthorized,
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin)),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		ConfigureCloud(args[0])

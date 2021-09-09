@@ -8,6 +8,7 @@ import (
 	"github.com/mevansam/goforms/forms"
 	"github.com/mevansam/goforms/ux"
 
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/cookbook"
 
 	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
@@ -25,7 +26,7 @@ the cloud. This sub-command can be used to configure a common recipe
 template which can be further customized when configuring a target.
 `,
 
-	PreRun: cbcli_auth.AssertAuthorized,
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin)),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		ConfigureRecipe(args[0], args[1])

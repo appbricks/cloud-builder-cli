@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
 	"github.com/appbricks/mycloudspace-client/api"
 	"github.com/appbricks/mycloudspace-client/mycscloud"
@@ -33,7 +34,7 @@ cloud. Use this sub-command to create a named target by associating a
 configured recipe template with a configured cloud template.
 `,
 
-	PreRun: cbcli_auth.AssertAuthorized,
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin)),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		CreateTarget(args[0], args[1])

@@ -7,6 +7,7 @@ import (
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/mevansam/termtables"
 
 	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
@@ -28,7 +29,7 @@ need ensure your public account credentials have been configured with
 the correct permissions.
 `,
 
-	PreRun: cbcli_auth.AssertAuthorized,
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin)),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		if listFlags.region {

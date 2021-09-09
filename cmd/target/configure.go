@@ -11,6 +11,7 @@ import (
 	"github.com/mevansam/goforms/ux"
 	"github.com/mevansam/goutils/utils"
 
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
 
 	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
@@ -34,7 +35,7 @@ re-apply this changes to the deployment if the target has already
 been launched.
 `,
 
-	PreRun: cbcli_auth.AssertAuthorized,
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin)),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		ConfigureTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(configureFlags.commonFlags)))

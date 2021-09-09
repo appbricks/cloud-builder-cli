@@ -11,6 +11,7 @@ import (
 	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
+	"github.com/appbricks/cloud-builder/auth"
 )
 
 var showCommand = &cobra.Command{
@@ -23,7 +24,7 @@ will show help for the recipe inputs including defaults that can be
 provided to customize the deployment of the recipe.
 `,
 
-	PreRun: cbcli_auth.AssertAuthorized,
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin)),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		ShowRecipe(args[0], args[1])

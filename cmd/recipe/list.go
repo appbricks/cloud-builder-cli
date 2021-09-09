@@ -6,6 +6,7 @@ import (
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/cookbook"
 	"github.com/mevansam/goutils/utils"
 	"github.com/mevansam/termtables"
@@ -28,7 +29,7 @@ Lists the recipes bundled with the CLI that can be launched in any
 one of the supported public clouds.
 `,
 
-	PreRun: cbcli_auth.AssertAuthorized,
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin)),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(listFlags.cloud) > 0 {

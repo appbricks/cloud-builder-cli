@@ -7,6 +7,7 @@ import (
 	"github.com/mevansam/goutils/logger"
 	"github.com/spf13/cobra"
 
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
 
 	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
@@ -33,7 +34,7 @@ updates. Rebuild and Clean-rebuild options are complementary and
 clean-rebuild takes precedence. 
 `,
 
-	PreRun: cbcli_auth.AssertAuthorized,
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin)),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		LaunchTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(launchFlags.commonFlags)))
