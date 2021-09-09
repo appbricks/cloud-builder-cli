@@ -93,7 +93,7 @@ function build() {
   if [[ $action == *:dev:* ]]; then
     GOOS=$os GOARCH=$arch go build ${root_dir}/cmd/cb
   else
-    GOOS=$os GOARCH=$arch go build -ldflags "-s -w" ${root_dir}/cmd/cb
+    GOOS=$os GOARCH=$arch go build -ldflags "-s -w -X github.com/appbricks/cloud-builder-cli/cmd.isProd=yes" ${root_dir}/cmd/cb
   fi
   zip -r ${release_dir}/cb_${os}_${arch}.zip .
   popd

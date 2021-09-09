@@ -44,6 +44,7 @@ import (
 )
 
 var (
+	isProd  string
 	cfgFile string
 )
 
@@ -141,6 +142,15 @@ func Execute() {
 		err error
 	)
 
+	if isProd == "yes" {
+		// reset trace log level if set for prod builds
+		if os.Getenv("CBS_LOGLEVEL") == "trace" {
+			cbcli_utils.ShowWarningMessage(
+				"Trace log-level is not supported in prod build. Resetting level to 'debug'.\n",
+			)
+			os.Setenv("CBS_LOGLEVEL", "debug")
+		}
+	}
 	logger.Initialize()
 
 	if err = rootCmd.Execute(); err != nil {
