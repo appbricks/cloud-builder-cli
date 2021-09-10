@@ -106,7 +106,13 @@ anonymized as it traverses the public provider networks.
 							"\n>> Please initialize the Cloud Builder client to secure configuration settings.",
 						),
 					),
-				)	
+				)
+				// load space target nodes if 
+				// executing a target command
+				if cmd.Parent() != nil && cmd.Parent().Name() == "target" {
+					cbcli_config.SpaceNodes = mycscloud.NewSpaceNodes(cbcli_config.Config)
+				}
+
 			} else {
 
 				var (
@@ -132,8 +138,8 @@ anonymized as it traverses the public provider networks.
 						fmt.Println()
 						cbcli_utils.ShowNoticeMessage("You are logged in as \"%s\".", awsAuth.Username())	
 					}
-					// load space target nodes if executing
-					// a target command
+					// load space target nodes if 
+					// executing a target command
 					if cmd.Parent() != nil && cmd.Parent().Name() == "target" {
 						if cbcli_config.SpaceNodes, err = mycscloud.GetSpaceNodes(cbcli_config.AWS_USERSPACE_API_URL, cbcli_config.Config); err != nil {
 							logger.DebugMessage("Failed to load and merge remote space nodes with local targets: %s", err.Error())
