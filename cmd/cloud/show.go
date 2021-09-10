@@ -25,7 +25,7 @@ will also show help for the configuration data required for the given
 cloud.
 `,
 
-	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin)),
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		ShowCloud(args[0])

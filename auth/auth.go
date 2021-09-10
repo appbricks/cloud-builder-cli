@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -162,7 +163,9 @@ func GetAuthenticatedToken(config config.Config, forceLogin bool, loginMessages 
 		logger.DebugMessage("ERROR! Failed to extract auth token: %s", err.Error())	
 		return nil, err
 	}
-	config.DeviceContext().SetLoggedInUser(awsAuth.UserID(), awsAuth.Username())
+	if err = config.SetLoggedInUser(awsAuth.UserID(), awsAuth.Username()); err != nil {
+		return nil, err
+	}
 	return awsAuth, nil
 }
 
@@ -241,22 +244,32 @@ func AuthorizeDeviceAndUser(config config.Config) error {
 	return nil
 }
 
-func AssertAuthorized(roleMask auth.RoleMask) func(cmd *cobra.Command, args []string) {
+func AssertAuthorized(roleMask auth.RoleMask, spaceNode userspace.SpaceNode) func(cmd *cobra.Command, args []string) {
 
 	return func(cmd *cobra.Command, args []string) {
-		if !roleMask.LoggedInUserHasRole(cbcli_config.Config.DeviceContext()) {
+		if !roleMask.LoggedInUserHasRole(cbcli_config.Config.DeviceContext(), spaceNode) {
+			
+			var accessType strings.Builder
+			if roleMask.HasRole(auth.Admin) {
+				accessType.WriteString("device ")
+			}
+			if roleMask.HasRole(auth.Manager) {
+				accessType.WriteString("and space ")
+			}
+			accessType.WriteString("admins")
+
 			if cmd.Parent() != nil {
 				cbcli_utils.ShowNoteMessage(
 					fmt.Sprintf(
-						"Only device admins can invoke command 'cb %s %s ...'\n", 
-						cmd.Parent().Name(), cmd.Name(),
+						"Only %s can invoke command 'cb %s %s ...'\n", 
+						accessType.String(), cmd.Parent().Name(), cmd.Name(),
 					),
 				)		
 			} else {
 				cbcli_utils.ShowNoteMessage(
 					fmt.Sprintf(
-						"Only device admins can to invoke command 'cb %s'.\n", 
-						cmd.Name(),
+						"Only %s can to invoke command 'cb %s'.\n", 
+						accessType.String(), cmd.Name(),
 					),
 				)
 			}

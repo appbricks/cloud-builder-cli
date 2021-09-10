@@ -36,6 +36,7 @@ import (
 	"github.com/appbricks/cloud-builder-cli/cmd/target"
 	"github.com/appbricks/cloud-builder/config"
 	"github.com/appbricks/cloud-builder/cookbook"
+	"github.com/appbricks/mycloudspace-client/mycscloud"
 
 	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
@@ -124,12 +125,21 @@ anonymized as it traverses the public provider networks.
 				if !cbcli_config.Config.DeviceContext().IsAuthorizedUser(awsAuth.Username()) {
 					// reset command
 					cmd.Run = func(cmd *cobra.Command, args []string) {}
-				}
-				// show logged in message only if cli 
-				// is being run via a non-root user				
-				if isAdmin, _ := run.IsAdmin(); !isAdmin {
-					fmt.Println()
-					cbcli_utils.ShowNoticeMessage("You are logged in as \"%s\".", awsAuth.Username())	
+				} else {
+					// show logged in message only if cli 
+					// is being run via a non-root user				
+					if isAdmin, _ := run.IsAdmin(); !isAdmin {
+						fmt.Println()
+						cbcli_utils.ShowNoticeMessage("You are logged in as \"%s\".", awsAuth.Username())	
+					}
+					// load space target nodes if executing
+					// a target command
+					if cmd.Parent() != nil && cmd.Parent().Name() == "target" {
+						if cbcli_config.SpaceNodes, err = mycscloud.GetSpaceNodes(cbcli_config.AWS_USERSPACE_API_URL, cbcli_config.Config); err != nil {
+							logger.DebugMessage("Failed to load and merge remote space nodes with local targets: %s", err.Error())
+							cbcli_utils.ShowErrorAndExit("Failed to load user's space nodes.")
+						}
+					}
 				}
 			}
 		}

@@ -1,16 +1,21 @@
 package target
 
 import (
-	"github.com/mevansam/goutils/logger"
+	"fmt"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
-	"github.com/appbricks/mycloudspace-client/mycscloud"
+	"github.com/appbricks/cloud-builder/userspace"
 
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
+
+var spaceNode userspace.SpaceNode
 
 var TargetCommands = &cobra.Command{
 	Use: "target",
@@ -54,20 +59,6 @@ func bindCommonFlags(
 		"application's attached space target\n(format <recipe>/<cloud>/<region>/<name>)")	
 }
 
-func getSpaceNodes() *mycscloud.SpaceNodes {
-
-	var (
-		err error
-
-		spaceNodes *mycscloud.SpaceNodes
-	)
-	if spaceNodes, err = mycscloud.GetSpaceNodes(cbcli_config.AWS_USERSPACE_API_URL, cbcli_config.Config); err != nil {
-		logger.DebugMessage("Failed to load and merge remote space nodes with local targets: %s", err.Error())
-		cbcli_utils.ShowErrorAndExit("Failed to load user's space nodes.")
-	}
-	return spaceNodes
-}
-
 func getTargetKeyFromArgs(
 	recipe, iaas, deploymentName string, 
 	commonFlags *commonFlags,
@@ -86,4 +77,31 @@ func getTargetKeyFromArgs(
 		targetKey = target.CreateKey(recipe, iaas, deploymentName, "<"+commonFlags.space)
 	}
 	return targetKey
+}
+
+// authorizes the user to perform a command on the selected space target
+func authorizeSpaceTarget(roleMask auth.RoleMask, commonFlags *commonFlags) func(cmd *cobra.Command, args []string) {
+
+	return func(cmd *cobra.Command, args []string) {
+
+		var (
+			targetKey string
+		)
+		
+		if len(commonFlags.region) > 0 && len(commonFlags.space) > 0 {
+			cbcli_utils.ShowErrorAndExit("Please provide only one of region or space options for target lookup.")
+		}
+		if len(commonFlags.region) > 0 {
+			targetKey = target.CreateKey(args[0], args[1], commonFlags.region, args[2])
+		} else if len(commonFlags.space) > 0 {
+			targetKey = target.CreateKey(args[0],  args[1], args[2], "<"+commonFlags.space)
+		}
+
+		spaceNode = cbcli_config.SpaceNodes.LookupSpaceNode(targetKey, func(nodes []userspace.SpaceNode) userspace.SpaceNode {
+			fmt.Printf("Space Nodes to select: %# v\n\n", nodes)
+			return nodes[0]
+		})
+
+		cbcli_auth.AssertAuthorized(roleMask, spaceNode)(cmd, args)
+	}
 }

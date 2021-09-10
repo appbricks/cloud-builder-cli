@@ -29,7 +29,7 @@ Lists the recipes bundled with the CLI that can be launched in any
 one of the supported public clouds.
 `,
 
-	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin)),
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(listFlags.cloud) > 0 {

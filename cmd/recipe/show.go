@@ -24,7 +24,7 @@ will show help for the recipe inputs including defaults that can be
 provided to customize the deployment of the recipe.
 `,
 
-	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin)),
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		ShowRecipe(args[0], args[1])

@@ -10,7 +10,6 @@ import (
 	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
 
-	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
@@ -34,7 +33,7 @@ updates. Rebuild and Clean-rebuild options are complementary and
 clean-rebuild takes precedence. 
 `,
 
-	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin)),
+	PreRun: authorizeSpaceTarget(auth.NewRoleMask(auth.Admin), &(deleteFlags.commonFlags)),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		LaunchTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(launchFlags.commonFlags)))

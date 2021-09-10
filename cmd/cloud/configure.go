@@ -27,7 +27,7 @@ can be used to configure your cloud credentials for the cloud
 environments you wish to target.
 `,
 
-	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin)),
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		ConfigureCloud(args[0])

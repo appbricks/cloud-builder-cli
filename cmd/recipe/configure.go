@@ -26,7 +26,7 @@ the cloud. This sub-command can be used to configure a common recipe
 template which can be further customized when configuring a target.
 `,
 
-	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin)),
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		ConfigureRecipe(args[0], args[1])

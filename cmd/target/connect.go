@@ -13,6 +13,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
 	"github.com/appbricks/mycloudspace-client/vpn"
 	"github.com/mevansam/goutils/utils"
@@ -42,6 +43,8 @@ forwarding them to the internet. You can effectively use this
 connection as a traditional VPN to access the internet anonymously or
 securely access your cloud space resources.
 `,
+
+	PreRun: authorizeSpaceTarget(auth.NewRoleMask(auth.Admin, auth.Manager, auth.Guest), &(connectFlags.commonFlags)),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		ConnectTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(connectFlags.commonFlags)))

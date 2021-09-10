@@ -34,7 +34,7 @@ cloud. Use this sub-command to create a named target by associating a
 configured recipe template with a configured cloud template.
 `,
 
-	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin)),
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		CreateTarget(args[0], args[1])

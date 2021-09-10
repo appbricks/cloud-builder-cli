@@ -7,6 +7,7 @@ import (
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
 	"github.com/mevansam/gocloud/cloud"
 	"github.com/mevansam/goforms/forms"
@@ -35,6 +36,8 @@ target has not been created and configured then this sub-command will
 return an error. Run 'cb target list' to view the list of configured
 targets.
 `,
+
+	PreRun: authorizeSpaceTarget(auth.NewRoleMask(auth.Admin, auth.Manager, auth.Guest), &(showFlags.commonFlags)),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		ShowTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(showFlags.commonFlags)))
