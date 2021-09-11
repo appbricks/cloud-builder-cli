@@ -14,6 +14,7 @@ import (
 	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
 
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
@@ -34,7 +35,7 @@ re-apply this changes to the deployment if the target has already
 been launched.
 `,
 
-	PreRun: authorizeSpaceTarget(auth.NewRoleMask(auth.Admin), &(configureFlags.commonFlags)),
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		ConfigureTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(configureFlags.commonFlags)))

@@ -18,6 +18,7 @@ import (
 	"github.com/mevansam/goutils/streams"
 	"github.com/mevansam/goutils/utils"
 
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
@@ -42,7 +43,7 @@ internal then this command can only be run once the VPN connection to
 the cloud space sandbox VPN has been establised.
 `,
 
-	PreRun: authorizeSpaceTarget(auth.NewRoleMask(auth.Admin), &(deleteFlags.commonFlags)),
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		SSHTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(sshFlags.commonFlags)))

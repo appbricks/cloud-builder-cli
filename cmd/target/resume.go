@@ -11,6 +11,7 @@ import (
 	"github.com/appbricks/cloud-builder/target"
 	"github.com/mevansam/gocloud/cloud"
 
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
@@ -31,7 +32,7 @@ resume a specific instance provide the instance name via the
 '-i|--instance' option.
 `,
 
-	PreRun: authorizeSpaceTarget(auth.NewRoleMask(auth.Admin, auth.Manager), &(deleteFlags.commonFlags)),
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		ResumeTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(resumeFlags.commonFlags)))

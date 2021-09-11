@@ -3,7 +3,6 @@ package target
 import (
 	"fmt"
 	"os"
-	"sort"
 	"strconv"
 
 	"github.com/gookit/color"
@@ -12,11 +11,11 @@ import (
 	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/cookbook"
 	"github.com/appbricks/cloud-builder/target"
-	"github.com/appbricks/cloud-builder/userspace"
 	"github.com/mevansam/goutils/logger"
 	"github.com/mevansam/goutils/utils"
 	"github.com/mevansam/termtables"
 
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
@@ -35,15 +34,16 @@ instances. Targets will be enumerated only for clouds a recipe has
 been configured for.
 `,
 
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
+
 	Run: func(cmd *cobra.Command, args []string) {
 		ListTargets()
 	},
 }
 
 type subCommandArgs struct {
-	space      userspace.SpaceNode
-	status     string
-	accessType auth.Role
+	tgt   *target.Target
+	state target.TargetState
 }
 
 type subCommand struct {
@@ -56,16 +56,6 @@ var targetSubCommands = []subCommand{
 	{
 		optionText: " - Show",
 		subCommand: ShowTarget,
-		setFlags:   func() {},
-	},
-	{
-		optionText: " - Connect",
-		subCommand: ConnectTarget,
-		setFlags:   func() {},
-	},
-	{
-		optionText: " - Manage",
-		subCommand: func(k string) {},
 		setFlags:   func() {},
 	},
 	{
@@ -97,45 +87,18 @@ var targetSubCommands = []subCommand{
 	},
 }
 
-var targetOptionsForState = map[string][]int{
-	"undeployed": {0, 3, 4},
-	"running":    {0, 1, 2, 3, 4, 5, 6},
-	"shutdown":   {0, 3, 4, 5, 7},
-	"pending":    {0},
-	"unknown":    {0},
+var targetOptionsForState = map[target.TargetState][]int{
+	target.Undeployed: {0, 1, 2},
+	target.Running:    {0, 1, 2, 3, 4},
+	target.Shutdown:   {0, 1, 2, 3, 5},
+	target.Pending:    {0},
+	target.Unknown:    {0},
 }
 
-var accessOptionFilter = map[auth.Role]map[int]bool {
-	// owned space administered 
-	// locally via a device to which
-	// the logged in user has admin
-	// access
-	auth.Admin: {
-		0: true, 1: true, 2: true, 3: true,  4: true,  5: true,  6: true,  7: true, 
-	},
-	// space to which the logged in
-	// user has admin access. this
-	// could be a shared non-owned
-	// space or an owned space on
-	// a device to which the logged
-	// in user does not have admin
-	// access
-	auth.Manager: {
-		0: true, 1: true, 2: true, 
-		/* enable when spaces can be suspended and resumed remotely */
-		// 6: true, 7: true,	
-	},
-	// non-owned space shared with 
-	// the logged user as guest
-	auth.Guest: {
-		0: true, 1: true,
-	},
-}
-
-var hasOption = func(accessType auth.Role, enabledOptions []int, option int) bool {
+var hasOption = func(enabledOptions []int, option int) bool {
 	for _, o := range enabledOptions {
 		if o == option {
-			return accessOptionFilter[accessType][option]
+			return true
 		}
 	}
 	return false
@@ -146,64 +109,53 @@ func ListTargets() {
 	var (
 		err error
 
-		spacesRecipes,
-		appsRecipes []cookbook.CookbookRecipeInfo
-
 		response string
 
 		targetIndex,
 		subCommandIndex int
+
+		spacesRecipes,
+		appsRecipes []cookbook.CookbookRecipeInfo
 	)
+	
+	for _, r := range cbcli_config.Config.TargetContext().Cookbook().RecipeList() {
+		if r.IsBastion {
+			spacesRecipes = append(spacesRecipes, r)
+		} else {
+			appsRecipes = append(appsRecipes, r)
+		}
+	}
 
 	targetIndex = 0
 	targetSubCommandArgs := []subCommandArgs{}
 
-	if auth.NewRoleMask(auth.Admin).LoggedInUserHasRole(cbcli_config.Config.DeviceContext(), nil) {
-			
-		for _, r := range cbcli_config.Config.TargetContext().Cookbook().RecipeList() {
-			if r.IsBastion {
-				spacesRecipes = append(spacesRecipes, r)
-			} else {
-				appsRecipes = append(appsRecipes, r)
-			}
-		}
+	spacesTable := buildSpacesTable(spacesRecipes, &targetIndex, &targetSubCommandArgs)
+	appsTable := buildAppsTable(appsRecipes, &targetIndex, &targetSubCommandArgs)
 
-		spacesTable := buildSpacesTable(spacesRecipes, &targetIndex, &targetSubCommandArgs)
-		appsTable := buildAppsTable(appsRecipes, &targetIndex, &targetSubCommandArgs)
-
-		fmt.Println("\nYou have administrative access to the following targets from this device.")
-		fmt.Println(color.OpBold.Render("\nMy Cloud Spaces\n===============\n"))
-		if len(spacesRecipes) > 0 {
-			fmt.Println(spacesTable.Render())
-		} else {
-			cbcli_utils.ShowInfoMessage("No space recipes found...")
-		}
-		fmt.Println(color.OpBold.Render("My Applications\n===============\n"))
-		if len(appsRecipes) > 0 {
-			fmt.Println(appsTable.Render())
-		} else {
-			cbcli_utils.ShowInfoMessage("No application recipes found...")
-		}	
+	fmt.Println("\nThe following targets have been configured.")
+	fmt.Println(color.OpBold.Render("\nMy Cloud Spaces\n===============\n"))
+	if len(spacesRecipes) > 0 {
+		fmt.Println(spacesTable.Render())
+	} else {
+		cbcli_utils.ShowInfoMessage("No space recipes found...")
+	}
+	fmt.Println(color.OpBold.Render("My Applications\n===============\n"))
+	if len(appsRecipes) > 0 {
+		fmt.Println(appsTable.Render())
+	} else {
+		cbcli_utils.ShowInfoMessage("No application recipes found...")
 	}
 
-	spaces := cbcli_config.SpaceNodes.GetSharedSpaces()
-	if (len(spaces) > 0) {
-		fmt.Println("\nYou have access to the following shared spaces.")
-		sharedSpacesTable := buildSharedSpacesTable(spaces, &targetIndex, &targetSubCommandArgs)
-		fmt.Println(color.OpBold.Render("\nMy Shared Cloud Spaces\n======================\n"))
-		fmt.Println(sharedSpacesTable.Render())
-	}
-	
 	numTargets := len(targetSubCommandArgs)
 	if listFlags.actions && numTargets > 0 {
 
-		optionList := make([]string, targetIndex)
+		options := make([]string, targetIndex)
 		for i := 0; i < numTargets; i++ {
-			optionList[i] = strconv.Itoa(i + 1)
+			options[i] = strconv.Itoa(i + 1)
 		}
 		if response = cbcli_utils.GetUserInputFromList(
 			"Enter # of node to execute sub-command on or (q)uit: ",
-			"", optionList); response == "q" {
+			"", options); response == "q" {
 			fmt.Println()
 			return
 		}
@@ -213,24 +165,23 @@ func ListTargets() {
 		}
 
 		targetIndex--
-		space := targetSubCommandArgs[targetIndex].space
+		tgt := targetSubCommandArgs[targetIndex].tgt
 
 		fmt.Println("\nSelect sub-command to execute on target.")
 		fmt.Print("\n  Recipe: ")
-		fmt.Println(color.OpBold.Render(space.GetRecipe()))
+		fmt.Println(color.OpBold.Render(tgt.RecipeName))
 		fmt.Print("  Cloud:  ")
-		fmt.Println(color.OpBold.Render(space.GetIaaS()))
+		fmt.Println(color.OpBold.Render(tgt.RecipeIaas))
 		fmt.Print("  Region: ")
-		fmt.Println(color.OpBold.Render(space.GetRegion()))
+		fmt.Println(color.OpBold.Render(*tgt.Provider.Region()))
 		fmt.Print("  Name:   ")
-		fmt.Println(color.OpBold.Render(space.GetSpaceName()))
+		fmt.Println(color.OpBold.Render(tgt.DeploymentName()))
 		fmt.Println()
 
-		subCommandArgs := targetSubCommandArgs[targetIndex]
-		enabledOptions := targetOptionsForState[subCommandArgs.status]
+		enabledOptions := targetOptionsForState[targetSubCommandArgs[targetIndex].state]
 		numEnabledOptions := len(enabledOptions)
 		for i, c := range targetSubCommands {
-			if hasOption(subCommandArgs.accessType, enabledOptions, i) {
+			if hasOption(enabledOptions, i) {
 				fmt.Print(color.Green.Render(strconv.Itoa(i + 1)))
 				fmt.Println(c.optionText)
 			} else {
@@ -239,24 +190,23 @@ func ListTargets() {
 		}
 		fmt.Println()
 
-		optionList = make([]string, numEnabledOptions)
-		allowedOptions := make(map[int]bool)
+		options = make([]string, numEnabledOptions)
 		for i, o := range enabledOptions {
-			o++
-			optionList[i] = strconv.Itoa(o)
-			allowedOptions[o] = true
+			options[i] = strconv.Itoa(o + 1)
 		}
 		if response = cbcli_utils.GetUserInputFromList(
 			"Enter # of sub-command or (q)uit: ",
-			"", optionList); response == "q" {
+			"", options); response == "q" {
 			fmt.Println()
 			return
 		}
 
-		if subCommandIndex, err = strconv.Atoi(response); err == nil && allowedOptions[subCommandIndex] {
+		if subCommandIndex, err = strconv.Atoi(response); err == nil &&
+			hasOption(enabledOptions, subCommandIndex-1) {
+
 			targetSubCommand := targetSubCommands[subCommandIndex-1]
 			targetSubCommand.setFlags()
-			targetSubCommand.subCommand(space.(*target.Target).Key())
+			targetSubCommand.subCommand(tgt.Key())
 
 		} else {
 			cbcli_utils.ShowErrorAndExit("invalid option provided")
@@ -337,9 +287,8 @@ func buildSpacesTable(
 
 							*targetSubCommandArgs = append(*targetSubCommandArgs,
 								subCommandArgs{
-									space:      tgt,
-									status:     tgt.GetStatus(),
-									accessType: auth.Admin,
+									tgt:   tgt,
+									state: tgt.Status(),
 								},
 							)
 						}
@@ -448,9 +397,8 @@ func buildAppsTable(
 
 						*targetSubCommandArgs = append(*targetSubCommandArgs,
 							subCommandArgs{
-								space:      tgt,
-								status:     tgt.GetStatus(),
-								accessType: auth.Admin,
+								tgt:   tgt,
+								state: tgt.Status(),
 							},
 						)
 					}
@@ -518,97 +466,6 @@ func getTargetStatusName(tgt *target.Target) string {
 		statusName = color.OpFuzzy.Render("unknown")
 	}
 	return statusName
-}
-
-func buildSharedSpacesTable(
-	spaces []*userspace.Space,
-	targetIndex *int,
-	targetSubCommandArgs *[]subCommandArgs,
-) *termtables.Table  {
-
-	sort.Sort(userspace.SpaceCollection(spaces))
-
-	table := termtables.CreateTable()
-	table.AddHeaders(
-		color.OpBold.Render("Recipe"),
-		color.OpBold.Render("Cloud"),
-		color.OpBold.Render("Region"),
-		color.OpBold.Render("Deployment Name"),
-		color.OpBold.Render("Version"),
-		color.OpBold.Render("Status"),
-		color.OpBold.Render("#"),
-	)
-
-	for i := 0; i < len(spaces); i++ {
-
-		var (
-			spacePrev, space *userspace.Space
-			recipe, iaas, region, status string
-		)
-
-		if (i > 0) {
-			spacePrev = spaces[i-1]
-		}
-		space = spaces[i]
-
-		if (spacePrev != nil && space.GetRecipe() == spacePrev.GetRecipe()) {
-			recipe = ""
-		} else {
-			if (spacePrev != nil) {
-				table.AddSeparator()
-			}
-			recipe = space.GetRecipe()
-		}
-		if (spacePrev != nil && len(iaas) == 0 && space.GetIaaS() == spacePrev.GetIaaS()) {
-			iaas = ""
-		} else {
-			iaas = space.GetIaaS()
-		}
-		if (spacePrev != nil && len(region) == 0 && space.GetRegion() == spacePrev.GetRegion()) {
-			region = ""
-		} else {
-			region = space.GetRegion()
-		}
-		status = space.GetStatus()
-		if (status == "running") {
-			*targetIndex++
-			
-			accessType := auth.Guest
-			if space.HasAdminAccess() {
-				accessType = auth.Manager
-			}
-			*targetSubCommandArgs = append(*targetSubCommandArgs,
-				subCommandArgs{
-					space:  space,
-					status: space.GetStatus(),
-					accessType: accessType,
-				},
-			)
-
-			table.AddRow(
-				recipe,
-				iaas,
-				region,
-				space.GetSpaceName(),
-				space.GetVersion(),
-				status,
-				strconv.Itoa(*targetIndex),
-			)
-
-			} else {
-				table.AddRow(
-					color.OpFuzzy.Render(recipe),
-					color.OpFuzzy.Render(iaas),
-					color.OpFuzzy.Render(region),
-					color.OpFuzzy.Render(space.GetSpaceName()),
-					color.OpFuzzy.Render(space.GetVersion()),
-					color.OpFuzzy.Render(status),
-					"",
-				)
-		}
-	}
-
-	return table
 }
 
 func init() {
