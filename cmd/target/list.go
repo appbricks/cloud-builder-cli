@@ -11,6 +11,7 @@ import (
 	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/cookbook"
 	"github.com/appbricks/cloud-builder/target"
+	"github.com/appbricks/cloud-builder/userspace"
 	"github.com/mevansam/goutils/logger"
 	"github.com/mevansam/goutils/utils"
 	"github.com/mevansam/termtables"
@@ -41,67 +42,68 @@ been configured for.
 	},
 }
 
-type subCommandArgs struct {
-	tgt   *target.Target
-	state target.TargetState
-}
-
-type subCommand struct {
-	optionText string
-	subCommand func(string)
-	setFlags   func()
-}
-
-var targetSubCommands = []subCommand{
-	{
-		optionText: " - Show",
-		subCommand: ShowTarget,
-		setFlags:   func() {},
-	},
-	{
-		optionText: " - Configure",
-		subCommand: ConfigureTarget,
-		setFlags:   func() {},
-	},
-	{
-		optionText: " - Launch/Update",
-		subCommand: LaunchTarget,
-		setFlags:   func() {},
-	},
-	{
-		optionText: " - Delete",
-		subCommand: DeleteTarget,
-		setFlags: func() {
-			deleteFlags.keep = true
+var spaceSelector = cbcli_utils.SpaceSelector{
+	Options: []cbcli_utils.Option{
+		{
+			Text: " - Show",
+			Command: func(space userspace.SpaceNode) error {
+				ShowTarget(space.Key())
+				return nil
+			},
+		},
+		{
+			Text: " - Configure",
+			Command: func(space userspace.SpaceNode) error {
+				ConfigureTarget(space.Key())
+				return nil
+			},
+		},
+		{
+			Text: " - Launch/Update",
+			Command: func(space userspace.SpaceNode) error {
+				LaunchTarget(space.Key())
+				return nil
+			},
+		},
+		{
+			Text: " - Delete",
+			Command: func(space userspace.SpaceNode) error {
+				deleteFlags.keep = true
+				DeleteTarget(space.Key())
+				return nil
+			},
+		},
+		{
+			Text: " - Suspend",
+			Command: func(space userspace.SpaceNode) error {
+				SuspendTarget(space.Key())
+				return nil
+			},
+		},
+		{
+			Text: " - Resume",
+			Command: func(space userspace.SpaceNode) error {
+				ResumeTarget(space.Key())
+				return nil
+			},
 		},
 	},
-	{
-		optionText: " - Suspend",
-		subCommand: SuspendTarget,
-		setFlags:   func() {},
+	OptionStateFilter: map[string][]int{
+		"undeployed": {0, 1, 2},
+		"running":    {0, 1, 2, 3, 4},
+		"shutdown":   {0, 1, 2, 3, 5},
+		"pending":    {0},
+		"unknown":    {0},
 	},
-	{
-		optionText: " - Resume",
-		subCommand: ResumeTarget,
-		setFlags:   func() {},
+	OptionRoleFilter:  map[auth.Role]map[int]bool{
+		// owned space administered
+		// locally via a device to which
+		// the logged in user has admin
+		// access
+		auth.Admin: {
+			0: true, 1: true, 2: true, 3: true, 4: true, 5: true,
+		},
 	},
-}
-
-var targetOptionsForState = map[target.TargetState][]int{
-	target.Undeployed: {0, 1, 2},
-	target.Running:    {0, 1, 2, 3, 4},
-	target.Shutdown:   {0, 1, 2, 3, 5},
-	target.Pending:    {0},
-	target.Unknown:    {0},
-}
-
-var hasOption = func(enabledOptions []int, option int) bool {
-	for _, o := range enabledOptions {
-		if o == option {
-			return true
-		}
-	}
-	return false
 }
 
 func ListTargets() {
@@ -109,10 +111,8 @@ func ListTargets() {
 	var (
 		err error
 
-		response string
-
-		targetIndex,
-		subCommandIndex int
+		response    string
+		targetIndex int
 
 		spacesRecipes,
 		appsRecipes []cookbook.CookbookRecipeInfo
@@ -127,10 +127,10 @@ func ListTargets() {
 	}
 
 	targetIndex = 0
-	targetSubCommandArgs := []subCommandArgs{}
+	targetList := []*target.Target{}
 
-	spacesTable := buildSpacesTable(spacesRecipes, &targetIndex, &targetSubCommandArgs)
-	appsTable := buildAppsTable(appsRecipes, &targetIndex, &targetSubCommandArgs)
+	spacesTable := buildSpacesTable(spacesRecipes, &targetIndex, &targetList)
+	appsTable := buildAppsTable(appsRecipes, &targetIndex, &targetList)
 
 	fmt.Println("\nThe following targets have been configured.")
 	fmt.Println(color.OpBold.Render("\nMy Cloud Spaces\n===============\n"))
@@ -146,7 +146,7 @@ func ListTargets() {
 		cbcli_utils.ShowInfoMessage("No application recipes found...")
 	}
 
-	numTargets := len(targetSubCommandArgs)
+	numTargets := len(targetList)
 	if listFlags.actions && numTargets > 0 {
 
 		options := make([]string, targetIndex)
@@ -165,7 +165,7 @@ func ListTargets() {
 		}
 
 		targetIndex--
-		tgt := targetSubCommandArgs[targetIndex].tgt
+		tgt := targetList[targetIndex]
 
 		fmt.Println("\nSelect sub-command to execute on target.")
 		fmt.Print("\n  Recipe: ")
@@ -178,38 +178,8 @@ func ListTargets() {
 		fmt.Println(color.OpBold.Render(tgt.DeploymentName()))
 		fmt.Println()
 
-		enabledOptions := targetOptionsForState[targetSubCommandArgs[targetIndex].state]
-		numEnabledOptions := len(enabledOptions)
-		for i, c := range targetSubCommands {
-			if hasOption(enabledOptions, i) {
-				fmt.Print(color.Green.Render(strconv.Itoa(i + 1)))
-				fmt.Println(c.optionText)
-			} else {
-				fmt.Println(color.OpFuzzy.Render(strconv.Itoa(i+1) + c.optionText))
-			}
-		}
-		fmt.Println()
-
-		options = make([]string, numEnabledOptions)
-		for i, o := range enabledOptions {
-			options[i] = strconv.Itoa(o + 1)
-		}
-		if response = cbcli_utils.GetUserInputFromList(
-			"Enter # of sub-command or (q)uit: ",
-			"", options); response == "q" {
-			fmt.Println()
-			return
-		}
-
-		if subCommandIndex, err = strconv.Atoi(response); err == nil &&
-			hasOption(enabledOptions, subCommandIndex-1) {
-
-			targetSubCommand := targetSubCommands[subCommandIndex-1]
-			targetSubCommand.setFlags()
-			targetSubCommand.subCommand(tgt.Key())
-
-		} else {
-			cbcli_utils.ShowErrorAndExit("invalid option provided")
+		if err = spaceSelector.SelectOption(tgt, auth.Admin); err != nil {
+			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
 	}
 }
@@ -217,7 +187,7 @@ func ListTargets() {
 func buildSpacesTable(
 	recipes []cookbook.CookbookRecipeInfo,
 	targetIndex *int,
-	targetSubCommandArgs *[]subCommandArgs,
+	targetList *[]*target.Target,
 ) *termtables.Table  {
 
 	var (
@@ -285,12 +255,7 @@ func buildSpacesTable(
 							tableRow[5] = getTargetStatusName(tgt)
 							tableRow[6] = strconv.Itoa(*targetIndex)
 
-							*targetSubCommandArgs = append(*targetSubCommandArgs,
-								subCommandArgs{
-									tgt:   tgt,
-									state: tgt.Status(),
-								},
-							)
+							*targetList = append(*targetList, tgt)
 						}
 						tableRow[3] = tgt.DeploymentName()
 						tableRow[4] = tgt.Version()
@@ -330,7 +295,7 @@ func buildSpacesTable(
 func buildAppsTable(
 	recipes []cookbook.CookbookRecipeInfo,
 	targetIndex *int,
-	targetSubCommandArgs *[]subCommandArgs,
+	targetList *[]*target.Target,
 ) *termtables.Table {
 
 	var (
@@ -395,12 +360,7 @@ func buildAppsTable(
 						tableRow[5] = getTargetStatusName(tgt)
 						tableRow[6] = strconv.Itoa(*targetIndex)
 
-						*targetSubCommandArgs = append(*targetSubCommandArgs,
-							subCommandArgs{
-								tgt:   tgt,
-								state: tgt.Status(),
-							},
-						)
+						*targetList = append(*targetList, tgt)
 					}
 					tableRow[3] = tgt.DeploymentName()
 					tableRow[4] = tgt.Version()
