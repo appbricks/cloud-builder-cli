@@ -36,13 +36,13 @@ authorized list via the MyCS Account Manager console.
 	PreRun: authorizeSpaceNode(auth.NewRoleMask(auth.Admin, auth.Manager), &(manageFlags.commonFlags)),
 
 	Run: func(cmd *cobra.Command, args []string) {
-		Manage()
+		ManageSpace(spaceNode)
 	},
 	Args: cobra.ExactArgs(3),
 }
 
-func Manage() {
-	switch n := spaceNode.(type) {
+func ManageSpace(space userspace.SpaceNode) {
+	switch n := space.(type) {
 		case *target.Target: {
 			fmt.Printf("tgt: %# v\n", n)
 		}

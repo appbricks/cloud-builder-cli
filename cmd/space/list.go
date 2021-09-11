@@ -11,6 +11,7 @@ import (
 	"github.com/appbricks/cloud-builder/userspace"
 	"github.com/mevansam/termtables"
 
+	"github.com/appbricks/cloud-builder-cli/cmd/target"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
@@ -36,37 +37,36 @@ been configured for.
 
 type selectorArgs struct {
 	space      userspace.SpaceNode
-	status     string
 	accessType auth.Role
 }
 
 var spaceSelector = cbcli_utils.SpaceSelector{
 	Options: []cbcli_utils.Option{
 		{
-			Text: " - Manage",
+			Text: " - Connect",
 			Command: func(space userspace.SpaceNode) error { 
-				fmt.Printf("\nManage selected: %# v\n", space)
+				ConnectSpace(space)
 				return nil
 			},
 		},
 		{
-			Text: " - Connect",
+			Text: " - Manage",
 			Command: func(space userspace.SpaceNode) error { 
-				fmt.Printf("\nConnect selected: %# v\n", space)
+				ManageSpace(space)
 				return nil
 			},
 		},
 		{
 			Text: " - Suspend",
 			Command: func(space userspace.SpaceNode) error { 
-				fmt.Printf("\nSuspend selected: %# v\n", space)
+				target.SuspendTarget(space.Key())
 				return nil
 			},
 		},
 		{
 			Text: " - Resume",
 			Command: func(space userspace.SpaceNode) error { 
-				fmt.Printf("\nResume selected: %# v\n", space)
+				target.ResumeTarget(space.Key())
 				return nil
 			},
 		},
@@ -101,7 +101,7 @@ var spaceSelector = cbcli_utils.SpaceSelector{
 		// non-owned space shared with
 		// the logged user as guest
 		auth.Guest: {
-			1: true, 
+			0: true, 
 		},		
 	},
 }
@@ -111,13 +111,7 @@ func ListTargets() {
 	var (
 		err error
 
-		// spacesRecipes,
-		// appsRecipes []cookbook.CookbookRecipeInfo
-
 		response string
-
-		// spaceIndex,
-		// subCommandIndex int
 	)
 
 	spaceIndex := 0
@@ -166,7 +160,6 @@ func ListTargets() {
 
 		if err = spaceSelector.SelectOption(
 			space,
-			spaceSubCommandArgs[spaceIndex].status,
 			spaceSubCommandArgs[spaceIndex].accessType,
 		); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
@@ -239,7 +232,6 @@ func buildSpacesTable(
 			*spaceSubCommandArgs = append(*spaceSubCommandArgs,
 				selectorArgs{
 					space:  space,
-					status: space.GetStatus(),
 					accessType: accessType,
 				},
 			)

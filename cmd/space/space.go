@@ -29,6 +29,7 @@ launched by another user and shared with you.`,
 
 func init() {
 	SpaceCommands.AddCommand(listCommand)
+	SpaceCommands.AddCommand(connectCommand)
 	SpaceCommands.AddCommand(manageCommand)
 }
 

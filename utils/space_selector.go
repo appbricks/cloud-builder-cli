@@ -21,7 +21,7 @@ type Option struct {
 	Command func(space userspace.SpaceNode) error
 }
 
-func (os SpaceSelector) SelectOption(space userspace.SpaceNode, state string, role auth.Role) error {
+func (os SpaceSelector) SelectOption(space userspace.SpaceNode, role auth.Role) error {
 
 	var (
 		err error
@@ -30,7 +30,7 @@ func (os SpaceSelector) SelectOption(space userspace.SpaceNode, state string, ro
 		selected int
 	)
 
-	enabledOptions := os.OptionStateFilter[state]
+	enabledOptions := os.OptionStateFilter[space.GetStatus()]
 	numEnabledOptions := len(enabledOptions)
 	for i, c := range os.Options {
 		if os.optionAllowedInRole(role, enabledOptions, i) {
@@ -57,7 +57,7 @@ func (os SpaceSelector) SelectOption(space userspace.SpaceNode, state string, ro
 	}
 
 	if selected, err = strconv.Atoi(response); err == nil && allowedOptions[selected] {
-		return os.Options[selected].Command(space)
+		return os.Options[selected-1].Command(space)
 	} else {
 		return fmt.Errorf("invalid option number entered")
 	}

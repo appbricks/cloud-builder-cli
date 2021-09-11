@@ -26,7 +26,6 @@ func init() {
 	TargetCommands.AddCommand(createCommand)
 	TargetCommands.AddCommand(listCommand)
 	TargetCommands.AddCommand(showCommand)
-	TargetCommands.AddCommand(connectCommand)
 	TargetCommands.AddCommand(configureCommand)
 	TargetCommands.AddCommand(launchCommand)
 	TargetCommands.AddCommand(deleteCommand)

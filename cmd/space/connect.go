@@ -1,4 +1,4 @@
-package target
+package space
 
 import (
 	"fmt"
@@ -15,10 +15,11 @@ import (
 
 	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
+	"github.com/appbricks/cloud-builder/userspace"
 	"github.com/appbricks/mycloudspace-client/vpn"
 	"github.com/mevansam/goutils/utils"
 
-	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
+	cbcli_target "github.com/appbricks/cloud-builder-cli/cmd/target"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
@@ -35,25 +36,25 @@ var connectCommand = &cobra.Command{
 
 	Short: "Connect to an existing target.",
 	Long: `
-Use this command to securly connect to your cloud space. This command
-will establish a VPN connection to the bastion instance of the target
-cloud space you specify. Once established the connection will pass
-all traffic originating at your machine via the bastion gateway,
-resolving any resource requests to cloud space resources or 
-forwarding them to the internet. You can effectively use this 
+Use this command to securely connect to your cloud space. This
+command will establish a VPN connection to the bastion instance of
+the target cloud space you specify. Once established the connection
+will pass all traffic originating at your machine via the bastion
+gateway, resolving any resource requests to cloud space resources or
+forwarding them to the internet. You can effectively use this
 connection as a traditional VPN to access the internet anonymously or
 securely access your cloud space resources.
 `,
 
-	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
+	PreRun: authorizeSpaceNode(auth.NewRoleMask(auth.Admin, auth.Manager, auth.Guest), &(connectFlags.commonFlags)), 
 
 	Run: func(cmd *cobra.Command, args []string) {
-		ConnectTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(connectFlags.commonFlags)))
+		ConnectSpace(spaceNode)
 	},
 	Args: cobra.ExactArgs(3),
 }
 
-func ConnectTarget(targetKey string) {
+func ConnectSpace(space userspace.SpaceNode) {
 
 	var (
 		err error
@@ -73,6 +74,7 @@ func ConnectTarget(targetKey string) {
 
 		sent, recd int64
 	)
+	targetKey := space.Key()
 
 	if tgt, err = cbcli_config.Config.TargetContext().GetTarget(targetKey); err == nil && tgt != nil {
 		if err = tgt.LoadRemoteRefs(); err != nil {
@@ -90,7 +92,7 @@ func ConnectTarget(targetKey string) {
 		}
 
 		if tgt.Status() != target.Running {
-			ResumeTarget(targetKey)
+			cbcli_target.ResumeTarget(targetKey)
 		}
 		
 		if connectFlags.superUser {
