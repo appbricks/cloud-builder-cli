@@ -23,18 +23,18 @@ import (
 var InitCommand = &cobra.Command{
 	Use: "init",
 
-	Short: "Initializes and registers the cloud builder client.",
+	Short: "Initialize and register the cloud builder client.",
 	Long: `
 This will register or associate a cloud builder user with all CLI 
 sessions. You need to register if you would like to share access to
-targets or would like to synchronize access to configurations across
-all your devices. It will also create client specific keys for
-encryption of cloud configurations. All credentials including
-configuration information are encrypted using public-private key
-encryption. When you initialize the CLI for first time the keys will
-be created and your private key will be saved to you system's key
-store. You will need to add this key to each of your devices from
-which you want to interact with or control your launch targets.
+targets or synchronize configurations across all your devices. It
+will also create client specific keys for encryption of cloud
+configurations. All credentials including configuration information
+are encrypted using public-private key encryption. When you
+initialize the CLI for first time the keys will be created and your
+private key will be saved to you system's key store or local file
+system. You will need to add this key to each of your devices from
+which you want to interact with and control your launch targets.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
