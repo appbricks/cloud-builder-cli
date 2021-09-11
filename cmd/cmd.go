@@ -33,6 +33,7 @@ import (
 	"github.com/appbricks/cloud-builder-cli/cmd/cloud"
 	"github.com/appbricks/cloud-builder-cli/cmd/initialize"
 	"github.com/appbricks/cloud-builder-cli/cmd/recipe"
+	"github.com/appbricks/cloud-builder-cli/cmd/space"
 	"github.com/appbricks/cloud-builder-cli/cmd/target"
 	"github.com/appbricks/cloud-builder/config"
 	"github.com/appbricks/cloud-builder/cookbook"
@@ -56,6 +57,11 @@ var noauthCmds = map[string]bool{
 	"version": true,
 	"init": true,
 	"logout": true,
+}
+
+var spaceCmds = map[string]bool{
+	"target": true,
+	"space": true,
 }
 
 var rootCmd = &cobra.Command{
@@ -98,7 +104,14 @@ anonymized as it traverses the public provider networks.
 			}
 		}
 
-		if _, noauth := noauthCmds[cmd.Name()]; !noauth {
+		// retrieve the command
+		// to check against
+		cmdName := cmd.Name()
+		if cmd.Parent() != nil {
+			cmdName = cmd.Parent().Name()
+		}
+
+		if _, noauth := noauthCmds[cmdName]; !noauth {
 			if !cbcli_config.Config.Initialized() {
 				fmt.Println(
 					color.OpReverse.Render(
@@ -140,11 +153,11 @@ anonymized as it traverses the public provider networks.
 					}
 					// load space target nodes if 
 					// executing a target command
-					if cmd.Parent() != nil && cmd.Parent().Name() == "target" {
+					if _, isSpaceCmd := spaceCmds[cmdName]; isSpaceCmd {
 						if cbcli_config.SpaceNodes, err = mycscloud.GetSpaceNodes(cbcli_config.AWS_USERSPACE_API_URL, cbcli_config.Config); err != nil {
 							logger.DebugMessage("Failed to load and merge remote space nodes with local targets: %s", err.Error())
 							cbcli_utils.ShowErrorAndExit("Failed to load user's space nodes.")
-						}
+						}								
 					}
 				}
 			}
@@ -294,4 +307,5 @@ func addCommands() {
 	rootCmd.AddCommand(cloud.CloudCommands)
 	rootCmd.AddCommand(recipe.RecipeCommands)
 	rootCmd.AddCommand(target.TargetCommands)
+	rootCmd.AddCommand(space.SpaceCommands)
 }
