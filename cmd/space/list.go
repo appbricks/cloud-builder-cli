@@ -7,11 +7,11 @@ import (
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 
+	"github.com/appbricks/cloud-builder-cli/cmd/target"
 	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/userspace"
 	"github.com/mevansam/termtables"
 
-	"github.com/appbricks/cloud-builder-cli/cmd/target"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
@@ -31,7 +31,7 @@ been configured for.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		ListTargets()
+		ListSpaces()
 	},
 }
 
@@ -40,38 +40,38 @@ type selectorArgs struct {
 	accessType auth.Role
 }
 
-var spaceSelector = cbcli_utils.SpaceSelector{
+var spaceSelector = cbcli_utils.OptionSelector{
 	Options: []cbcli_utils.Option{
 		{
 			Text: " - Connect",
-			Command: func(space userspace.SpaceNode) error { 
-				ConnectSpace(space)
+			Command: func(data interface{}) error { 
+				ConnectSpace(data.(userspace.SpaceNode))
 				return nil
 			},
 		},
 		{
 			Text: " - Manage",
-			Command: func(space userspace.SpaceNode) error { 
-				ManageSpace(space)
+			Command: func(data interface{}) error { 
+				ManageSpace(data.(userspace.SpaceNode))
 				return nil
 			},
 		},
 		{
 			Text: " - Suspend",
-			Command: func(space userspace.SpaceNode) error { 
-				target.SuspendTarget(space.Key())
+			Command: func(data interface{}) error { 
+				target.SuspendTarget(data.(userspace.SpaceNode).Key())
 				return nil
 			},
 		},
 		{
 			Text: " - Resume",
-			Command: func(space userspace.SpaceNode) error { 
-				target.ResumeTarget(space.Key())
+			Command: func(data interface{}) error { 
+				target.ResumeTarget(data.(userspace.SpaceNode).Key())
 				return nil
 			},
 		},
 	},
-	OptionStateFilter: map[string][]int{
+	OptionListFilter: map[string][]int{
 		"undeployed": {},
 		"running":    {0, 1, 2},
 		"shutdown":   {3},
@@ -106,7 +106,7 @@ var spaceSelector = cbcli_utils.SpaceSelector{
 	},
 }
 
-func ListTargets() {
+func ListSpaces() {
 
 	var (
 		err error
@@ -122,7 +122,7 @@ func ListTargets() {
 	if (len(spaces) > 0) {
 		fmt.Println("\nYou have access to the following shared spaces.")
 		sharedSpacesTable := buildSpacesTable(spaces, &spaceIndex, &spaceSubCommandArgs)
-		fmt.Println(color.OpBold.Render("\nMy Cloud Spaces\n======================\n"))
+		fmt.Println(color.OpBold.Render("\nMy Cloud Spaces\n================\n"))
 		fmt.Println(sharedSpacesTable.Render())
 	}
 
@@ -141,7 +141,7 @@ func ListTargets() {
 		}
 		if spaceIndex, err = strconv.Atoi(response); err != nil ||
 			spaceIndex < 1 || spaceIndex > numSpaces {
-			cbcli_utils.ShowErrorAndExit("invalid option provided")
+			cbcli_utils.ShowErrorAndExit("invalid entry")
 		}
 
 		spaceIndex--
@@ -160,6 +160,7 @@ func ListTargets() {
 
 		if err = spaceSelector.SelectOption(
 			space,
+			space.GetStatus(),
 			spaceSubCommandArgs[spaceIndex].accessType,
 		); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())

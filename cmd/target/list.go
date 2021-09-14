@@ -42,53 +42,53 @@ been configured for.
 	},
 }
 
-var spaceSelector = cbcli_utils.SpaceSelector{
+var spaceSelector = cbcli_utils.OptionSelector{
 	Options: []cbcli_utils.Option{
 		{
 			Text: " - Show",
-			Command: func(space userspace.SpaceNode) error {
-				ShowTarget(space.Key())
+			Command: func(data interface{}) error {
+				ShowTarget(data.(userspace.SpaceNode).Key())
 				return nil
 			},
 		},
 		{
 			Text: " - Configure",
-			Command: func(space userspace.SpaceNode) error {
-				ConfigureTarget(space.Key())
+			Command: func(data interface{}) error {
+				ConfigureTarget(data.(userspace.SpaceNode).Key())
 				return nil
 			},
 		},
 		{
 			Text: " - Launch/Update",
-			Command: func(space userspace.SpaceNode) error {
-				LaunchTarget(space.Key())
+			Command: func(data interface{}) error {
+				LaunchTarget(data.(userspace.SpaceNode).Key())
 				return nil
 			},
 		},
 		{
 			Text: " - Delete",
-			Command: func(space userspace.SpaceNode) error {
+			Command: func(data interface{}) error {
 				deleteFlags.keep = true
-				DeleteTarget(space.Key())
+				DeleteTarget(data.(userspace.SpaceNode).Key())
 				return nil
 			},
 		},
 		{
 			Text: " - Suspend",
-			Command: func(space userspace.SpaceNode) error {
-				SuspendTarget(space.Key())
+			Command: func(data interface{}) error {
+				SuspendTarget(data.(userspace.SpaceNode).Key())
 				return nil
 			},
 		},
 		{
 			Text: " - Resume",
-			Command: func(space userspace.SpaceNode) error {
-				ResumeTarget(space.Key())
+			Command: func(data interface{}) error {
+				ResumeTarget(data.(userspace.SpaceNode).Key())
 				return nil
 			},
 		},
 	},
-	OptionStateFilter: map[string][]int{
+	OptionListFilter: map[string][]int{
 		"undeployed": {0, 1, 2},
 		"running":    {0, 1, 2, 3, 4},
 		"shutdown":   {0, 1, 2, 3, 5},
@@ -161,7 +161,7 @@ func ListTargets() {
 		}
 		if targetIndex, err = strconv.Atoi(response); err != nil ||
 			targetIndex < 1 || targetIndex > numTargets {
-			cbcli_utils.ShowErrorAndExit("invalid option provided")
+			cbcli_utils.ShowErrorAndExit("invalid entry")
 		}
 
 		targetIndex--
@@ -178,7 +178,7 @@ func ListTargets() {
 		fmt.Println(color.OpBold.Render(tgt.DeploymentName()))
 		fmt.Println()
 
-		if err = spaceSelector.SelectOption(tgt, auth.Admin); err != nil {
+		if err = spaceSelector.SelectOption(tgt, tgt.GetStatus(), auth.Admin); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
 	}
