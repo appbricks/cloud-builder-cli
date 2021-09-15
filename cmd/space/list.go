@@ -2,6 +2,7 @@ package space
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 
 	"github.com/gookit/color"
@@ -10,6 +11,8 @@ import (
 	"github.com/appbricks/cloud-builder-cli/cmd/target"
 	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/userspace"
+	"github.com/mevansam/goutils/logger"
+	"github.com/mevansam/goutils/run"
 	"github.com/mevansam/termtables"
 
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
@@ -45,7 +48,27 @@ var spaceSelector = cbcli_utils.OptionSelector{
 		{
 			Text: " - Connect",
 			Command: func(data interface{}) error { 
-				ConnectSpace(data.(userspace.SpaceNode))
+				space := data.(userspace.SpaceNode)
+				if err := run.RunAsAdminWithArgs(
+					[]string{
+						os.Args[0],
+						"space",
+						"connect",
+						space.GetRecipe(),
+						space.GetIaaS(),
+						"-r",
+						space.GetRegion(),
+					},
+					os.Stdout, os.Stderr,
+				); err != nil {
+					logger.DebugMessage(
+						"Execution of CLI command with elevated privileges failed with error: %s", 
+						err.Error(),
+					)
+					os.Exit(1)
+				} else {
+					os.Exit(0)
+				}
 				return nil
 			},
 		},
