@@ -44,6 +44,7 @@ func GetUserInputFromList(
 	prompt string,
 	selected string,
 	options []string,
+	validate bool,
 ) string {
 
 	var (
@@ -71,6 +72,28 @@ func GetUserInputFromList(
 		} else {
 			ShowErrorAndExit(err.Error())
 		}
+	}
+	if validate {
+		for _, o := range options {
+			if response == o {
+				return response
+			}
+		}
+	
+		fmt.Println(
+			color.Red.Render(
+				fmt.Sprintf("\nInvalid selection '%s'. Selection must be one of the following:\n", response),
+			),
+		)
+		for _, o := range options {
+			fmt.Println(
+				color.Red.Render(
+					fmt.Sprintf("- %s", o),
+				),
+			)
+		}
+		fmt.Println()
+		os.Exit(1)	
 	}
 	return response
 }
