@@ -49,8 +49,8 @@ func (os OptionSelector) SelectOption(data interface{}, listFilter string, roleF
 		allowedOptions[o] = true
 	}
 	if response = GetUserInputFromList(
-		"Enter # of sub-command or (q)uit: ",
-		"", optionList); response == "q" {
+		"Enter # of option or (q)uit: ",
+		"", optionList, false); response == "q" {
 		fmt.Println()
 		return nil
 	}
