@@ -35,7 +35,7 @@ been configured for.
 	},
 }
 
-type selectorArgs struct {
+type spaceSelectorArgs struct {
 	space      userspace.SpaceNode
 	accessType auth.Role
 }
@@ -115,7 +115,7 @@ func ListSpaces() {
 	)
 
 	spaceIndex := 0
-	spaceSubCommandArgs := []selectorArgs{}
+	spaceSubCommandArgs := []spaceSelectorArgs{}
 
 	// shared spaces a retrieved after login for target commands
 	spaces := cbcli_config.SpaceNodes.GetAllSpaces()
@@ -135,7 +135,7 @@ func ListSpaces() {
 		}
 		if response = cbcli_utils.GetUserInputFromList(
 			"Enter # of node to execute sub-command on or (q)uit: ",
-			"", optionList); response == "q" {
+			"", optionList, false); response == "q" {
 			fmt.Println()
 			return
 		}
@@ -171,7 +171,7 @@ func ListSpaces() {
 func buildSpacesTable(
 	spaces []userspace.SpaceNode,
 	spaceIndex *int,
-	spaceSubCommandArgs *[]selectorArgs,
+	spaceSubCommandArgs *[]spaceSelectorArgs,
 ) *termtables.Table  {
 
 	deviceContext := cbcli_config.Config.DeviceContext()
@@ -231,7 +231,7 @@ func buildSpacesTable(
 			*spaceIndex++
 
 			*spaceSubCommandArgs = append(*spaceSubCommandArgs,
-				selectorArgs{
+				spaceSelectorArgs{
 					space:  space,
 					accessType: accessType,
 				},

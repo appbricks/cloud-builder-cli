@@ -90,12 +90,12 @@ func SSHTarget(targetKey string) {
 
 			if response = cbcli_utils.GetUserInputFromList(
 				"Enter # of instance to SSH to or (q)uit: ",
-				"", options); response == "q" {
+				"", options, false); response == "q" {
 				return
 			}
 			if instanceIndex, err = strconv.Atoi(response); err != nil ||
 				instanceIndex < 1 || instanceIndex > numInstances {
-				cbcli_utils.ShowErrorAndExit("invalid option provided")
+				cbcli_utils.ShowErrorAndExit("invalid entry")
 			}
 			instanceIndex--
 			managedInstance = managedInstances[instanceIndex]

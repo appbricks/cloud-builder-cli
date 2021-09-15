@@ -155,7 +155,7 @@ func ListTargets() {
 		}
 		if response = cbcli_utils.GetUserInputFromList(
 			"Enter # of node to execute sub-command on or (q)uit: ",
-			"", options); response == "q" {
+			"", options, false); response == "q" {
 			fmt.Println()
 			return
 		}

@@ -96,6 +96,7 @@ anonymized as it traverses the public provider networks.
 				"Do you agree to the terms: ",
 				"yes",
 				[]string{"no", "yes"},
+				true,
 			)
 			if response == "yes" {
 				cbcli_config.Config.SetEULAAccepted()

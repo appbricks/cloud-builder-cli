@@ -67,7 +67,7 @@ func SuspendTarget(targetKey string) {
 							spinner.CharSets[39], 
 							100*time.Millisecond,
 							spinner.WithSuffix(fmt.Sprintf(" Stopping instance \"%s\".", name)),
-							spinner.WithFinalMSG(fmt.Sprintf("Instance \"%s\" stopped.\n", name)),
+							spinner.WithFinalMSG(fmt.Sprintf("Instance \"%s\" stopped.\n\n", name)),
 							spinner.WithHiddenCursor(true),
 						)
 						s.Start()						

@@ -123,9 +123,10 @@ func CreateTarget(recipeName, iaasName string) {
 					os.Exit(0)
 				}
 				spaceTgtKey = cbcli_utils.GetUserInputFromList(
-					"Please tab through to select the target space to deploy application to: ",
+					"User <TAB> to scroll through and select from the list of target spaces to deploy application to: ",
 					spaceTargets[0],
 					spaceTargets,
+					true,
 				)
 			} else {
 				spaceTgtKey = createFlags.dependentTarget

@@ -171,6 +171,7 @@ func configureTarget(tgt *target.Target, tags ...string) {
 			"Do you wish to overwrite it (yes/no)? ",
 			"yes",
 			[]string{"no", "yes"},
+			true,
 		)
 
 		if len(response) > 0 && response != "yes" {
