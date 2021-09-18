@@ -1,4 +1,4 @@
-package space
+package target
 
 import (
 	"fmt"
@@ -15,11 +15,10 @@ import (
 
 	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
-	"github.com/appbricks/cloud-builder/userspace"
 	"github.com/appbricks/mycloudspace-client/vpn"
 	"github.com/mevansam/goutils/utils"
 
-	cbcli_target "github.com/appbricks/cloud-builder-cli/cmd/target"
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
@@ -46,15 +45,15 @@ connection as a traditional VPN to access the internet anonymously or
 securely access your cloud space resources.
 `,
 
-	PreRun: authorizeSpaceNode(auth.NewRoleMask(auth.Admin, auth.Manager, auth.Guest), &(connectFlags.commonFlags)), 
+PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
-		ConnectSpace(spaceNode)
+		ConnectSpace(getTargetKeyFromArgs(args[0], args[1], args[2], &(connectFlags.commonFlags)))
 	},
 	Args: cobra.ExactArgs(3),
 }
 
-func ConnectSpace(space userspace.SpaceNode) {
+func ConnectSpace(targetKey string) {
 
 	var (
 		err error
@@ -74,7 +73,6 @@ func ConnectSpace(space userspace.SpaceNode) {
 
 		sent, recd int64
 	)
-	targetKey := space.Key()
 
 	if tgt, err = cbcli_config.Config.TargetContext().GetTarget(targetKey); err == nil && tgt != nil {
 		if err = tgt.LoadRemoteRefs(); err != nil {
@@ -92,7 +90,7 @@ func ConnectSpace(space userspace.SpaceNode) {
 		}
 
 		if tgt.Status() != target.Running {
-			cbcli_target.ResumeTarget(targetKey)
+			ResumeTarget(targetKey)
 		}
 		
 		if connectFlags.superUser {
