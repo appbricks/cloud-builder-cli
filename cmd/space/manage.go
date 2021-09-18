@@ -134,7 +134,7 @@ func ManageSpace(space userspace.SpaceNode) {
 	if space.GetStatus() != "running" {
 		cbcli_utils.ShowErrorAndExit("Space target node needs to be in a running state in order manage it.")
 	}
-	if apiClient, err = mycsnode.NewApiClient(cbcli_config.Config.DeviceContext(), space); err != nil {
+	if apiClient, err = mycsnode.NewApiClient(cbcli_config.Config, space); err != nil {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}
 	if isAuthenticated, err = apiClient.Authenticate(); err != nil {

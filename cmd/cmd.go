@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 
 	"github.com/gookit/color"
@@ -155,7 +156,7 @@ anonymized as it traverses the public provider networks.
 					// load space target nodes if 
 					// executing a target command
 					if _, isSpaceCmd := spaceCmds[cmdName]; isSpaceCmd {
-						if cbcli_config.SpaceNodes, err = mycscloud.GetSpaceNodes(cbcli_config.AWS_USERSPACE_API_URL, cbcli_config.Config); err != nil {
+						if cbcli_config.SpaceNodes, err = mycscloud.GetSpaceNodes(cbcli_config.Config, cbcli_config.AWS_USERSPACE_API_URL); err != nil {
 							logger.DebugMessage("Failed to load and merge remote space nodes with local targets: %s", err.Error())
 							cbcli_utils.ShowErrorAndExit("Failed to load user's space nodes.")
 						}								
@@ -226,7 +227,7 @@ func init() {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", home+"/.cb/config.yml", "config file")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", filepath.Join(home, ".cb", "config.yml"), "config file")
 }
 
 // read in config file and ENV variables if set.
