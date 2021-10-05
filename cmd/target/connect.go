@@ -45,7 +45,7 @@ connection as a traditional VPN to access the internet anonymously or
 securely access your cloud space resources.
 `,
 
-PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		ConnectSpace(getTargetKeyFromArgs(args[0], args[1], args[2], &(connectFlags.commonFlags)))
