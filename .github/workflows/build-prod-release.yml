@@ -69,6 +69,20 @@ jobs:
         ref: master
         path: go/src/github.com/mevansam/goutils
 
+    - name: Checking out headscale repository
+      uses: actions/checkout@v2    
+      with:
+        repository: appbricks/headscale
+        ref: main
+        path: go/src/github.com/appbricks/headscale
+
+    - name: Checking out tailscale repository
+      uses: actions/checkout@v2    
+      with:
+        repository: appbricks/tailscale
+        ref: main
+        path: go/src/github.com/appbricks/tailscale
+
     - name: Checking out termtables repository
       uses: actions/checkout@v2    
       with:
