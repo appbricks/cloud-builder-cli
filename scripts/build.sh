@@ -13,7 +13,7 @@ fi
 
 # install packrv2
 [[ -e ${GOPATH}/bin/packr2 ]] || \
-  go get -u github.com/gobuffalo/packr/v2/packr2
+  go install github.com/gobuffalo/packr/v2/packr2@latest
 
 build_dir=${root_dir}/build
 if [[ $action == *:clean-all:* ]]; then
