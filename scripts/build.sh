@@ -47,9 +47,9 @@ function build() {
     pushd $root_dir
     if [[ $action == *:clean:* ]]; then
       # clean will remove the cookbook build dist
-      $build_cookbook -r $cookbook_repo_path -b $cookbook_version -o $os -c -v
+      $build_cookbook -r $cookbook_repo_path -b $cookbook_version -o $os -a $arch -c -v
     else
-      $build_cookbook -r $cookbook_repo_path -b $cookbook_version -o $os -v
+      $build_cookbook -r $cookbook_repo_path -b $cookbook_version -o $os -a $arch -v
     fi
     popd
 
@@ -132,6 +132,7 @@ else
 
   # build release binaries for all supported architectures
   build "darwin" "amd64"
-  build "linux" "amd64"
-  build "windows" "amd64"
+  # build "linux" "amd64"
+  build "linux" "arm64"
+  # build "windows" "amd64"
 fi
