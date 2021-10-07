@@ -129,17 +129,22 @@ func logoRequestHandler() (string, func(http.ResponseWriter, *http.Request)) {
 		}
 }
 
-func openBrowser(url string) error {
+func openBrowser(url string) (err error) {
 	switch runtime.GOOS {
 		case "linux":
-			return exec.Command("xdg-open", url).Run()
+			if err = exec.Command("xdg-open", url).Run(); err != nil {
+				if err = exec.Command("lynx", url).Run(); err != nil {
+					err = exec.Command("w3m", url).Run()
+				}
+			}
 		case "windows":
-			return exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Run()
+			err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Run()
 		case "darwin":
-			return exec.Command("open", url).Run()
+			err = exec.Command("open", url).Run()
 		default:
-			return fmt.Errorf("unsupported platform")
+			err = fmt.Errorf("unsupported platform")
 	}
+	return
 }
 
 func GetAuthenticatedToken(config config.Config, forceLogin bool, loginMessages ...string) (*AWSCognitoJWT, error) {
