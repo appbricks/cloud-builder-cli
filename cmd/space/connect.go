@@ -102,28 +102,22 @@ func ConnectSpace(spaceNode userspace.SpaceNode) {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}
 
+	// tailscale daemon starts background network mesh connection services
 	tsd = tailscale.NewTailscaleDaemon(
 		cbcli_config.Config, cbcli_config.SpaceNodes, filepath.Join(home, ".cb"),
 	)
 	if err = tsd.Start(); err != nil {
 		cbcli_utils.ShowErrorAndExit(
-			fmt.Sprintf("Error connecting to the space network mesh: %s", err.Error()))
+			fmt.Sprintf("Error starting space network mesh connection daemon: %s", err.Error()))
 	}
-
+	// tailscale client to issue commands to the background service
 	tsc := tailscale.NewTailscaleClient(spaceNode)	
 	
+	// trap keyboard exit/termination event
+	disconnect := make(chan bool)
 	if err := keyboard.Open(); err != nil {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}
-	defer func() {
-		_ = keyboard.Close()
-		if err = tsc.Disconnect(); err != nil {
-			logger.DebugMessage("Error disconnecting tailscale client: %s", err.Error())
-		}
-		tsd.Stop()
-	}()
-
-	disconnect := make(chan bool)
 	go func() {
 		for key != keyboard.KeyCtrlX && key != keyboard.KeyCtrlC {
 			if _, key, err = keyboard.GetKey(); err != nil {
@@ -132,7 +126,18 @@ func ConnectSpace(spaceNode userspace.SpaceNode) {
 		}
 		disconnect <- true
 	}()
+
+	// cleanup on exit
+	defer func() {
+		_ = keyboard.Close()
+		if err = tsc.Disconnect(); err != nil {
+			logger.DebugMessage("Error disconnecting tailscale client: %s", err.Error())
+		}
+		tsd.Stop()
+	}()
 	
+	// intitiate the connecting to the space network. 
+	// timeout after 5s if connection cannot be established
 	retryTimer := time.NewTicker(500 * time.Millisecond)	
 	go func() {
 		defer retryTimer.Stop()
@@ -152,7 +157,9 @@ func ConnectSpace(spaceNode userspace.SpaceNode) {
 					return
 				}	
 			}
-		}		
+		}
+		cbcli_utils.ShowErrorMessage("Timed out while attempting to connect to space network mesh.")
+		disconnect <- true
 	}()
 
 	fmt.Println()

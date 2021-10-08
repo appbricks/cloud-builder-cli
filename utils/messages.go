@@ -9,6 +9,11 @@ import (
 )
 
 func ShowErrorAndExit(message string) {
+	ShowErrorMessage(message)
+	os.Exit(1)
+}
+
+func ShowErrorMessage(message string) {
 
 	var (
 		format string
@@ -25,7 +30,6 @@ func ShowErrorAndExit(message string) {
 			utils.FormatMessage(7, 80, false, true, format, message),
 		),
 	)
-	os.Exit(1)
 }
 
 func ShowDangerMessage(message string, args ...interface{}) {
