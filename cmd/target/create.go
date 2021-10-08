@@ -172,8 +172,17 @@ func CreateTarget(recipeName, iaasName string) {
 
 		// add target to MyCS account
 		spaceAPI := mycscloud.NewSpaceAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
-		if err = spaceAPI.AddSpace(tgt, false); err != nil {
-			cbcli_utils.ShowErrorAndExit(err.Error())
+		if tgt.Recipe.IsBastion() {
+			// only recipes with a bastion instance is considered
+			// a space. TBD: this criteria should be revisited
+
+			if err = spaceAPI.AddSpace(tgt, false); err != nil {
+				cbcli_utils.ShowErrorAndExit(err.Error())
+			}	
+		} else {
+			// if err = spaceAPI.AddApp(tgt, false); err != nil {
+			// 	cbcli_utils.ShowErrorAndExit(err.Error())
+			// }	
 		}
 		return
 	}
