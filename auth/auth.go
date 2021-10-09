@@ -132,11 +132,7 @@ func logoRequestHandler() (string, func(http.ResponseWriter, *http.Request)) {
 func openBrowser(url string) (err error) {
 	switch runtime.GOOS {
 		case "linux":
-			if err = exec.Command("xdg-open", url).Run(); err != nil {
-				if err = exec.Command("lynx", url).Run(); err != nil {
-					err = exec.Command("w3m", url).Run()
-				}
-			}
+			err = exec.Command("xdg-open", url).Run()
 		case "windows":
 			err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Run()
 		case "darwin":
