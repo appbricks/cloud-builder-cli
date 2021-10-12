@@ -15,7 +15,7 @@ import (
 
 	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
-	"github.com/appbricks/mycloudspace-client/vpn"
+	"github.com/appbricks/mycloudspace-common/vpn"
 	"github.com/mevansam/goutils/utils"
 
 	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
@@ -131,7 +131,7 @@ func ConnectSpace(targetKey string) {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
 			if !isAdmin {
-				cbcli_utils.ShowWarningMessage("\nPlease enter you password for admin priveleges required to update the network configuration, if requested.")
+				cbcli_utils.ShowWarningMessage("\nPlease enter you password for admin privileges required to update the network configuration, if requested.")
 				if err = run.RunAsAdmin(os.Stdout, os.Stderr); err != nil {
 					logger.DebugMessage(
 						"Execution of CLI command with elevated privileges failed with error: %s", 
@@ -186,7 +186,7 @@ func ConnectSpace(targetKey string) {
 					s.Prefix = "\nUnable to retrieve connection status.\n"
 				}
 				s.Prefix = fmt.Sprintf(
-					"recd %s, sent %s: ", 
+					"recd %s, sent %s ", 
 					utils.ByteCountIEC(sent), 
 					utils.ByteCountIEC(recd),
 				)

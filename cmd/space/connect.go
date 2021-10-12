@@ -79,7 +79,7 @@ func ConnectSpace(spaceNode userspace.SpaceNode) {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}
 	if !isAdmin {
-		cbcli_utils.ShowWarningMessage("\nPlease enter you password for admin priveleges required to update the network configuration, if requested.")
+		cbcli_utils.ShowWarningMessage("\nPlease enter you password for admin privileges required to update the network configuration, if requested.")
 		if err = run.RunAsAdmin(os.Stdout, os.Stderr); err != nil {
 			logger.DebugMessage(
 				"Execution of CLI command with elevated privileges failed with error: %s", 
@@ -170,7 +170,7 @@ func ConnectSpace(spaceNode userspace.SpaceNode) {
 		spinner.WithFinalMSG("Connection to space network mesh has been terminated.\n"),
 		spinner.WithHiddenCursor(true),
 	)
-	s.Prefix = tsc.GetStatus()
+	s.Prefix = tsc.GetStatus() + " "
 	s.Start()
 
 	for {
@@ -181,7 +181,7 @@ func ConnectSpace(spaceNode userspace.SpaceNode) {
 			return
 		case <-time.After(time.Millisecond * 100):					
 		}
-		s.Prefix = tsc.GetStatus()
+		s.Prefix = tsc.GetStatus() + " "
 	}
 }
 

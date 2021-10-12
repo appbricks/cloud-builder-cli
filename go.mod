@@ -8,6 +8,8 @@ replace github.com/appbricks/cloud-builder => ../cloud-builder
 
 replace github.com/appbricks/mycloudspace-client => ../mycloudspace-client
 
+replace github.com/appbricks/mycloudspace-common => ../mycloudspace-common
+
 replace github.com/mevansam/gocloud => ../../mevansam/gocloud
 
 replace github.com/mevansam/goforms => ../../mevansam/goforms
@@ -21,6 +23,7 @@ replace tailscale.com => ../tailscale
 require (
 	github.com/appbricks/cloud-builder v0.0.0-00010101000000-000000000000
 	github.com/appbricks/mycloudspace-client v0.0.0-00010101000000-000000000000
+	github.com/appbricks/mycloudspace-common v0.0.0-00010101000000-000000000000
 	github.com/briandowns/spinner v1.12.0
 	github.com/eiannone/keyboard v0.0.0-20200508000154-caf4b762e807
 	github.com/gobuffalo/logger v1.0.4 // indirect
@@ -39,7 +42,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
-	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
+	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
 	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b
 )
