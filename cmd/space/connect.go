@@ -10,6 +10,7 @@ import (
 	"github.com/eiannone/keyboard"
 	"github.com/mevansam/goutils/logger"
 	"github.com/mevansam/goutils/run"
+	"github.com/mevansam/goutils/utils"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 
@@ -61,6 +62,8 @@ func ConnectSpace(spaceNode userspace.SpaceNode) {
 		tsd *tailscale.TailscaleDaemon
 
 		key keyboard.Key
+
+		sent, recd int64
 	)
 
 	if spaceNode.GetStatus() != "running" {
@@ -170,7 +173,24 @@ func ConnectSpace(spaceNode userspace.SpaceNode) {
 		spinner.WithFinalMSG("Connection to space network mesh has been terminated.\n"),
 		spinner.WithHiddenCursor(true),
 	)
-	s.Prefix = tsc.GetStatus() + " "
+
+	setStatus := func() {
+		status := tsc.GetStatus()
+		if status == "Connected" {
+			if sent, recd, err = tsd.BytesTransmitted(); err != nil {
+				logger.DebugMessage("Error retrieving tailscale connection status: %s", err.Error())
+				s.Prefix = "\nUnable to retrieve connection status.\n"
+			}
+			s.Prefix = fmt.Sprintf(
+				"Connected: recd %s, sent %s ", 
+				utils.ByteCountIEC(sent), 
+				utils.ByteCountIEC(recd),
+			)	
+		} else {
+			s.Prefix = status + " "
+		}
+	}
+	setStatus()
 	s.Start()
 
 	for {
@@ -179,9 +199,9 @@ func ConnectSpace(spaceNode userspace.SpaceNode) {
 			s.Stop()
 			fmt.Println()
 			return
-		case <-time.After(time.Millisecond * 100):					
+		case <-time.After(time.Millisecond * 500):					
 		}
-		s.Prefix = tsc.GetStatus() + " "
+		setStatus()
 	}
 }
 
