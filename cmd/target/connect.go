@@ -200,7 +200,7 @@ func ConnectSpace(targetKey string) {
 					s.Stop()
 					fmt.Println()
 					return
-				case <-time.After(time.Millisecond * 100):					
+				case <-time.After(time.Millisecond * 500):					
 				}
 				setStatus()
 			}
