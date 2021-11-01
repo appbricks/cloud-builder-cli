@@ -44,7 +44,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: appbricks/mycloudspace-common
-        ref: master
+        ref: main
         path: go/src/github.com/appbricks/mycloudspace-common
 
     - name: Checking out cloud-builder repository
