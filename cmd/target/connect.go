@@ -15,7 +15,9 @@ import (
 
 	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
-	"github.com/appbricks/mycloudspace-common/vpn"
+	"github.com/appbricks/mycloudspace-client/mycsnode"
+	"github.com/appbricks/mycloudspace-client/vpn"
+	vpn_common "github.com/appbricks/mycloudspace-common/vpn"
 	"github.com/mevansam/goutils/utils"
 
 	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
@@ -26,7 +28,6 @@ import (
 var connectFlags = struct {
 	commonFlags
 
-	superUser bool
 	download  bool
 }{}
 
@@ -48,23 +49,26 @@ securely access your cloud space resources.
 	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
-		ConnectSpace(getTargetKeyFromArgs(args[0], args[1], args[2], &(connectFlags.commonFlags)))
+		ConnectTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(connectFlags.commonFlags)))
 	},
 	Args: cobra.ExactArgs(3),
 }
 
-func ConnectSpace(targetKey string) {
+func ConnectTarget(targetKey string) {
 
 	var (
 		err error
 
 		tgt *target.Target
-		user, passwd string
+
+		apiClient       *mycsnode.ApiClient		
+		isAuthenticated bool
 
 		isAdmin bool
 
-		vpnConfig vpn.Config
-		vpnClient vpn.Client
+		configData vpn_common.ConfigData
+		vpnConfig  vpn_common.Config
+		vpnClient  vpn_common.Client
 
 		fileInfo           os.FileInfo
 		configInstructions string
@@ -79,28 +83,20 @@ func ConnectSpace(targetKey string) {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
 	
-		instance := tgt.ManagedInstance("bastion")
-		if instance == nil {
-			cbcli_utils.ShowErrorAndExit(
-				fmt.Sprintf(
-					"Unable to locate a deployed bastion instance within the space target \"%s\".",
-					targetKey,
-				),
-			)
+		if apiClient, err = mycsnode.NewApiClient(cbcli_config.Config, tgt); err != nil {
+			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
-
-		if tgt.Status() != target.Running {
-			ResumeTarget(targetKey)
+		if isAuthenticated, err = apiClient.Authenticate(); err != nil {
+			cbcli_utils.ShowErrorAndExit(err.Error())
+		}
+		if !isAuthenticated {
+			cbcli_utils.ShowErrorAndExit("Authenticate with space target failed.")
+		}
+		if configData, err = vpn.NewVPNConfigData(apiClient); err != nil {
+			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
 		
-		if connectFlags.superUser {
-			user = instance.RootUser()
-			passwd = instance.RootPassword()
-		} else {
-			user = instance.NonRootUser()
-			passwd = instance.NonRootPassword()
-		}
-		if vpnConfig, err = vpn.NewConfigFromTarget(tgt, user, passwd); err != nil {
+		if vpnConfig, err = vpn_common.NewConfigFromTarget(configData); err != nil {
 			logger.DebugMessage("Error loading VPN configuration: %s", err.Error())
 			cbcli_utils.ShowErrorAndExit("Unable to retrieve VPN configuration. This could be because your VPN server is still starting up or in the process of shutting down. Please try again.")
 		}
@@ -194,6 +190,12 @@ func ConnectSpace(targetKey string) {
 			setStatus()
 			s.Start()
 
+			defer func() {
+				if err = configData.Delete(); err != nil {
+					logger.DebugMessage("connect(): Error deleting vpn config data: %s", err.Error())
+				}
+			}()
+
 			for {
 				select {
 				case <-disconnect:
@@ -221,8 +223,6 @@ func init() {
 	flags.SortFlags = false
 	bindCommonFlags(flags, &(connectFlags.commonFlags))
 
-	flags.BoolVarP(&connectFlags.superUser, "super", "u", false, 
-		"connect as a super user with no restrictions")
 	flags.BoolVarP(&connectFlags.download, "download", "d", false, 
 		"download the VPN configuration file instead of\nestablishing a connection")
 }
