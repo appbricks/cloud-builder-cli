@@ -174,8 +174,14 @@ func Execute() {
 	)
 
 	if isProd == "yes" {
-		// reset trace log level if set for prod builds
-		if os.Getenv("CBS_LOGLEVEL") == "trace" {
+		logLevel := os.Getenv("CBS_LOGLEVEL")
+		if len(logLevel) == 0 {
+			// default is error but for prod builds we do 
+			// not want to show errors unless requested
+			os.Setenv("CBS_LOGLEVEL", "fatal")
+
+		} else if logLevel == "trace" {
+			// reset trace log level if set for prod builds
 			cbcli_utils.ShowWarningMessage(
 				"Trace log-level is not supported in prod build. Resetting level to 'debug'.\n",
 			)
