@@ -7,7 +7,7 @@ import (
 )
 
 const VERSION = `0.0.0`
-const BUILD_TIMESTAMP = `January 01, 2020 at 00:00 EST`
+const BUILD_TIMESTAMP = `November 19, 2021 at 09:16 EST`
 
 var versionCommand = &cobra.Command{
 	Use: "version",
