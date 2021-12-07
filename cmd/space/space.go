@@ -59,7 +59,7 @@ func authorizeSpaceNode(roleMask auth.RoleMask, commonFlags *commonFlags) func(c
 		}
 		targetKey = target.CreateKey(args[0], args[1], commonFlags.region, args[2])
 
-		spaceNode = cbcli_config.SpaceNodes.LookupSpaceNode(targetKey, func(nodes []userspace.SpaceNode) userspace.SpaceNode {
+		spaceNode = cbcli_config.SpaceNodes.LookupSpace(targetKey, func(nodes []userspace.SpaceNode) userspace.SpaceNode {
 			fmt.Printf("Space Nodes to select: %# v\n\n", nodes)
 			return nodes[0]
 		})

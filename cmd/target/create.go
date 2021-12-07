@@ -176,7 +176,7 @@ func CreateTarget(recipeName, iaasName string) {
 			// only recipes with a bastion instance is considered
 			// a space. TBD: this criteria should be revisited
 
-			if err = spaceAPI.AddSpace(tgt, false); err != nil {
+			if err = spaceAPI.AddSpace(tgt, true); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}	
 		} else {

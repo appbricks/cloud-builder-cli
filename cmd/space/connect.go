@@ -25,8 +25,8 @@ import (
 var connectFlags = struct {
 	commonFlags
 
-	// superUser bool
-	// download  bool
+	useSpaceDNS    bool
+	egressViaSpace bool
 }{}
 
 var connectCommand = &cobra.Command{
@@ -51,7 +51,7 @@ management dashboard.
 	Args: cobra.ExactArgs(3),
 }
 
-func ConnectSpace(spaceNode userspace.SpaceNode) {
+func ConnectSpace(space userspace.SpaceNode) {
 
 	var (
 		err error
@@ -60,17 +60,18 @@ func ConnectSpace(spaceNode userspace.SpaceNode) {
 		isAdmin bool
 
 		tsd *tailscale.TailscaleDaemon
+		tsc *tailscale.TailscaleClient
 
 		key keyboard.Key
 
 		sent, recd int64
 	)
 
-	if spaceNode.GetStatus() != "running" {
+	if space.GetStatus() != "running" {
 		cbcli_utils.ShowErrorAndExit(
 			fmt.Sprintf(
 				"Space \"%s\" in \"%s\" region \"%s\" is not online.",
-				spaceNode.GetSpaceName(), spaceNode.GetIaaS(), spaceNode.GetRegion(),
+				space.GetSpaceName(), space.GetIaaS(), space.GetRegion(),
 			),
 		)
 		// TODO: if the current logged in user has admin access he should be able to resume the space
@@ -95,7 +96,7 @@ func ConnectSpace(spaceNode userspace.SpaceNode) {
 	} else {
 		cbcli_utils.ShowInfoMessage(
 			"\nConnecting to space \"%s\" in \"%s\" region \"%s\".",
-			spaceNode.GetSpaceName(), spaceNode.GetIaaS(), spaceNode.GetRegion(),
+			space.GetSpaceName(), space.GetIaaS(), space.GetRegion(),
 		)
 	}
 	
@@ -107,14 +108,18 @@ func ConnectSpace(spaceNode userspace.SpaceNode) {
 
 	// tailscale daemon starts background network mesh connection services
 	tsd = tailscale.NewTailscaleDaemon(
-		cbcli_config.Config, cbcli_config.SpaceNodes, filepath.Join(home, ".cb"),
+		cbcli_config.SpaceNodes, filepath.Join(home, ".cb"),
 	)
 	if err = tsd.Start(); err != nil {
 		cbcli_utils.ShowErrorAndExit(
 			fmt.Sprintf("Error starting space network mesh connection daemon: %s", err.Error()))
 	}
 	// tailscale client to issue commands to the background service
-	tsc := tailscale.NewTailscaleClient(spaceNode)	
+	tsc = tailscale.NewTailscaleClient(
+		tsd.TunnelDeviceName(),
+		cbcli_config.Config.DeviceContext().GetDevice().Name,
+		cbcli_config.SpaceNodes,
+	)
 	
 	// trap keyboard exit/termination event
 	disconnect := make(chan bool)
@@ -153,9 +158,17 @@ func ConnectSpace(spaceNode userspace.SpaceNode) {
 			case <-disconnect:
 				return
 			case <-retryTimer.C:
-				if err = tsc.Connect(); err != nil {
-					logger.TraceMessage(
-						fmt.Sprintf("Failed to initiate login to the space network mesh via the client: %s", err.Error()))
+				if err = tsc.Connect(
+					space, 
+					connectFlags.useSpaceDNS, 
+					connectFlags.egressViaSpace,
+				); err != nil {
+					cbcli_utils.ShowErrorMessage(
+						fmt.Sprintf(
+							"Failed to initiate login to the space network mesh via the client: %s", 
+							err.Error(),
+						),
+					)
 				} else {
 					return
 				}	
@@ -210,8 +223,8 @@ func init() {
 	flags.SortFlags = false
 	bindCommonFlags(flags, &(connectFlags.commonFlags))
 
-	// flags.BoolVarP(&connectFlags.superUser, "super", "u", false, 
-	// 	"connect as a super user with no restrictions")
-	// flags.BoolVarP(&connectFlags.download, "download", "d", false, 
-	// 	"download the VPN configuration file instead of\nestablishing a connection")
+	flags.BoolVarP(&connectFlags.useSpaceDNS, "user-space-dns", "n", false, 
+		"use space DNS services")
+	flags.BoolVarP(&connectFlags.egressViaSpace, "egress-via-space", "e", false, 
+		"egress all network traffic via space node")
 }
