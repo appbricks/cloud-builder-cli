@@ -154,6 +154,7 @@ require (
 	github.com/tailscale/goupnp v1.0.1-0.20210804011211-c64d0f06ea05 // indirect
 	github.com/tailscale/netlink v1.1.1-0.20211101221916-cabfb018fe85 // indirect
 	github.com/tcnksm/go-httpstat v0.2.0 // indirect
+	github.com/tidwall/gjson v1.12.1 // indirect
 	github.com/toqueteos/webbrowser v1.2.0 // indirect
 	github.com/u-root/uio v0.0.0-20210528114334-82958018845c // indirect
 	github.com/ugorji/go/codec v1.1.7 // indirect
