@@ -37,7 +37,7 @@ var connectCommand = &cobra.Command{
 Use this command to securely connect to your cloud space's mesh 
 netowrk. This enables any device connected to this network to
 communicate point-to-point securely and share services and 
-applications with each other as well as accessing space applications
+applications with each other as well as access space applications
 that have been shared with the mesh. Shared applications and
 permissions can be managed via the MyCloudSpace account and space
 management dashboard.
