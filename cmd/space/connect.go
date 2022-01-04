@@ -108,7 +108,9 @@ func ConnectSpace(space userspace.SpaceNode) {
 
 	// tailscale daemon starts background network mesh connection services
 	tsd = tailscale.NewTailscaleDaemon(
-		cbcli_config.SpaceNodes, filepath.Join(home, ".cb"),
+		filepath.Join(home, ".cb"), 
+		cbcli_config.SpaceNodes, 
+		cbcli_config.MonitorService, 
 	)
 	if err = tsd.Start(); err != nil {
 		cbcli_utils.ShowErrorAndExit(
@@ -142,6 +144,15 @@ func ConnectSpace(space userspace.SpaceNode) {
 			logger.DebugMessage("Error disconnecting tailscale client: %s", err.Error())
 		}
 		tsd.Stop()
+
+		cbcli_config.ShutdownSpinner = spinner.New(
+			spinner.CharSets[11], 
+			100*time.Millisecond,
+			spinner.WithSuffix(" Shutting down background services."),
+			spinner.WithFinalMSG(""),
+			spinner.WithHiddenCursor(true),
+		)
+		cbcli_config.ShutdownSpinner.Start()
 	}()
 	
 	// intitiate the connecting to the space network. 

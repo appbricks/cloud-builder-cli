@@ -39,6 +39,7 @@ import (
 	"github.com/appbricks/cloud-builder/config"
 	"github.com/appbricks/cloud-builder/cookbook"
 	"github.com/appbricks/mycloudspace-client/mycscloud"
+	"github.com/appbricks/mycloudspace-common/monitors"
 
 	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
@@ -173,6 +174,15 @@ func Execute() {
 		err error
 	)
 
+	defer func() {
+		if cbcli_config.MonitorService != nil {
+			cbcli_config.MonitorService.Stop()
+		}
+		if cbcli_config.ShutdownSpinner != nil {
+			cbcli_config.ShutdownSpinner.Stop()
+		}
+	}()
+
 	if isProd == "yes" {
 		logLevel := os.Getenv("CBS_LOGLEVEL")
 		if len(logLevel) == 0 {
@@ -257,6 +267,15 @@ func initConfig() {
 		logger.DebugMessage("Error loading the configuration: %s", err.Error())
 
 		fmt.Println("Failed to unlock configuration file!")
+		os.Exit(1)
+	}
+
+	eventPublisher := mycscloud.NewEventPublisher(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config)
+	cbcli_config.MonitorService = monitors.NewMonitorService(eventPublisher, 30 /* publish monitor events to cloud every 30s */)
+	if err = cbcli_config.MonitorService.Start(); err != nil {
+		logger.DebugMessage("Failed to start monitor service: %s", err.Error())
+
+		fmt.Println("Failed to start internal telemetry services!")
 		os.Exit(1)
 	}
 }

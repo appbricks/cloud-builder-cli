@@ -75,6 +75,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sso v1.4.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.7.2 // indirect
 	github.com/aws/smithy-go v1.8.0 // indirect
+	github.com/cloudevents/sdk-go/v2 v2.7.0 // indirect
 	github.com/coreos/go-iptables v0.6.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v3 v3.0.0 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
@@ -163,6 +164,9 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a // indirect
 	github.com/zclconf/go-cty v1.1.1 // indirect
 	go.opencensus.io v0.23.0 // indirect
+	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/multierr v1.6.0 // indirect
+	go.uber.org/zap v1.17.0 // indirect
 	go4.org/intern v0.0.0-20211027215823-ae77deb06f29 // indirect
 	go4.org/mem v0.0.0-20201119185036-c04c5a6ff174 // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20211027215541-db492cf91b37 // indirect
@@ -172,7 +176,7 @@ require (
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20211205182925-97ca703d548d // indirect
 	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/time v0.0.0-20210611083556-38a9dc6acbc6 // indirect
+	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	golang.org/x/tools v0.1.7 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	golang.zx2c4.com/go118/netip v0.0.0-20211111135330-a4a02eeacf9d // indirect
