@@ -269,7 +269,7 @@ func buildUserDevicesTable(
 
 	first := true
 	for _, user := range users {
-		if user.IsOwner {
+		if user.IsOwner || len(user.Devices) == 0 {
 			continue
 		}
 		if !first {
