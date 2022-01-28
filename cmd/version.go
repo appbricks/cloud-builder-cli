@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-)
 
-const VERSION = `0.0.0`
-const BUILD_TIMESTAMP = `November 19, 2021 at 09:16 EST`
+	"github.com/appbricks/cloud-builder-cli/config"
+	"github.com/appbricks/mycloudspace-client/system"
+)
 
 var versionCommand = &cobra.Command{
 	Use: "version",
@@ -19,7 +19,8 @@ configuration status.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("\nVersion:    %s\n", VERSION)
-		fmt.Printf("Build date: %s\n", BUILD_TIMESTAMP)
+		fmt.Printf("\nDevice Type:     %s\n", system.GetDeviceType())
+		fmt.Printf("Client Version:  %s\n", system.GetDeviceVersion(config.ClientType, config.Version))
+		fmt.Printf("Build date:      %s\n\n", config.BuildTimestamp)
 	},
 }

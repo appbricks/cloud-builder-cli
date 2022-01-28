@@ -90,16 +90,23 @@ function build() {
   # build and package release binary
   mkdir -p ${release_dir}/${os}_${arch}
   pushd ${release_dir}/${os}_${arch}
+
+  versionFlags="-X \"github.com/appbricks/cloud-builder-cli/config.Version=$build_version\" -X \"github.com/appbricks/cloud-builder-cli/config.BuildTimestamp=$build_timestamp\""
+  
   if [[ $action == *:dev:* ]]; then
-    GOOS=$os GOARCH=$arch go build ${root_dir}/cmd/cb
+    GOOS=$os GOARCH=$arch go build -ldflags "$versionFlags" ${root_dir}/cmd/cb
   else
-    GOOS=$os GOARCH=$arch go build -ldflags "-s -w -X github.com/appbricks/cloud-builder-cli/cmd.isProd=yes" ${root_dir}/cmd/cb
+    GOOS=$os GOARCH=$arch go build -ldflags "-s -w -X github.com/appbricks/cloud-builder-cli/cmd.isProd=yes $versionFlags" ${root_dir}/cmd/cb
   fi
   zip -r ${release_dir}/cb_${os}_${arch}.zip .
   popd
 }
 
 if [[ $action == *:dev:* ]]; then
+  # set version
+  build_version=dev
+  build_timestamp=$(date +'%B %d, %Y at %H:%M %Z')
+
   # build binary for a dev environment
   rm -f $GOPATH/bin/cb
 
@@ -113,22 +120,6 @@ else
   tag=${GITHUB_REF/refs\/tags\//}
   build_version=${tag:-0.0.0}
   build_timestamp=$(date +'%B %d, %Y at %H:%M %Z')
-
-  if [[ `go env GOOS` == darwin ]]; then
-    sed -i '' \
-      "s|^const VERSION = \`.*\`$|const VERSION = \`$build_version\`|" \
-      ${root_dir}/cmd/version.go
-    sed -i '' \
-      "s|^const BUILD_TIMESTAMP = \`.*\`$|const BUILD_TIMESTAMP = \`$build_timestamp\`|" \
-      ${root_dir}/cmd/version.go
-  else
-    sed -i \
-      "s|^const VERSION = \`.*\`$|const VERSION = \`$build_version\`|" \
-      ${root_dir}/cmd/version.go
-    sed -i \
-      "s|^const BUILD_TIMESTAMP = \`.*\`$|const BUILD_TIMESTAMP = \`$build_timestamp\`|" \
-      ${root_dir}/cmd/version.go
-  fi
 
   # build release binaries for all supported architectures
   build "darwin" "amd64"
