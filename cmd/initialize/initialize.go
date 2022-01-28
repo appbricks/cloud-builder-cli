@@ -13,6 +13,7 @@ import (
 	"github.com/appbricks/cloud-builder/userspace"
 	"github.com/appbricks/mycloudspace-client/api"
 	"github.com/appbricks/mycloudspace-client/mycscloud"
+	"github.com/appbricks/mycloudspace-client/system"
 	"github.com/mevansam/goutils/logger"
 
 	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
@@ -274,6 +275,8 @@ func initialize() {
 		deviceAPI = mycscloud.NewDeviceAPI(newOwnerAPIClient)
 		if deviceIDKey, deviceID, err = deviceAPI.RegisterDevice(
 			deviceName, 
+			system.GetDeviceType(),
+			system.GetDeviceVersion(cbcli_config.ClientType, cbcli_config.Version),
 			"", 
 			device.RSAPublicKey, 
 			owner.WGPublickKey,
