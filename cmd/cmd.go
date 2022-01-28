@@ -110,7 +110,7 @@ anonymized as it traverses the public provider networks.
 		// retrieve the command
 		// to check against
 		cmdName := cmd.Name()
-		if cmd.Parent() != nil {
+		if cmd.Parent() != nil && cmd.Parent().Parent() != nil {
 			cmdName = cmd.Parent().Name()
 		}
 
@@ -271,7 +271,7 @@ func initConfig() {
 	}
 
 	eventPublisher := mycscloud.NewEventPublisher(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config)
-	cbcli_config.MonitorService = monitors.NewMonitorService(eventPublisher, 30 /* publish monitor events to cloud every 30s */)
+	cbcli_config.MonitorService = monitors.NewMonitorService(eventPublisher, 1 /* publish monitor events to cloud every 1s */)
 	if err = cbcli_config.MonitorService.Start(); err != nil {
 		logger.DebugMessage("Failed to start monitor service: %s", err.Error())
 
