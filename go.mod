@@ -42,7 +42,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
-	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871
+	golang.org/x/crypto v0.0.0-20211202192323-5770296d904e
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
 	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b
 )
@@ -60,6 +60,7 @@ require (
 	github.com/Azure/go-autorest/autorest/validation v0.2.0 // indirect
 	github.com/Azure/go-autorest/logger v0.1.0 // indirect
 	github.com/Azure/go-autorest/tracing v0.5.0 // indirect
+	github.com/BurntSushi/toml v0.4.1 // indirect
 	github.com/agext/levenshtein v1.2.2 // indirect
 	github.com/akutz/memconn v0.1.0 // indirect
 	github.com/alexbrainman/sspi v0.0.0-20210105120005-909beea2cc74 // indirect
@@ -109,7 +110,7 @@ require (
 	github.com/insomniacslk/dhcp v0.0.0-20210621130208-1cac67f12b1e // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/native v0.0.0-20200817173448-b6b71def0850 // indirect
-	github.com/jsimonetti/rtnetlink v0.0.0-20210525051524-4cc836578190 // indirect
+	github.com/jsimonetti/rtnetlink v0.0.0-20211022192332-93da33804786 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/jstemmer/go-junit-report v0.9.1 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
@@ -130,8 +131,8 @@ require (
 	github.com/mattn/go-ieproxy v0.0.0-20190610004146-91bb50d98149 // indirect
 	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
-	github.com/mdlayher/genetlink v1.0.0 // indirect
-	github.com/mdlayher/netlink v1.4.1 // indirect
+	github.com/mdlayher/genetlink v1.1.0 // indirect
+	github.com/mdlayher/netlink v1.4.2 // indirect
 	github.com/mdlayher/sdnotify v0.0.0-20210228150836-ea3ec207d697 // indirect
 	github.com/mdlayher/socket v0.0.0-20211102153432-57e3fa563ecb // indirect
 	github.com/minio/highwayhash v1.0.2 // indirect
@@ -171,18 +172,18 @@ require (
 	go4.org/mem v0.0.0-20201119185036-c04c5a6ff174 // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20211027215541-db492cf91b37 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
-	golang.org/x/mod v0.4.2 // indirect
-	golang.org/x/net v0.0.0-20211205041911-012df41ee64c // indirect
+	golang.org/x/mod v0.5.1 // indirect
+	golang.org/x/net v0.0.0-20211208012354-db4efeb81f4b // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20211205182925-97ca703d548d // indirect
+	golang.org/x/sys v0.0.0-20211214234402-4825e8c3871d // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
-	golang.org/x/tools v0.1.7 // indirect
+	golang.org/x/tools v0.1.8 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	golang.zx2c4.com/go118/netip v0.0.0-20211111135330-a4a02eeacf9d // indirect
 	golang.zx2c4.com/wintun v0.0.0-20211104114900-415007cec224 // indirect
 	golang.zx2c4.com/wireguard v0.0.0-20211129173154-2dd424e2d808 // indirect
-	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20211124212657-dd7407c86d22 // indirect
+	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20211230205640-daad0b7ba671 // indirect
 	golang.zx2c4.com/wireguard/windows v0.4.10 // indirect
 	google.golang.org/api v0.44.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
@@ -191,6 +192,7 @@ require (
 	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	honnef.co/go/tools v0.2.2 // indirect
 	inet.af/netaddr v0.0.0-20211027220019-c74959edd3b6 // indirect
 	inet.af/netstack v0.0.0-20211101182044-1c1bcf452982 // indirect
 	inet.af/peercred v0.0.0-20210318190834-4259e17bb763 // indirect

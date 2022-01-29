@@ -54,7 +54,7 @@ func initialize() {
 		resetPassphrase bool
 
 		device *userspace.Device
-		owner *userspace.User
+		// owner *userspace.User
 		
 		hostName,
 		userID,
@@ -193,7 +193,7 @@ func initialize() {
 		line.SetCompleter(nil)
 
 		// create device owner user
-		if owner, err = deviceContext.NewOwnerUser(userID, userName); err != nil {
+		if /*owner*/ _, err = deviceContext.NewOwnerUser(userID, userName); err != nil {
 			panic(err)
 		}
 		// create new device
@@ -279,7 +279,6 @@ func initialize() {
 			system.GetDeviceVersion(cbcli_config.ClientType, cbcli_config.Version),
 			"", 
 			device.RSAPublicKey, 
-			owner.WGPublickKey,
 		); err != nil {
 			panic(err)
 		}

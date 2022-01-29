@@ -61,14 +61,11 @@ func ConnectTarget(targetKey string) {
 
 		tgt *target.Target
 
-		apiClient       *mycsnode.ApiClient		
-		isAuthenticated bool
-
 		isAdmin bool
 
-		configData vpn_common.ConfigData
-		vpnConfig  vpn_common.Config
-		vpnClient  vpn_common.Client
+		vpnConfigData vpn_common.ConfigData
+		vpnConfig     vpn_common.Config
+		vpnClient     vpn_common.Client
 
 		fileInfo           os.FileInfo
 		configInstructions string
@@ -79,28 +76,7 @@ func ConnectTarget(targetKey string) {
 	)
 
 	if tgt, err = cbcli_config.Config.TargetContext().GetTarget(targetKey); err == nil && tgt != nil {
-		if err = tgt.LoadRemoteRefs(); err != nil {
-			cbcli_utils.ShowErrorAndExit(err.Error())
-		}
-	
-		if apiClient, err = mycsnode.NewApiClient(cbcli_config.Config, tgt); err != nil {
-			cbcli_utils.ShowErrorAndExit(err.Error())
-		}
-		if isAuthenticated, err = apiClient.Authenticate(); err != nil {
-			cbcli_utils.ShowErrorAndExit(err.Error())
-		}
-		if !isAuthenticated {
-			cbcli_utils.ShowErrorAndExit("Authenticate with space target failed.")
-		}
-		if configData, err = vpn.NewVPNConfigData(apiClient); err != nil {
-			cbcli_utils.ShowErrorAndExit(err.Error())
-		}
-		
-		if vpnConfig, err = vpn_common.NewConfigFromTarget(configData); err != nil {
-			logger.DebugMessage("Error loading VPN configuration: %s", err.Error())
-			cbcli_utils.ShowErrorAndExit("Unable to retrieve VPN configuration. This could be because your VPN server is still starting up or in the process of shutting down. Please try again.")
-		}
-		
+
 		if connectFlags.download {
 			home, _ := homedir.Dir()
 			downloadDir := filepath.Join(home, "Downloads")
@@ -114,6 +90,10 @@ func ConnectTarget(targetKey string) {
 			if !fileInfo.IsDir() {
 				downloadDir = home
 			}
+			
+			// load target and retrieve vpn config
+			vpnConfigData, vpnConfig = getVPNConfig(tgt)
+			// save retrieved config
 			if configInstructions, err = vpnConfig.Save(downloadDir); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
@@ -141,6 +121,9 @@ func ConnectTarget(targetKey string) {
 				cbcli_utils.ShowInfoMessage("\nStarting VPN connection.")
 			}
 
+			// load target and retrieve vpn config
+			vpnConfigData, vpnConfig = getVPNConfig(tgt)
+			// create vpn client using retrieve config
 			if vpnClient, err = vpnConfig.NewClient(); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
@@ -191,7 +174,8 @@ func ConnectTarget(targetKey string) {
 			s.Start()
 
 			defer func() {
-				if err = configData.Delete(); err != nil {
+				// delete vpn configuration
+				if err = vpnConfigData.Delete(); err != nil {
 					logger.DebugMessage("connect(): Error deleting vpn config data: %s", err.Error())
 				}
 			}()
@@ -216,6 +200,41 @@ func ConnectTarget(targetKey string) {
 			targetKey,
 		),
 	)
+}
+
+func getVPNConfig(tgt *target.Target) (vpn_common.ConfigData, vpn_common.Config) {
+
+	var (
+		err error
+
+		apiClient       *mycsnode.ApiClient		
+		isAuthenticated bool
+
+		vpnConfigData vpn_common.ConfigData
+		vpnConfig     vpn_common.Config
+	)
+
+	if err = tgt.LoadRemoteRefs(); err != nil {
+		cbcli_utils.ShowErrorAndExit(err.Error())
+	}
+
+	if apiClient, err = mycsnode.NewApiClient(cbcli_config.Config, tgt); err != nil {
+		cbcli_utils.ShowErrorAndExit(err.Error())
+	}
+	if isAuthenticated, err = apiClient.Authenticate(); err != nil {
+		cbcli_utils.ShowErrorAndExit(err.Error())
+	}
+	if !isAuthenticated {
+		cbcli_utils.ShowErrorAndExit("Authenticate with space target failed.")
+	}
+	if vpnConfigData, err = vpn.NewVPNConfigData(apiClient); err != nil {
+		cbcli_utils.ShowErrorAndExit(err.Error())
+	}	
+	if vpnConfig, err = vpn_common.NewConfigFromTarget(vpnConfigData); err != nil {
+		logger.DebugMessage("Error loading VPN configuration: %s", err.Error())
+		cbcli_utils.ShowErrorAndExit("Unable to retrieve VPN configuration. This could be because your VPN server is still starting up or in the process of shutting down. Please try again.")
+	}
+	return vpnConfigData, vpnConfig
 }
 
 func init() {

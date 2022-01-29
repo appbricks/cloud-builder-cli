@@ -211,7 +211,7 @@ func AuthorizeDeviceAndUser(config config.Config) error {
 					if user, err = deviceContext.NewGuestUser(userID, userName); err != nil {
 						return err
 					}						
-					if _, _, err = deviceAPI.AddDeviceUser(deviceContext.GetDevice().DeviceID, user.WGPublickKey); err != nil {
+					if _, _, err = deviceAPI.AddDeviceUser(deviceContext.GetDevice().DeviceID); err != nil {
 						return err
 					}
 					fmt.Println()
