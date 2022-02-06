@@ -124,7 +124,7 @@ func ConnectTarget(targetKey string) {
 			// load target and retrieve vpn config
 			vpnConfigData, vpnConfig = getVPNConfig(tgt)
 			// create vpn client using retrieve config
-			if vpnClient, err = vpnConfig.NewClient(); err != nil {
+			if vpnClient, err = vpnConfig.NewClient(cbcli_config.MonitorService); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
 			if err = vpnClient.Connect(); err != nil {
