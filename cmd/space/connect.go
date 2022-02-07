@@ -62,6 +62,8 @@ func ConnectSpace(space userspace.SpaceNode) {
 		tsd *tailscale.TailscaleDaemon
 		tsc *tailscale.TailscaleClient
 
+		cachedIPs []string
+
 		key keyboard.Key
 
 		sent, recd int64
@@ -112,6 +114,10 @@ func ConnectSpace(space userspace.SpaceNode) {
 		cbcli_config.SpaceNodes, 
 		cbcli_config.MonitorService, 
 	)
+	if cachedIPs, err = tsd.CacheDNSNames(cbcli_config.GetApiEndpointNames()); err != nil {
+		logger.ErrorMessage("Error while caching API endpoints in tailscale DNS: %s", err.Error())
+	}
+
 	if err = tsd.Start(); err != nil {
 		cbcli_utils.ShowErrorAndExit(
 			fmt.Sprintf("Error starting space network mesh connection daemon: %s", err.Error()))
@@ -122,6 +128,7 @@ func ConnectSpace(space userspace.SpaceNode) {
 		cbcli_config.Config.DeviceContext().GetDevice().Name,
 		cbcli_config.SpaceNodes,
 	)
+	tsc.AddSplitDestinations(cachedIPs)
 	
 	// trap keyboard exit/termination event
 	disconnect := make(chan bool)
