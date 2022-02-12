@@ -146,13 +146,17 @@ anonymized as it traverses the public provider networks.
 				}
 				if !cbcli_config.Config.DeviceContext().IsAuthorizedUser(awsAuth.Username()) {
 					// reset command
+					cmd.PreRun = nil
 					cmd.Run = func(cmd *cobra.Command, args []string) {}
 				} else {
 					// show logged in message only if cli 
 					// is being run via a non-root user				
 					if isAdmin, _ := run.IsAdmin(); !isAdmin {
 						fmt.Println()
-						cbcli_utils.ShowNoticeMessage("You are logged in as \"%s\".", awsAuth.Username())	
+						deviceName, _ := cbcli_config.Config.DeviceContext().GetDeviceName()
+						cbcli_utils.ShowNoticeMessage(
+							"You are logged in as \"%s\" on device \"%s\".", 
+							awsAuth.Username(), deviceName)
 					}
 					// load space target nodes if 
 					// executing a target command
