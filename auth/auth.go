@@ -201,7 +201,7 @@ func AuthorizeDeviceAndUser(config config.Config) error {
 			fmt.Println()
 			
 			if user, _ = deviceContext.GetGuestUser(userName); user == nil || user.Active /* device was deactivated in mycs account but not in device context */ {
-				cbcli_utils.ShowNoticeMessage("User \"%s\" is not authorized to use this device.", userName)
+				cbcli_utils.ShowNoticeMessage("User \"%s\" is not authorized to use this device.", user.Name)
 
 				fmt.Println()				
 				if requestAccess, err = cbcli_utils.GetYesNoUserInput("Do you wish to request access to this device : ", false); err != nil {
@@ -215,7 +215,7 @@ func AuthorizeDeviceAndUser(config config.Config) error {
 						return err
 					}
 					fmt.Println()
-					cbcli_utils.ShowNoticeMessage("A request to grant user \"%s\" access to this device has been submitted.", userName)	
+					cbcli_utils.ShowNoticeMessage("A request to grant user \"%s\" access to this device has been submitted.", user.Name)	
 				} else {
 					return fmt.Errorf("access request declined")
 				}
@@ -262,14 +262,14 @@ func AssertAuthorized(roleMask auth.RoleMask, spaceNode userspace.SpaceNode) fun
 			if cmd.Parent() != nil {
 				cbcli_utils.ShowNoteMessage(
 					fmt.Sprintf(
-						"Only %s can invoke command 'cb %s %s ...'\n", 
+						"\nOnly %s can invoke command 'cb %s %s ...'\n", 
 						accessType.String(), cmd.Parent().Name(), cmd.Name(),
 					),
 				)		
 			} else {
 				cbcli_utils.ShowNoteMessage(
 					fmt.Sprintf(
-						"Only %s can to invoke command 'cb %s'.\n", 
+						"\nOnly %s can to invoke command 'cb %s'.\n", 
 						accessType.String(), cmd.Name(),
 					),
 				)
