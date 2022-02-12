@@ -148,6 +148,8 @@ anonymized as it traverses the public provider networks.
 					// reset command
 					cmd.PreRun = nil
 					cmd.Run = func(cmd *cobra.Command, args []string) {}
+					fmt.Println()
+					
 				} else {
 					// show logged in message only if cli 
 					// is being run via a non-root user				
