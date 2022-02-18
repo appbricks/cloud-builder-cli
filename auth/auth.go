@@ -197,31 +197,34 @@ func AuthorizeDeviceAndUser(config config.Config) error {
 	// authenticate device and user
 	if err = deviceAPI.UpdateDeviceContext(deviceContext); err != nil {
 
-		if err.Error() == "unauthorized" {
+		errStr := err.Error()
+		if errStr == "unauthorized(pending)" {
 			fmt.Println()
-			
-			if user, _ = deviceContext.GetGuestUser(userName); user == nil || user.Active /* device was deactivated in mycs account but not in device context */ {
-				cbcli_utils.ShowNoticeMessage("User \"%s\" is not authorized to use this device.", user.Name)
+			cbcli_utils.ShowNoticeMessage("User \"%s\" is not authorized to use this device. A request to grant access to this device is still pending.", userName)
 
-				fmt.Println()				
-				if requestAccess, err = cbcli_utils.GetYesNoUserInput("Do you wish to request access to this device : ", false); err != nil {
-					return err
-				}
-				if (requestAccess) {
+		} else if errStr == "unauthorized" {
+			fmt.Println()
+			cbcli_utils.ShowNoticeMessage("User \"%s\" is not authorized to use this device.", userName)			
+
+			fmt.Println()				
+			if requestAccess, err = cbcli_utils.GetYesNoUserInput("Do you wish to request access to this device : ", false); err != nil {
+				return err
+			}
+			if (requestAccess) {
+				if user, _ = deviceContext.GetGuestUser(userName); user == nil {
 					if user, err = deviceContext.NewGuestUser(userID, userName); err != nil {
 						return err
-					}						
-					if _, _, err = deviceAPI.AddDeviceUser(deviceContext.GetDevice().DeviceID); err != nil {
-						return err
 					}
-					fmt.Println()
-					cbcli_utils.ShowNoticeMessage("A request to grant user \"%s\" access to this device has been submitted.", user.Name)	
 				} else {
-					return fmt.Errorf("access request declined")
+					user.Active = false
 				}
-
-			} else if (!user.Active) {
-				cbcli_utils.ShowNoticeMessage("User \"%s\" is not authorized to use this device. A request to grant access to this device is still pending.", userName)
+				if _, _, err = deviceAPI.AddDeviceUser(deviceContext.GetDevice().DeviceID); err != nil {
+					return err
+				}
+				fmt.Println()
+				cbcli_utils.ShowNoticeMessage("A request to grant user \"%s\" access to this device has been submitted.", user.Name)	
+			} else {
+				return fmt.Errorf("access request declined")
 			}
 			
 			return nil
