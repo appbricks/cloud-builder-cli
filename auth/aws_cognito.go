@@ -3,6 +3,8 @@ package auth
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"time"
 
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
@@ -54,4 +56,32 @@ func (awsJWT *AWSCognitoJWT) UserID() string {
 func (awsJWT *AWSCognitoJWT) Username() string {
 	username, _ := awsJWT.jwtToken.Get("cognito:username")
 	return username.(string)
+}
+
+func (awsJWT *AWSCognitoJWT) KeyTimestamp() time.Duration {
+	var (
+		err error
+		ok  bool
+
+		value   interface{}
+		ts      string
+		tsValue uint64
+	)
+	
+	if value, _ = awsJWT.jwtToken.Get("cognito:keyTimestamp"); value == nil {
+		return 0
+	}	
+	if ts, ok = value.(string); !ok {
+		logger.ErrorMessage(
+			"JWT Token claim cognito:keyTimestamp is not the expected type: %# v", 
+			value)
+		return 0
+	}
+	if tsValue, err = strconv.ParseUint(ts, 10, 64); err != nil {
+		logger.ErrorMessage(
+			"Unable to parse JWT Token claim cognito:keyTimestamp with value '%s': %s", 
+			ts, err.Error())
+		return 0
+	}
+	return time.Duration(tsValue)
 }
