@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
@@ -58,30 +57,41 @@ func (awsJWT *AWSCognitoJWT) Username() string {
 	return username.(string)
 }
 
-func (awsJWT *AWSCognitoJWT) KeyTimestamp() time.Duration {
+func (awsJWT *AWSCognitoJWT) KeyTimestamp() int64 {
+	return awsJWT.getTimesampClaim("custom:keyTimestamp")
+}
+
+func (awsJWT *AWSCognitoJWT) ConfigTimestamp() int64 {
+	return awsJWT.getTimesampClaim("custom:configTimestamp")
+}
+
+func (awsJWT *AWSCognitoJWT) getTimesampClaim(claimKey string) int64 {
+
 	var (
 		err error
 		ok  bool
 
 		value   interface{}
 		ts      string
-		tsValue uint64
+		tsValue int64
 	)
 	
-	if value, _ = awsJWT.jwtToken.Get("cognito:keyTimestamp"); value == nil {
+	if value, _ = awsJWT.jwtToken.Get(claimKey); value == nil {
 		return 0
 	}	
 	if ts, ok = value.(string); !ok {
 		logger.ErrorMessage(
-			"JWT Token claim cognito:keyTimestamp is not the expected type: %# v", 
-			value)
+			"JWT Token claim %s is not the expected type: %# v", 
+			claimKey, value,
+		)
 		return 0
 	}
-	if tsValue, err = strconv.ParseUint(ts, 10, 64); err != nil {
+	if tsValue, err = strconv.ParseInt(ts, 10, 64); err != nil {
 		logger.ErrorMessage(
-			"Unable to parse JWT Token claim cognito:keyTimestamp with value '%s': %s", 
-			ts, err.Error())
+			"Unable to parse JWT Token claim %s with value '%s': %s", 
+			claimKey, ts, err.Error(),
+		)
 		return 0
 	}
-	return time.Duration(tsValue)
+	return tsValue
 }

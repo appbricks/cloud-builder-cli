@@ -36,6 +36,8 @@ Signs out the current user in context.
 		if err = config.AuthContext().Reset(); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
+		config.DeviceContext().SetLoggedInUser("", "")
+		
 		fmt.Println()
 		if awsAuth != nil {
 			cbcli_utils.ShowNoteMessage("User \"%s\" has been logged out.", awsAuth.Username())

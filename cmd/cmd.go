@@ -38,6 +38,7 @@ import (
 	"github.com/appbricks/cloud-builder-cli/cmd/target"
 	"github.com/appbricks/cloud-builder/config"
 	"github.com/appbricks/cloud-builder/cookbook"
+	"github.com/appbricks/mycloudspace-client/api"
 	"github.com/appbricks/mycloudspace-client/mycscloud"
 	"github.com/appbricks/mycloudspace-common/monitors"
 
@@ -137,15 +138,23 @@ anonymized as it traverses the public provider networks.
 					awsAuth *cbcli_auth.AWSCognitoJWT
 				)
 				if awsAuth, err = cbcli_auth.GetAuthenticatedToken(cbcli_config.Config, false); err != nil {
-					logger.DebugMessage("Authentication returned error: %s", err.Error())
+					logger.ErrorMessage(
+						"rootCmd.PersistentPreRun(): Authentication returned error: %s", 
+						err.Error(),
+					)
 					cbcli_utils.ShowErrorAndExit("My Cloud Space user authentication failed.")
 				}
 				if err = cbcli_auth.AuthorizeDeviceAndUser(cbcli_config.Config); err != nil {
-					logger.DebugMessage("Authorizing logged in user on this device returned error: %s", err.Error())
+					logger.ErrorMessage(
+						"rootCmd.PersistentPreRun(): Authorizing logged in user on this device returned error: %s", 
+						err.Error(),
+					)
 					cbcli_utils.ShowErrorAndExit("My Cloud Space device and user authorization failed.")
 				}
 				if !cbcli_config.Config.DeviceContext().IsAuthorizedUser(awsAuth.Username()) {
-					// reset command
+					// user is valid but is pending being granted access to this
+					// device. reset command so login context is saved but commend
+					// is not executed.
 					cmd.PreRun = nil
 					cmd.Run = func(cmd *cobra.Command, args []string) {}
 					fmt.Println()
@@ -266,7 +275,7 @@ func initConfig() {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}
 	// initialize / load config file
-	if cbcli_config.Config, err = config.InitFileConfig(cfgFile, cbCookbook, getPassphrase); err != nil {
+	if cbcli_config.Config, err = config.InitFileConfig(cfgFile, cbCookbook, getPassphrase, uploadConfig); err != nil {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}
 	if err = cbcli_config.Config.Load(); err != nil {
@@ -316,6 +325,23 @@ func getPassphrase() string {
 		panic(err)
 	}
 	return passphrase
+}
+
+// encrypt and upload configuration to cloud
+func uploadConfig(key string, configData []byte, asOf int64) (int64, error) {
+
+	if key == "targetContext" {
+		logger.TraceMessage("uploadConfig(): Uploading encrypted config data for key '%s'.", key)
+
+		user := cbcli_config.Config.DeviceContext().GetOwner()
+		userAPI := mycscloud.NewUserAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config))
+		
+		return userAPI.UpdateUserConfig(user, configData, asOf)
+
+	} else {
+		logger.TraceMessage("uploadConfig(): Request to upload config key '%s' will be ignored.", key)
+	}
+	return 0, nil
 }
 
 func setupCloseHandler() {

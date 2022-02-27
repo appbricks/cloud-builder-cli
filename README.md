@@ -414,3 +414,22 @@ The following command reference outlines all the available CLI commands and indi
 ```
 
 > ** Sub-command still to be implemented
+
+## Generating User Private Keys
+
+When a client device is setup with a device owner the CLI will check if the user is
+associated with a key. If the user has not been setup with a key then the CLI will
+request a new key be imported or generated. If you wish to create the key manually
+you can do it via the following `openssl` commands.
+
+```
+openssl genrsa -passout pass:x -out my-private-key-temp.pem -aes256 4096
+openssl pkcs8 -topk8 -v2 aes256 -passin pass:x -passout pass:MYSECRET -in my-private-key-temp.pem -out my-private-key.pem
+rm my-private-key-temp.pem
+```
+
+The second command is required to convert the key to a format the CLI can read. The
+key file created would be `my-private-key.pem` from the above example. Once created
+you should save the generated key file in a secure location preferrably offline
+on a USB stick which can be locked away. You will need this key in the future to 
+unlock configurations and claim additional devices.

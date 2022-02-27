@@ -1,9 +1,13 @@
 package initialize
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hasura/go-graphql-client"
@@ -14,8 +18,10 @@ import (
 	"github.com/appbricks/mycloudspace-client/api"
 	"github.com/appbricks/mycloudspace-client/mycscloud"
 	"github.com/appbricks/mycloudspace-client/system"
+	"github.com/mevansam/goutils/crypto"
 	"github.com/mevansam/goutils/logger"
 
+	"github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
@@ -50,15 +56,21 @@ func initialize() {
 
 		awsAuth *cbcli_auth.AWSCognitoJWT
 
+		fi os.FileInfo
+
+		importKey,
 		resetConfig,
 		resetPassphrase bool
 
 		device *userspace.Device
-		// owner *userspace.User
+		owner *userspace.User
 		
 		hostName,
 		userID,
 		userName,
+		ownerKeyFile,
+		ownerKeyFilePEM,
+		ownerKeyFilePassphrase,		
 		deviceIDKey,
 		deviceID,
 		deviceName,
@@ -67,6 +79,9 @@ func initialize() {
 		verifyPassphrase,
 		unlockTimeout string
 
+		ownerKey    *crypto.RSAKey
+		ownerConfig []byte
+		
 		timeout int
 
 		prevOwnerAPIClient, 
@@ -167,13 +182,172 @@ func initialize() {
 		userID = awsAuth.UserID()
 		userName = awsAuth.Username()
 
+		// create device owner user
+		if owner, err = deviceContext.NewOwnerUser(userID, userName); err != nil {
+			panic(err)
+		}
+		// create new device to associate with the owner
+		if device, err = deviceContext.NewDevice(); err != nil {
+			panic(err)
+		}
+
+		needNewKey := awsAuth.KeyTimestamp() == 0
+		if needNewKey {
+			fmt.Println()
+			cbcli_utils.ShowNoteMessage(
+				fmt.Sprintf(
+					"It appears that user '%s' is not associated with a public key. " + 
+					"You will need to either import the user's key-pair or create a new one.", 
+					userName,
+				),
+			)
+			fmt.Println()
+			if importKey, err = cbcli_utils.GetYesNoUserInput(
+				fmt.Sprintf("Do you wish to import a private key for user '%s' : ", userName),
+				false,
+			); err != nil {
+				panic(err)
+			}
+
+		} else {
+			fmt.Println()
+			cbcli_utils.ShowNoteMessage(
+				fmt.Sprintf(
+					"In order to continue you need to import user %s's private key. The key is " +
+					"required to unlock the user's global configuration and initialize this device.", 
+					userName,
+				),
+			)
+			importKey = true
+		}
+
+		fmt.Println()
+		if importKey {
+			if ownerKey, err = auth.ImportPrivateKey(line); err != nil {
+				panic(err)
+			}
+
+		} else {
+			if ownerKeyFile, err = line.Prompt("Path to save key file (you can drag/drop from a finder/explorer window to the terminal) : "); err != nil {
+				panic(err)
+			}
+			ownerKeyFile = strings.TrimSpace(
+				strings.TrimSuffix(strings.TrimSuffix(strings.TrimPrefix(strings.TrimPrefix(ownerKeyFile, "'"), "\""), "'"), "\""),
+			)
+
+			if fi, err = os.Stat(ownerKeyFile); err != nil {
+				if os.IsNotExist(err) {
+					cbcli_utils.ShowErrorAndExit(fmt.Sprintf("Path '%s' does not exist.", ownerKeyFile))
+				}
+				panic(err)
+			}
+			if !fi.IsDir() {
+				cbcli_utils.ShowErrorAndExit(fmt.Sprintf("Path '%s' is not a directory.", ownerKeyFile))
+			}
+			ownerKeyFile = filepath.Join(ownerKeyFile, userName + "-key.pem")
+
+			if ownerKeyFilePassphrase, err = line.PasswordPrompt("Enter the key file passphrase : "); err != nil {
+				panic(err)
+			}
+			if verifyPassphrase, err = line.PasswordPrompt("Verify the key file passphrase : "); err != nil {
+				panic(err)
+			}
+			if ownerKeyFilePassphrase != verifyPassphrase {
+				fmt.Println("\nPassphrases do not match.")
+				os.Exit(1)
+			}
+			if ownerKey, err = crypto.NewRSAKey(); err != nil {
+				panic(err)
+			}
+			if ownerKeyFilePEM, err = ownerKey.GetEncryptedPrivateKeyPEM([]byte(ownerKeyFilePassphrase)); err != nil {
+				panic(err)
+			}
+			if err = ioutil.WriteFile(ownerKeyFile, []byte(ownerKeyFilePEM), 0600); err != nil {
+				panic(err)
+			}
+
+			fmt.Println()
+			cbcli_utils.ShowNoteMessage(
+				"A new RSA private key has been generated and saved to the following path:", 
+			)
+			cbcli_utils.ShowNoteMessage(
+				fmt.Sprintf(
+					"- %s", 
+					ownerKeyFile,
+				),
+			)
+			fmt.Println()
+			cbcli_utils.ShowNoteMessage(
+				fmt.Sprintf(
+					"This key will be used to secure all data associated with the user '%s' as well as " +
+					"establishing a verifiable identity. It is important that this key is saved in a " +
+					"secure location offline such as a USB key which can be locked away in a safe.", 
+					userName,
+				),
+			)
+		}
+
+		// api client for new owner used owner's 
+		// user public key and user config
+		newOwnerAPIClient = api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config)
+		userAPI := mycscloud.NewUserAPI(newOwnerAPIClient)
+
+		if needNewKey {
+			// save new key
+			if err = owner.SetKey(ownerKey); err != nil {
+				panic(err)
+			}
+			if err = userAPI.UpdateUserKey(owner); err != nil {
+				panic(err)
+			}
+
+		} else {
+			// validate known public key with provided private 
+			// key by encrypting some data with the known public 
+			// key and decrypting with the provided private key
+			if _, err = userAPI.GetUser(owner); err != nil {
+				panic(err)
+			}
+			// save imported key
+			if err = owner.SetKey(ownerKey); err != nil {
+				cbcli_utils.ShowErrorAndExit("Failed to validate provided private key with user's known public key.")
+			}
+			// load saved configuration
+			if ownerConfig, err = userAPI.GetUserConfig(owner); err != nil {
+				panic(err)
+			}	
+		}
+
+		// if no config exists (for example if user did not have a 
+		// public key then it is assumed no encrypted config would 
+		// exist) then save the current default else load the config
+		targetContext := config.TargetContext()
+		if ownerConfig == nil {
+			var configTimestamp int64
+			
+			defaultConfig := new(bytes.Buffer)
+			if err = targetContext.Save(defaultConfig); err != nil {
+				panic(err)
+			}
+			if configTimestamp, err = userAPI.UpdateUserConfig(owner, defaultConfig.Bytes(), 0); err != nil {
+				panic(err)
+			}
+			config.SetConfigAsOf(configTimestamp)
+
+		} else {
+			if err = targetContext.Load(bytes.NewReader(ownerConfig)); err != nil {
+				panic(err)
+			}
+			config.SetConfigAsOf(awsAuth.ConfigTimestamp())
+		}
+
 		fmt.Println()
 		cbcli_utils.ShowNoteMessage(
 			"This client CLI will be given a unique device identity with the machine it is running on. " +
 			"This helps identify which clients or devices are connecting to your space along with the " +
 			"users that are connecting. If you use the Cloud Space client or CLI from another machine or " +
 			"device it will receive its own identity but your configuration context will remain the same. " +
-			"It is recommended that you give this device a name that will help you identify the it within " +
+			"It is recommended that you give this device a name that will help you identify it within " +
 			"your network.",
 		)
 		fmt.Println()
@@ -191,19 +365,6 @@ func initialize() {
 			panic(err)
 		}
 		line.SetCompleter(nil)
-
-		// create device owner user
-		if /*owner*/ _, err = deviceContext.NewOwnerUser(userID, userName); err != nil {
-			panic(err)
-		}
-		// create new device
-		if device, err = deviceContext.NewDevice(); err != nil {
-			panic(err)
-		}
-
-		// api client for new owner which will be
-		// used to register this device with that user
-		newOwnerAPIClient = api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config)
 	}
 
 	resetPassphrase = true

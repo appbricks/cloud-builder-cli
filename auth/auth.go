@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"bytes"
 	"encoding/base64"
 	"fmt"
 	"net/http"
@@ -19,7 +20,9 @@ import (
 	"github.com/appbricks/mycloudspace-client/mycscloud"
 	"github.com/briandowns/spinner"
 	"github.com/gookit/color"
+	"github.com/mevansam/goutils/crypto"
 	"github.com/mevansam/goutils/logger"
+	"github.com/peterh/liner"
 	"github.com/spf13/cobra"
 
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
@@ -177,9 +180,14 @@ func AuthorizeDeviceAndUser(config config.Config) error {
 
 		awsAuth *AWSCognitoJWT
 
+		user *userspace.User
+
 		userID, 
-		userName string
-		user     *userspace.User
+		userName,
+		ownerUserID string
+		ownerConfig []byte
+
+		ownerKey *crypto.RSAKey
 
 		requestAccess bool
 	)
@@ -222,7 +230,8 @@ func AuthorizeDeviceAndUser(config config.Config) error {
 					return err
 				}
 				fmt.Println()
-				cbcli_utils.ShowNoticeMessage("A request to grant user \"%s\" access to this device has been submitted.", user.Name)	
+				cbcli_utils.ShowNoticeMessage("A request to grant user \"%s\" access to this device has been submitted.", user.Name)
+
 			} else {
 				return fmt.Errorf("access request declined")
 			}
@@ -234,7 +243,7 @@ func AuthorizeDeviceAndUser(config config.Config) error {
 	}
 
 	// ensure that the device has an owner
-	_, isOwnerSet := deviceContext.GetOwnerUserName()
+	ownerUserID, isOwnerSet := deviceContext.GetOwnerUserID()
 	if !isOwnerSet {
 		fmt.Println()
 		cbcli_utils.ShowCommentMessage(
@@ -245,7 +254,65 @@ func AuthorizeDeviceAndUser(config config.Config) error {
 		os.Exit(1)
 	}
 
+	// if logged in user is the owner ensure 
+	// owner is intialized and config is latest
+	if userID == ownerUserID {
+		owner := deviceContext.GetOwner()
+
+		if len(owner.RSAPrivateKey) == 0 {
+			fmt.Println()
+
+			line := liner.NewLiner()
+			line.SetCtrlCAborts(true)
+			if ownerKey, err = ImportPrivateKey(line); err != nil {
+				cbcli_utils.ShowErrorAndExit(
+					fmt.Sprintf("User's private key import failed with error: %s", err.Error()),
+				)
+			}
+			if err = owner.SetKey(ownerKey); err != nil {
+				cbcli_utils.ShowErrorAndExit("Failed to validate provided private key with user's known public key.")
+			}		
+		}
+		if config.GetConfigAsOf() < awsAuth.ConfigTimestamp() {
+			userAPI := mycscloud.NewUserAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
+	
+			if ownerConfig, err = userAPI.GetUserConfig(owner); err != nil {
+				return err
+			}
+			if err = config.TargetContext().Load(bytes.NewReader(ownerConfig)); err != nil {
+				panic(err)
+			}
+			config.SetConfigAsOf(awsAuth.ConfigTimestamp())
+		}
+	} 
+
 	return nil
+}
+
+func ImportPrivateKey(line *liner.State) (*crypto.RSAKey, error) {
+
+	var (
+		err error
+
+		keyFile,
+		keyFilePassphrase string
+
+		key *crypto.RSAKey
+	)
+
+	if keyFile, err = line.Prompt("Path to key file (you can drag/drop from a finder/explorer window to the terminal) : "); err != nil {
+		return nil, err
+	}
+	keyFile = strings.TrimSpace(
+		strings.TrimSuffix(strings.TrimSuffix(strings.TrimPrefix(strings.TrimPrefix(keyFile, "'"), "\""), "'"), "\""),
+	)
+	if keyFilePassphrase, err = line.PasswordPrompt("Enter the key file passphrase : "); err != nil {
+		return nil, err
+	}
+	if key, err = crypto.NewRSAKeyFromFile(keyFile, []byte(keyFilePassphrase)); err != nil {
+		return nil, err
+	}
+	return key, nil
 }
 
 func AssertAuthorized(roleMask auth.RoleMask, spaceNode userspace.SpaceNode) func(cmd *cobra.Command, args []string) {

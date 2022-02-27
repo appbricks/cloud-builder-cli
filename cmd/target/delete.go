@@ -91,7 +91,7 @@ func DeleteTarget(targetKey string) {
 				context.SaveTarget(tgt.Key(), tgt)
 			}
 			if !deleteFlags.keep {
-				context.TargetSet().DeleteTarget(tgt.Key())
+				context.DeleteTarget(tgt.Key())
 
 				// delete target to MyCS account
 				spaceAPI := mycscloud.NewSpaceAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
