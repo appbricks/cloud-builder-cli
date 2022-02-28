@@ -131,7 +131,7 @@ func ConnectSpace(space userspace.SpaceNode) {
 	tsc.AddSplitDestinations(cachedIPs)
 	
 	// trap keyboard exit/termination event
-	disconnect := make(chan bool)
+	disconnect := make(chan bool, 2)
 	if err := keyboard.Open(); err != nil {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}
@@ -141,16 +141,15 @@ func ConnectSpace(space userspace.SpaceNode) {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
 		}
+		// ensure all listeners 
+		// receive the event
+		disconnect <- true
 		disconnect <- true
 	}()
 
 	// cleanup on exit
 	defer func() {
 		_ = keyboard.Close()
-		if err = tsc.Disconnect(); err != nil {
-			logger.DebugMessage("Error disconnecting tailscale client: %s", err.Error())
-		}
-		tsd.Stop()
 
 		cbcli_config.ShutdownSpinner = spinner.New(
 			spinner.CharSets[11], 
@@ -160,6 +159,11 @@ func ConnectSpace(space userspace.SpaceNode) {
 			spinner.WithHiddenCursor(true),
 		)
 		cbcli_config.ShutdownSpinner.Start()
+
+		if err = tsc.Disconnect(); err != nil {
+			logger.DebugMessage("Error disconnecting tailscale client: %s", err.Error())
+		}
+		tsd.Stop()
 	}()
 	
 	// intitiate the connecting to the space network. 
