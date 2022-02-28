@@ -279,8 +279,21 @@ func AuthorizeDeviceAndUser(config config.Config) error {
 			if ownerConfig, err = userAPI.GetUserConfig(owner); err != nil {
 				return err
 			}
+			if err = config.TargetContext().Reset(); err != nil {
+				cbcli_utils.ShowErrorAndExit(
+					fmt.Sprintf(
+						"Failed to reset current config as a change was detected: %s", 
+						err.Error(),
+					),
+				)
+			}
 			if err = config.TargetContext().Load(bytes.NewReader(ownerConfig)); err != nil {
-				panic(err)
+				cbcli_utils.ShowErrorAndExit(
+					fmt.Sprintf(
+						"Failed to reset load updated config: %s", 
+						err.Error(),
+					),
+				)
 			}
 			config.SetConfigAsOf(awsAuth.ConfigTimestamp())
 		}
