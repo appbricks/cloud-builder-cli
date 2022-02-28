@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -26,6 +27,8 @@ import (
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
+
+var deviceNameRE = regexp.MustCompile("^[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9]$")
 
 var InitCommand = &cobra.Command{
 	Use: "init",
@@ -365,6 +368,11 @@ func initialize() {
 			panic(err)
 		}
 		line.SetCompleter(nil)
+		if !deviceNameRE.MatchString(deviceName) {
+			cbcli_utils.ShowErrorAndExit(
+				"Invalid device name. Device name should contain only alpha-numeric characters. It must start " +
+				"and end with an alpha-numeric character and can optionally include '-'s in between.")
+		}
 	}
 
 	resetPassphrase = true
@@ -390,7 +398,7 @@ func initialize() {
 
 	fmt.Println()
 	line.SetCompleter(func(line string) []string {
-		return []string{"12h", "1h", "30m", "10m", ""}
+		return []string{"24h", "12h", "1h", "30m", "10m", ""}
 	})
 	if unlockTimeout, err = line.PromptWithSuggestion("Enter unlock timeout (i.e. ##h(ours)/m(inutes)/(s)econds) : ", "24h", -1); err != nil {
 		panic(err)
