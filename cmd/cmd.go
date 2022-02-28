@@ -286,7 +286,11 @@ func initConfig() {
 	}
 
 	eventPublisher := mycscloud.NewEventPublisher(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config)
-	cbcli_config.MonitorService = monitors.NewMonitorService(eventPublisher, 1 /* publish monitor events to cloud every 1s */)
+	cbcli_config.MonitorService = monitors.NewMonitorService(
+		eventPublisher, 
+		1 /* publish monitor events every 1s */, 
+		1000 /* collect counter metrics every 1s */,
+	)
 	if err = cbcli_config.MonitorService.Start(); err != nil {
 		logger.DebugMessage("Failed to start monitor service: %s", err.Error())
 
