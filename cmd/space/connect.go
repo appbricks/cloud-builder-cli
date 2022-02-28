@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/briandowns/spinner"
@@ -69,6 +70,8 @@ func ConnectSpace(space userspace.SpaceNode) {
 		sent, recd int64
 	)
 
+	deviceContext := cbcli_config.Config.DeviceContext()
+
 	if space.GetStatus() != "running" {
 		cbcli_utils.ShowErrorAndExit(
 			fmt.Sprintf(
@@ -110,7 +113,7 @@ func ConnectSpace(space userspace.SpaceNode) {
 
 	// tailscale daemon starts background network mesh connection services
 	tsd = tailscale.NewTailscaleDaemon(
-		filepath.Join(home, ".cb"), 
+		filepath.Join(home, ".cb", strings.ToLower(deviceContext.GetDevice().Name)), 
 		cbcli_config.SpaceNodes, 
 		cbcli_config.MonitorService, 
 	)
@@ -125,7 +128,7 @@ func ConnectSpace(space userspace.SpaceNode) {
 	// tailscale client to issue commands to the background service
 	tsc = tailscale.NewTailscaleClient(
 		tsd.TunnelDeviceName(),
-		cbcli_config.Config.DeviceContext().GetDevice().Name,
+		deviceContext.GetDevice().Name,
 		cbcli_config.SpaceNodes,
 	)
 	tsc.AddSplitDestinations(cachedIPs)
