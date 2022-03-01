@@ -28,7 +28,7 @@ import (
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
-var deviceNameRE = regexp.MustCompile("^[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9]$")
+var deviceNameRE = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9]$`)
 
 var InitCommand = &cobra.Command{
 	Use: "init",
@@ -398,9 +398,13 @@ func initialize() {
 
 	fmt.Println()
 	line.SetCompleter(func(line string) []string {
-		return []string{"24h", "12h", "1h", "30m", "10m", ""}
+		return []string{"24h", "12h", "1h", "30m", "15m", ""}
 	})
-	if unlockTimeout, err = line.PromptWithSuggestion("Enter unlock timeout (i.e. ##h(ours)/m(inutes)/(s)econds) : ", "24h", -1); err != nil {
+	defTimeout := "15m"
+	if awsAuth.Preferences().RememberFor24h {
+		defTimeout = "24h"
+	}
+	if unlockTimeout, err = line.PromptWithSuggestion("Enter unlock timeout (i.e. ##h(ours)/m(inutes)/(s)econds) : ", defTimeout, -1); err != nil {
 		panic(err)
 	}
 	line.SetCompleter(nil)
