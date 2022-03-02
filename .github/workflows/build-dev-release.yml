@@ -86,7 +86,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: appbricks/tailscale
-        ref: ab-wireguard-latest
+        ref: appbricks/dev
         path: go/src/github.com/appbricks/tailscale
 
     - name: Checking out termtables repository
