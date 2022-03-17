@@ -3,13 +3,30 @@ package utils
 import (
 	"fmt"
 	"os"
+	"runtime/debug"
+	"strings"
 
 	"github.com/gookit/color"
 	"github.com/mevansam/goutils/utils"
+	"github.com/sirupsen/logrus"
 )
 
 func ShowErrorAndExit(message string) {
+	
+	var (
+		stack strings.Builder
+	)
+
 	ShowErrorMessage(message)
+	
+	logLevel := logrus.GetLevel()	
+	if logLevel == logrus.TraceLevel || logLevel == logrus.DebugLevel {
+		stack.Write(debug.Stack())
+		fmt.Println(
+			color.Red.Render("\n" + stack.String()),
+		)
+	}
+
 	os.Exit(1)
 }
 
