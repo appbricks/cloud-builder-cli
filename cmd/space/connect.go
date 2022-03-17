@@ -4,20 +4,21 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
 	"github.com/briandowns/spinner"
 	"github.com/eiannone/keyboard"
-	"github.com/mevansam/goutils/logger"
-	"github.com/mevansam/goutils/run"
-	"github.com/mevansam/goutils/utils"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 
 	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/userspace"
 	"github.com/appbricks/mycloudspace-client/tailscale"
+	"github.com/mevansam/goutils/logger"
+	"github.com/mevansam/goutils/run"
+	"github.com/mevansam/goutils/utils"
 
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
@@ -51,6 +52,8 @@ management dashboard.
 	},
 	Args: cobra.ExactArgs(3),
 }
+
+var overrideInterruptEvent = func(disconnect chan bool) error { return nil }
 
 func ConnectSpace(space userspace.SpaceNode) {
 
@@ -111,6 +114,46 @@ func ConnectSpace(space userspace.SpaceNode) {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}
 
+	// trap keyboard exit/termination event
+	disconnect := make(chan bool, 2)
+	if err = overrideInterruptEvent(disconnect); err != nil {
+		cbcli_utils.ShowErrorAndExit(err.Error())	
+	}
+	if err := keyboard.Open(); err != nil {
+		cbcli_utils.ShowErrorAndExit(err.Error())
+	}
+	go func() {
+		if runtime.GOOS == "windows" {
+			// don't handle ctrl-c for windows as that
+			// is handled via the interrupt event handler
+			for key != keyboard.KeyCtrlX {
+				if _, key, err = keyboard.GetKey(); err != nil {
+					if err.Error() != "operation canceled" {
+						logger.ErrorMessage(
+							"ConnectSpace: Unable to pause for key intput. Received error: %s", 
+							err.Error(),
+						)	
+					}
+					break
+				}
+			}	
+		} else {
+			for key != keyboard.KeyCtrlX && key != keyboard.KeyCtrlC {
+				if _, key, err = keyboard.GetKey(); err != nil {
+					logger.ErrorMessage(
+						"ConnectSpace: Unable to pause for key intput. Received error: %s", 
+						err.Error(),
+					)
+					break
+				}
+			}	
+		}
+		// ensure all listeners 
+		// receive the event
+		disconnect <- true
+		disconnect <- true
+	}()
+
 	// tailscale daemon starts background network mesh connection services
 	tsd = tailscale.NewTailscaleDaemon(
 		filepath.Join(home, ".cb", strings.ToLower(deviceContext.GetDevice().Name)), 
@@ -133,23 +176,6 @@ func ConnectSpace(space userspace.SpaceNode) {
 	)
 	tsc.AddSplitDestinations(cachedIPs)
 	
-	// trap keyboard exit/termination event
-	disconnect := make(chan bool, 2)
-	if err := keyboard.Open(); err != nil {
-		cbcli_utils.ShowErrorAndExit(err.Error())
-	}
-	go func() {
-		for key != keyboard.KeyCtrlX && key != keyboard.KeyCtrlC {
-			if _, key, err = keyboard.GetKey(); err != nil {
-				cbcli_utils.ShowErrorAndExit(err.Error())
-			}
-		}
-		// ensure all listeners 
-		// receive the event
-		disconnect <- true
-		disconnect <- true
-	}()
-
 	// cleanup on exit
 	defer func() {
 		_ = keyboard.Close()
@@ -163,6 +189,7 @@ func ConnectSpace(space userspace.SpaceNode) {
 		)
 		cbcli_config.ShutdownSpinner.Start()
 
+		// terminate and cleanup tailscale connection
 		if err = tsc.Disconnect(); err != nil {
 			logger.DebugMessage("Error disconnecting tailscale client: %s", err.Error())
 		}
