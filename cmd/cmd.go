@@ -220,13 +220,13 @@ func Execute() {
 		os.Exit(1)
 	}
 
-	if cbcli_config.Config != nil {		
-		if admin, _ := run.IsAdmin(); !admin {
+	if cbcli_config.Config != nil {
+		if admin, _ := run.IsAdmin(); admin && os.Getenv("__CB_RUN_AS_ROOT__") == "1" {
+			logger.TraceMessage("Config has not been saved as CLI was re-spawned as root or with elevated privileges.")
+		} else {
 			if err = cbcli_config.Config.Save(); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
-			}	
-		} else {
-			logger.TraceMessage("Config has not been saved as CLI was run as root or with elevated privileges.")
+			}
 		}
 	}
 }
