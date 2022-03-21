@@ -88,7 +88,7 @@ func Authenticate(config config.Config, loginMessages ...string) error {
 		}
 		
 		s := spinner.New(
-			spinner.CharSets[39], 
+			spinner.CharSets[cbcli_config.SpinnerNetworkType], 
 			100*time.Millisecond,
 			spinner.WithSuffix(" Waiting for authentication to complete."),
 			spinner.WithFinalMSG(color.Green.Render("Authentication is complete. You are now signed in.\n")),

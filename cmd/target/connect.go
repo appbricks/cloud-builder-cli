@@ -152,7 +152,7 @@ func ConnectTarget(targetKey string) {
 			
 			fmt.Println()
 			s := spinner.New(
-				spinner.CharSets[39], 
+				spinner.CharSets[cbcli_config.SpinnerNetworkType], 
 				100*time.Millisecond,
 				spinner.WithSuffix(" Press CTRL-x or CTRL-c to disconnect."),
 				spinner.WithFinalMSG("VPN connection has been disconnected.\n"),

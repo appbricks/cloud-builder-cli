@@ -64,7 +64,7 @@ func SuspendTarget(targetKey string) {
 					state, _ := instance.State()
 					if state == cloud.StateRunning {						
 						s = spinner.New(
-							spinner.CharSets[39], 
+							spinner.CharSets[cbcli_config.SpinnerNetworkType], 
 							100*time.Millisecond,
 							spinner.WithSuffix(fmt.Sprintf(" Stopping instance \"%s\".", name)),
 							spinner.WithFinalMSG(fmt.Sprintf("Instance \"%s\" stopped.\n\n", name)),

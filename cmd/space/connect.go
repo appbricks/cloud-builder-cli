@@ -181,7 +181,7 @@ func ConnectSpace(space userspace.SpaceNode) {
 		_ = keyboard.Close()
 
 		cbcli_config.ShutdownSpinner = spinner.New(
-			spinner.CharSets[11], 
+			spinner.CharSets[cbcli_config.SpinnerShutdownType], 
 			100*time.Millisecond,
 			spinner.WithSuffix(" Shutting down background services."),
 			spinner.WithFinalMSG(""),
@@ -232,7 +232,7 @@ func ConnectSpace(space userspace.SpaceNode) {
 
 	fmt.Println()
 	s := spinner.New(
-		spinner.CharSets[39], 
+		spinner.CharSets[cbcli_config.SpinnerNetworkType], 
 		100*time.Millisecond,
 		spinner.WithSuffix(" Press CTRL-x or CTRL-c to disconnect."),
 		spinner.WithFinalMSG("Connection to space network mesh has been terminated.\n"),

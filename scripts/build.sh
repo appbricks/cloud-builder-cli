@@ -24,6 +24,8 @@ fi
 release_dir=${build_dir}/releases
 mkdir -p ${release_dir}
 
+WINTUN_VER=0.14.1
+
 function build() {
 
   local os=$1
@@ -96,7 +98,14 @@ function build() {
   if [[ $action == *:dev:* ]]; then
     GOOS=$os GOARCH=$arch go build -ldflags "$versionFlags" ${root_dir}/cmd/cb
   else
-    GOOS=$os GOARCH=$arch go build -ldflags "-s -w -X github.com/appbricks/cloud-builder-cli/cmd.isProd=yes $versionFlags" ${root_dir}/cmd/cb
+    GOOS=$os GOARCH=$arch go build -ldflags "-s -w $versionFlags" ${root_dir}/cmd/cb
+  fi
+  if [[ $os == windows ]]; then
+    curl -OL https://www.wintun.net/builds/wintun-${WINTUN_VER}.zip
+    unzip wintun-${WINTUN_VER}.zip
+    rm wintun-${WINTUN_VER}.zip
+    cp wintun/bin/${arch}/wintun.dll .
+    rm -fr wintun
   fi
   zip -r ${release_dir}/cb_${os}_${arch}.zip .
   popd
@@ -122,8 +131,8 @@ else
   build_timestamp=$(date +'%B %d, %Y at %H:%M %Z')
 
   # build release binaries for all supported architectures
-  build "darwin" "amd64"
-  build "linux" "amd64"
-  build "linux" "arm64"
+  # build "darwin" "amd64"
+  # build "linux" "amd64"
+  # build "linux" "arm64"
   build "windows" "amd64"
 fi

@@ -64,7 +64,7 @@ func ResumeTarget(targetKey string) {
 					state, _ := instance.State()
 					if state == cloud.StateStopped {
 						s = spinner.New(
-							spinner.CharSets[39], 
+							spinner.CharSets[cbcli_config.SpinnerNetworkType], 
 							100*time.Millisecond,
 							spinner.WithSuffix(fmt.Sprintf(" Starting instance \"%s\".", name)),
 							spinner.WithFinalMSG(fmt.Sprintf("Instance \"%s\" started.\n\n", name)),
