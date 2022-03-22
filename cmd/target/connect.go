@@ -16,8 +16,7 @@ import (
 	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
 	"github.com/appbricks/mycloudspace-client/mycsnode"
-	"github.com/appbricks/mycloudspace-client/vpn"
-	vpn_common "github.com/appbricks/mycloudspace-common/vpn"
+	"github.com/appbricks/mycloudspace-common/vpn"
 	"github.com/mevansam/goutils/utils"
 
 	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
@@ -61,11 +60,11 @@ func ConnectTarget(targetKey string) {
 
 		tgt *target.Target
 
-		isAdmin bool
+		isAdmin bool 
 
-		vpnConfigData vpn_common.ConfigData
-		vpnConfig     vpn_common.Config
-		vpnClient     vpn_common.Client
+		vpnConfigData vpn.ConfigData
+		vpnConfig     vpn.Config
+		vpnClient     vpn.Client
 
 		fileInfo           os.FileInfo
 		configInstructions string
@@ -135,9 +134,23 @@ func ConnectTarget(targetKey string) {
 			}
 			defer func() {
 				_ = keyboard.Close()
+
+				cbcli_config.ShutdownSpinner = spinner.New(
+					spinner.CharSets[cbcli_config.SpinnerShutdownType], 
+					100*time.Millisecond,
+					spinner.WithSuffix(" Shutting down background services."),
+					spinner.WithFinalMSG(""),
+					spinner.WithHiddenCursor(true),
+				)
+				cbcli_config.ShutdownSpinner.Start()
+
 				if err = vpnClient.Disconnect(); err != nil {
 					logger.DebugMessage("Error disconnecting from VPN: %s", err.Error())
 				}
+				// delete vpn configuration
+				if err = vpnConfigData.Delete(); err != nil {
+					logger.DebugMessage("connect(): Error deleting vpn config data: %s", err.Error())
+				}				
 			}()
 
 			disconnect := make(chan bool)
@@ -173,13 +186,6 @@ func ConnectTarget(targetKey string) {
 			setStatus()
 			s.Start()
 
-			defer func() {
-				// delete vpn configuration
-				if err = vpnConfigData.Delete(); err != nil {
-					logger.DebugMessage("connect(): Error deleting vpn config data: %s", err.Error())
-				}
-			}()
-
 			for {
 				select {
 				case <-disconnect:
@@ -202,7 +208,7 @@ func ConnectTarget(targetKey string) {
 	)
 }
 
-func getVPNConfig(tgt *target.Target) (vpn_common.ConfigData, vpn_common.Config) {
+func getVPNConfig(tgt *target.Target) (vpn.ConfigData, vpn.Config) {
 
 	var (
 		err error
@@ -210,8 +216,8 @@ func getVPNConfig(tgt *target.Target) (vpn_common.ConfigData, vpn_common.Config)
 		apiClient       *mycsnode.ApiClient		
 		isAuthenticated bool
 
-		vpnConfigData vpn_common.ConfigData
-		vpnConfig     vpn_common.Config
+		vpnConfigData vpn.ConfigData
+		vpnConfig     vpn.Config
 	)
 
 	if err = tgt.LoadRemoteRefs(); err != nil {
@@ -230,7 +236,7 @@ func getVPNConfig(tgt *target.Target) (vpn_common.ConfigData, vpn_common.Config)
 	if vpnConfigData, err = vpn.NewVPNConfigData(apiClient); err != nil {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}	
-	if vpnConfig, err = vpn_common.NewConfigFromTarget(vpnConfigData); err != nil {
+	if vpnConfig, err = vpn.NewConfigFromTarget(vpnConfigData); err != nil {
 		logger.DebugMessage("Error loading VPN configuration: %s", err.Error())
 		cbcli_utils.ShowErrorAndExit("Unable to retrieve VPN configuration. This could be because your VPN server is still starting up or in the process of shutting down. Please try again.")
 	}
