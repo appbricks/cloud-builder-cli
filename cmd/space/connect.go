@@ -53,8 +53,6 @@ management dashboard.
 	Args: cobra.ExactArgs(3),
 }
 
-var overrideInterruptEvent = func(disconnect chan bool) error { return nil }
-
 func ConnectSpace(space userspace.SpaceNode) {
 
 	var (
@@ -116,9 +114,25 @@ func ConnectSpace(space userspace.SpaceNode) {
 
 	// trap keyboard exit/termination event
 	disconnect := make(chan bool, 2)
-	if err = overrideInterruptEvent(disconnect); err != nil {
-		cbcli_utils.ShowErrorAndExit(err.Error())	
+
+	if runtime.GOOS == "windows" {
+		// ctrl-c is not trapped correctly in windows
+		// as we also wait on keyboard. this handler
+		// traps the event at the win32 API and handles
+		// the interrupt to the connection.
+		if err = run.HandleInterruptEvent(
+			func() bool {
+				// ensure all listeners 
+				// receive the event
+				disconnect <- true
+				disconnect <- true
+				return true
+			},
+		); err != nil {
+			cbcli_utils.ShowErrorAndExit(err.Error())	
+		}	
 	}
+
 	if err := keyboard.Open(); err != nil {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}
