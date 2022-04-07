@@ -39,7 +39,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/peterh/liner v1.2.2
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
-	github.com/sirupsen/logrus v1.8.1 // indirect
+	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
@@ -98,7 +98,7 @@ require (
 	github.com/go-playground/validator/v10 v10.10.0 // indirect
 	github.com/gobuffalo/packd v1.0.1 // indirect
 	github.com/goccy/go-json v0.9.4 // indirect
-	github.com/godbus/dbus/v5 v5.0.6 // indirect
+	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/golang-jwt/jwt/v4 v4.3.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect

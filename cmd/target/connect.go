@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/briandowns/spinner"
@@ -82,12 +83,11 @@ func ConnectTarget(targetKey string) {
 			if fileInfo, err = os.Stat(downloadDir); err != nil {
 				if os.IsNotExist(err) {
 					downloadDir = home
+				} else if fileInfo != nil && !fileInfo.IsDir() {
+					downloadDir = home
 				} else {
 					cbcli_utils.ShowErrorAndExit(err.Error())
 				}
-			}
-			if !fileInfo.IsDir() {
-				downloadDir = home
 			}
 			
 			// load target and retrieve vpn config
@@ -129,9 +129,57 @@ func ConnectTarget(targetKey string) {
 			if err = vpnClient.Connect(); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
+
+			// trap keyboard exit/termination event
+			disconnect := make(chan bool)
+
+			if runtime.GOOS == "windows" {
+				// ctrl-c is not trapped correctly in windows
+				// as we also wait on keyboard. this handler
+				// traps the event at the win32 API and handles
+				// the interrupt to the connection.
+				if err = run.HandleInterruptEvent(
+					func() bool {
+						disconnect <- true
+						return true
+					},
+				); err != nil {
+					cbcli_utils.ShowErrorAndExit(err.Error())	
+				}	
+			}
+			
 			if err := keyboard.Open(); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
+			go func() {
+				if runtime.GOOS == "windows" {
+					// don't handle ctrl-c for windows as that
+					// is handled via the interrupt event handler
+					for key != keyboard.KeyCtrlX {
+						if _, key, err = keyboard.GetKey(); err != nil {
+							if err.Error() != "operation canceled" {
+								logger.ErrorMessage(
+									"ConnectSpace: Unable to pause for key input. Received error: %s", 
+									err.Error(),
+								)	
+							}
+							break
+						}
+					}	
+				} else {
+					for key != keyboard.KeyCtrlX && key != keyboard.KeyCtrlC {
+						if _, key, err = keyboard.GetKey(); err != nil {
+							logger.ErrorMessage(
+								"ConnectSpace: Unable to pause for key input. Received error: %s", 
+								err.Error(),
+							)
+							break
+						}
+					}	
+				}
+				disconnect <- true
+			}()
+
 			defer func() {
 				_ = keyboard.Close()
 
@@ -153,16 +201,6 @@ func ConnectTarget(targetKey string) {
 				}				
 			}()
 
-			disconnect := make(chan bool)
-			go func() {
-				for key != keyboard.KeyCtrlX && key != keyboard.KeyCtrlC {
-					if _, key, err = keyboard.GetKey(); err != nil {
-						cbcli_utils.ShowErrorAndExit(err.Error())
-					}
-				}
-				disconnect <- true
-			}()
-			
 			fmt.Println()
 			s := spinner.New(
 				spinner.CharSets[cbcli_config.SpinnerNetworkType], 
