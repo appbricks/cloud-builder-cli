@@ -441,7 +441,10 @@ func initialize() {
 			// unregister this device using the prev owner's API client
 			deviceAPI = mycscloud.NewDeviceAPI(prevOwnerAPIClient)
 			if _, err = deviceAPI.UnRegisterDevice(oldDeviceID); err != nil {
-				panic(err)
+				logger.DebugMessage(
+					"initialize(): Unable to unregister device with ID '%s'. Registration of new device will continue: %s", 
+					oldDeviceID, err.Error(),
+				)
 			}
 		}		
 		// register this device using the new owner's API client
