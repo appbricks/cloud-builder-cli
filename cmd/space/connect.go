@@ -10,6 +10,7 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/eiannone/keyboard"
+	"github.com/gookit/color"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 
@@ -211,13 +212,14 @@ func ConnectSpace(space userspace.SpaceNode) {
 	}()
 	
 	// intitiate the connecting to the space network. 
-	// timeout after 5s if connection cannot be established
-	retryTimer := time.NewTicker(500 * time.Millisecond)	
+	// timeout after 10s if connection cannot be established
+	errStatus := " "
+	retryTimer := time.NewTicker(1000 * time.Millisecond)	
 	go func() {
 		defer retryTimer.Stop()
 
 		for timeoutCounter := 0;
-			timeoutCounter < 10; 
+			timeoutCounter < 100; 
 			timeoutCounter++ {
 
 			select {
@@ -229,18 +231,20 @@ func ConnectSpace(space userspace.SpaceNode) {
 					connectFlags.useSpaceDNS, 
 					connectFlags.egressViaSpace,
 				); err != nil {
-					cbcli_utils.ShowErrorMessage(
-						fmt.Sprintf(
-							"Failed to initiate login to the space network mesh via the client: %s", 
-							err.Error(),
-						),
+					logger.ErrorMessage(
+						"ConnectSpace(): Failed to initiate login to the space network mesh via the client: %s", 
+						err.Error(),
 					)
+					errStatus = color.Red.Render(" (Mesh login failed) ")
 				} else {
+					errStatus = " "
 					return
 				}	
 			}
 		}
-		cbcli_utils.ShowErrorMessage("Timed out while attempting to connect to space network mesh.")
+		fmt.Println()
+		cbcli_utils.ShowErrorMessage("Timed out while attempting to connect to space network mesh. You may not be authorized to connect.")
+
 		disconnect <- true
 	}()
 
@@ -266,7 +270,7 @@ func ConnectSpace(space userspace.SpaceNode) {
 				utils.ByteCountIEC(recd),
 			)	
 		} else {
-			s.Prefix = status + " "
+			s.Prefix = status + errStatus
 		}
 	}
 	setStatus()
