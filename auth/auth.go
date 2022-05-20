@@ -226,7 +226,7 @@ func AuthorizeDeviceAndUser(config config.Config) error {
 				} else {
 					user.Active = false
 				}
-				if _, _, err = deviceAPI.AddDeviceUser(deviceContext.GetDevice().DeviceID); err != nil {
+				if _, _, err = deviceAPI.AddDeviceUser(deviceContext.GetDevice().DeviceID, ""); err != nil {
 					return err
 				}
 				fmt.Println()

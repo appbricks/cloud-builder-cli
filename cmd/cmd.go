@@ -32,6 +32,7 @@ import (
 	"github.com/mevansam/goutils/run"
 
 	"github.com/appbricks/cloud-builder-cli/cmd/cloud"
+	"github.com/appbricks/cloud-builder-cli/cmd/device"
 	"github.com/appbricks/cloud-builder-cli/cmd/initialize"
 	"github.com/appbricks/cloud-builder-cli/cmd/recipe"
 	"github.com/appbricks/cloud-builder-cli/cmd/space"
@@ -288,8 +289,8 @@ func initConfig() {
 	eventPublisher := mycscloud.NewEventPublisher(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config)
 	cbcli_config.MonitorService = monitors.NewMonitorService(
 		eventPublisher, 
-		1 /* publish monitor events every 1s */, 
-		1000 /* collect counter metrics every 1s */,
+		5 /* publish monitor events every 5s */, 
+		5000 /* collect counter metrics every 5s */,
 	)
 	if err = cbcli_config.MonitorService.Start(); err != nil {
 		logger.DebugMessage("Failed to start monitor service: %s", err.Error())
@@ -368,6 +369,7 @@ func addCommands() {
 	rootCmd.AddCommand(initialize.InitCommand)
 	rootCmd.AddCommand(logoutCommand)
 	rootCmd.AddCommand(cloud.CloudCommands)
+	rootCmd.AddCommand(device.DeviceCommands)
 	rootCmd.AddCommand(recipe.RecipeCommands)
 	rootCmd.AddCommand(target.TargetCommands)
 	rootCmd.AddCommand(space.SpaceCommands)

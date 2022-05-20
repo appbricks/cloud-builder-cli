@@ -455,6 +455,7 @@ func initialize() {
 			system.GetDeviceVersion(cbcli_config.ClientType, cbcli_config.Version),
 			"", 
 			device.RSAPublicKey, 
+			"",
 		); err != nil {
 			panic(err)
 		}
