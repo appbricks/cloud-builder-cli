@@ -44,6 +44,16 @@ func DeleteUser(deviceName string, userName string) {
 	if device = deviceContext.GetManagedDevice(deviceName); device == nil {
 		cbcli_utils.ShowErrorAndExit("Not a valid managed device name.")
 	}
+	userExists := false
+	for _, u := range device.DeviceUsers {
+		if u.Name == userName {
+			userExists = true
+			break
+		}
+	}
+	if !userExists {
+		cbcli_utils.ShowErrorAndExit("Not a valid device user.")
+	}
 
 	apiClient := api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config)
 	userAPI := mycscloud.NewUserAPI(apiClient)
@@ -52,7 +62,7 @@ func DeleteUser(deviceName string, userName string) {
 		cbcli_utils.ShowErrorAndExit("Failed to lookup user name")
 	}
 	numUsers := len(users)
-	if numUsers != 1 {
+	if numUsers == 0 || (numUsers > 0 && users[0].Name != userName) {
 		cbcli_utils.ShowErrorAndExit("Not a valid user name.")
 	}
 	user = users[0]

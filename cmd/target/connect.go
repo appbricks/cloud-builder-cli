@@ -77,6 +77,10 @@ func ConnectTarget(targetKey string) {
 
 	if tgt, err = cbcli_config.Config.TargetContext().GetTarget(targetKey); err == nil && tgt != nil {
 
+		if tgt.GetStatus() != "running" {
+			ResumeTarget(targetKey)
+		}
+
 		if connectFlags.download {
 			home, _ := homedir.Dir()
 			downloadDir := filepath.Join(home, "Downloads")

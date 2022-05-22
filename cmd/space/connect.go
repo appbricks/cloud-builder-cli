@@ -16,7 +16,9 @@ import (
 
 	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/userspace"
+	"github.com/appbricks/mycloudspace-client/mycsnode"
 	"github.com/appbricks/mycloudspace-client/tailscale"
+	"github.com/appbricks/mycloudspace-common/vpn"
 	"github.com/mevansam/goutils/logger"
 	"github.com/mevansam/goutils/run"
 	"github.com/mevansam/goutils/utils"
@@ -27,6 +29,9 @@ import (
 
 var connectFlags = struct {
 	commonFlags
+
+	managedDevice     string
+	managedDeviceUser string
 
 	useSpaceDNS    bool
 	egressViaSpace bool
@@ -56,6 +61,29 @@ management dashboard.
 
 func ConnectSpace(space userspace.SpaceNode) {
 
+	if space.GetStatus() != "running" {
+		cbcli_utils.ShowErrorAndExit(
+			fmt.Sprintf(
+				"Space \"%s\" in \"%s\" region \"%s\" is not online.",
+				space.GetSpaceName(), space.GetIaaS(), space.GetRegion(),
+			),
+		)
+		// TODO: if the current logged in user has admin access he should be able to resume the space
+	}
+
+	if len(connectFlags.managedDevice) == 0 {
+		connectToSpaceNetwork(space)
+	} else {
+		// if managed device option is provided we 
+		// simply create download a space connection 
+		// configuration for configuring a native VPN 
+		// client to connect to the space network
+		downloadConnectConfig(space)
+	}
+}
+
+func connectToSpaceNetwork(space userspace.SpaceNode) {
+	
 	var (
 		err error
 
@@ -74,16 +102,6 @@ func ConnectSpace(space userspace.SpaceNode) {
 
 	deviceContext := cbcli_config.Config.DeviceContext()
 
-	if space.GetStatus() != "running" {
-		cbcli_utils.ShowErrorAndExit(
-			fmt.Sprintf(
-				"Space \"%s\" in \"%s\" region \"%s\" is not online.",
-				space.GetSpaceName(), space.GetIaaS(), space.GetRegion(),
-			),
-		)
-		// TODO: if the current logged in user has admin access he should be able to resume the space
-	}
-	
 	// re-spawn the CLI with elevated privileges 
 	// if it is not running cli with such access
 	if isAdmin, err = run.IsAdmin(); err != nil {
@@ -293,8 +311,110 @@ func init() {
 	flags.SortFlags = false
 	bindCommonFlags(flags, &(connectFlags.commonFlags))
 
+	flags.StringVarP(&connectFlags.managedDevice, "device", "d", "", 
+		"managed device to download connection config for")
+	flags.StringVarP(&connectFlags.managedDeviceUser, "user", "u", "", 
+		"user of managed device to create connection config for")
+
 	flags.BoolVarP(&connectFlags.useSpaceDNS, "user-space-dns", "n", false, 
 		"use space DNS services")
 	flags.BoolVarP(&connectFlags.egressViaSpace, "egress-via-space", "e", false, 
 		"egress all network traffic via space node")
+}
+
+func downloadConnectConfig(space userspace.SpaceNode) {
+
+	var (
+		err error
+
+		home     string
+		fileInfo os.FileInfo
+
+		managedDevice      *userspace.Device
+		managedDeviceUser  *userspace.User
+		configInstructions string
+
+		apiClient       *mycsnode.ApiClient
+		isAuthenticated bool
+
+		vpnConfigData vpn.ConfigData
+		vpnConfig     vpn.Config
+	)
+
+	deviceContext := cbcli_config.Config.DeviceContext()
+
+	// if managed device option is provided we 
+	// simply create download a space connection 
+	// configuration for configuring a native VPN 
+	// client to connect to the space network
+	if managedDevice = deviceContext.GetManagedDevice(connectFlags.managedDevice); managedDevice == nil {
+		cbcli_utils.ShowErrorAndExit("Not a valid managed device name.")
+	}
+	if len(connectFlags.managedDeviceUser) > 0 {
+		for _, u := range managedDevice.DeviceUsers {
+			if u.Name == connectFlags.managedDeviceUser {
+				managedDeviceUser = u
+				break
+			}
+		}
+		if managedDeviceUser == nil {
+			cbcli_utils.ShowErrorAndExit("Not a valid managed device user.")
+		}	
+	}
+
+	home, err = homedir.Dir()
+	if err != nil {
+		cbcli_utils.ShowErrorAndExit(err.Error())
+	}	
+	downloadDir := filepath.Join(home, "Downloads")
+	if fileInfo, err = os.Stat(downloadDir); err != nil {
+		if os.IsNotExist(err) {
+			downloadDir = home
+		} else if fileInfo != nil && !fileInfo.IsDir() {
+			downloadDir = home
+		} else {
+			cbcli_utils.ShowErrorAndExit(err.Error())
+		}
+	}
+	
+	// load target and retrieve vpn config
+	if apiClient, err = mycsnode.NewApiClient(cbcli_config.Config, space); err != nil {
+		cbcli_utils.ShowErrorAndExit(err.Error())
+	}
+	if isAuthenticated, err = apiClient.Authenticate(); err != nil {
+		cbcli_utils.ShowErrorAndExit(err.Error())
+	}
+	if !isAuthenticated {
+		cbcli_utils.ShowErrorAndExit("Authenticate with space target failed.")
+	}
+
+	if vpnConfigData, err = vpn.NewVPNConfigData(&nodeConnectService{
+		ApiClient:           apiClient,
+		managedDeviceID:     managedDevice.DeviceID,
+		managedDeviceUserID: managedDeviceUser.UserID,
+	}); err != nil {
+		cbcli_utils.ShowErrorAndExit(err.Error())
+	}	
+	if vpnConfig, err = vpn.NewConfigFromTarget(vpnConfigData); err != nil {
+		logger.DebugMessage("Error loading VPN configuration: %s", err.Error())
+		cbcli_utils.ShowErrorAndExit("Unable to retrieve VPN configuration. This could be because your VPN server is still starting up or in the process of shutting down. Please try again.")
+	}
+
+	// save retrieved config
+	if configInstructions, err = vpnConfig.Save(downloadDir); err != nil {
+		cbcli_utils.ShowErrorAndExit(err.Error())
+	}
+	fmt.Println()
+	fmt.Println(configInstructions)
+}
+
+type nodeConnectService struct {
+	*mycsnode.ApiClient
+	
+	managedDeviceID, 
+	managedDeviceUserID string
+}
+
+func (s *nodeConnectService) Connect() (*vpn.ServiceConfig, error) {
+	return s.CreateConnectConfig(s.managedDeviceID, s.managedDeviceUserID)
 }
