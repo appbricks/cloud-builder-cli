@@ -306,22 +306,6 @@ func connectToSpaceNetwork(space userspace.SpaceNode) {
 	}
 }
 
-func init() {
-	flags := connectCommand.Flags()
-	flags.SortFlags = false
-	bindCommonFlags(flags, &(connectFlags.commonFlags))
-
-	flags.StringVarP(&connectFlags.managedDevice, "device", "d", "", 
-		"managed device to download connection config for")
-	flags.StringVarP(&connectFlags.managedDeviceUser, "user", "u", "", 
-		"user of managed device to create connection config for")
-
-	flags.BoolVarP(&connectFlags.useSpaceDNS, "user-space-dns", "n", false, 
-		"use space DNS services")
-	flags.BoolVarP(&connectFlags.egressViaSpace, "egress-via-space", "e", false, 
-		"egress all network traffic via space node")
-}
-
 func downloadConnectConfig(space userspace.SpaceNode) {
 
 	var (
@@ -342,6 +326,9 @@ func downloadConnectConfig(space userspace.SpaceNode) {
 	)
 
 	deviceContext := cbcli_config.Config.DeviceContext()
+	if !auth.NewRoleMask(auth.Admin).LoggedInUserHasRole(deviceContext, space) {
+		cbcli_utils.ShowErrorAndExit("Only device admins can download space connect configurations.")
+	}
 
 	// if managed device option is provided we 
 	// simply create download a space connection 
@@ -359,7 +346,7 @@ func downloadConnectConfig(space userspace.SpaceNode) {
 		}
 		if managedDeviceUser == nil {
 			cbcli_utils.ShowErrorAndExit("Not a valid managed device user.")
-		}	
+		}
 	}
 
 	home, err = homedir.Dir()
@@ -417,4 +404,20 @@ type nodeConnectService struct {
 
 func (s *nodeConnectService) Connect() (*vpn.ServiceConfig, error) {
 	return s.CreateConnectConfig(s.managedDeviceID, s.managedDeviceUserID)
+}
+
+func init() {
+	flags := connectCommand.Flags()
+	flags.SortFlags = false
+	bindCommonFlags(flags, &(connectFlags.commonFlags))
+
+	flags.StringVarP(&connectFlags.managedDevice, "device", "d", "", 
+		"managed device to download connection config for (device admins only)")
+	flags.StringVarP(&connectFlags.managedDeviceUser, "user", "u", "", 
+		"user of managed device to create connection config for (device admins only)")
+
+	flags.BoolVarP(&connectFlags.useSpaceDNS, "user-space-dns", "n", false, 
+		"use space DNS services")
+	flags.BoolVarP(&connectFlags.egressViaSpace, "egress-via-space", "e", false, 
+		"egress all network traffic via space node")
 }
