@@ -384,7 +384,9 @@ func downloadConnectConfig(space userspace.SpaceNode) {
 	}	
 	if vpnConfig, err = vpn.NewConfigFromTarget(vpnConfigData); err != nil {
 		logger.DebugMessage("Error loading VPN configuration: %s", err.Error())
-		cbcli_utils.ShowErrorAndExit("Unable to retrieve VPN configuration. This could be because your VPN server is still starting up or in the process of shutting down. Please try again.")
+		cbcli_utils.ShowErrorAndExit(
+			"Unable to retrieve VPN configuration. This could be because your VPN server " + 
+			"is still starting up or in the process of shutting down. Please try again.")
 	}
 
 	// save retrieved config
@@ -393,6 +395,13 @@ func downloadConnectConfig(space userspace.SpaceNode) {
 	}
 	fmt.Println()
 	fmt.Println(configInstructions)
+	cbcli_utils.ShowWarningMessage(
+		"If the space does not have an amin network configured this configuration " + 
+		"will fail next team the space node is restarted. To use static native " + 
+		"configurations the space network must be configured with an admin network " + 
+		"which will ensure the node has a static external IP.",
+	)
+	fmt.Println()
 }
 
 type nodeConnectService struct {
