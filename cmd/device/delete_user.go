@@ -44,6 +44,9 @@ func DeleteUser(deviceName string, userName string) {
 	if device = deviceContext.GetManagedDevice(deviceName); device == nil {
 		cbcli_utils.ShowErrorAndExit("Not a valid managed device name.")
 	}
+	if ownerName, _ := deviceContext.GetOwnerUserName(); userName == ownerName {
+		cbcli_utils.ShowErrorAndExit("You cannot remove owner user from managed device.")
+	}
 	userExists := false
 	for _, u := range device.DeviceUsers {
 		if u.Name == userName {

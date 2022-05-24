@@ -338,15 +338,23 @@ func downloadConnectConfig(space userspace.SpaceNode) {
 		cbcli_utils.ShowErrorAndExit("Not a valid managed device name.")
 	}
 	if len(connectFlags.managedDeviceUser) > 0 {
-		for _, u := range managedDevice.DeviceUsers {
-			if u.Name == connectFlags.managedDeviceUser {
-				managedDeviceUser = u
-				break
+		if ownerName, _ := deviceContext.GetOwnerUserName(); connectFlags.managedDeviceUser == ownerName {
+			managedDeviceUser = deviceContext.GetOwner()
+
+		} else {
+			for _, u := range managedDevice.DeviceUsers {
+				if u.Name == connectFlags.managedDeviceUser {
+					managedDeviceUser = u
+					break
+				}
 			}
+			if managedDeviceUser == nil {
+				cbcli_utils.ShowErrorAndExit("Not a valid managed device user.")
+			}	
 		}
-		if managedDeviceUser == nil {
-			cbcli_utils.ShowErrorAndExit("Not a valid managed device user.")
-		}
+		
+	} else {
+		managedDeviceUser = deviceContext.GetOwner()
 	}
 
 	home, err = homedir.Dir()
