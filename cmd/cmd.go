@@ -289,7 +289,7 @@ func initConfig() {
 	eventPublisher := mycscloud.NewEventPublisher(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config)
 	cbcli_config.MonitorService = monitors.NewMonitorService(
 		eventPublisher, 
-		5 /* publish monitor events every 5s */, 
+		1 /* num of collections before publishing */, 
 		5000 /* collect counter metrics every 5s */,
 	)
 	if err = cbcli_config.MonitorService.Start(); err != nil {
