@@ -63,6 +63,8 @@ func ConnectTarget(targetKey string) {
 
 		isAdmin bool 
 
+		apiClient *mycsnode.ApiClient
+
 		vpnConfigData vpn.ConfigData
 		vpnConfig     vpn.Config
 		vpnClient     vpn.Client
@@ -81,6 +83,12 @@ func ConnectTarget(targetKey string) {
 			ResumeTarget(targetKey)
 		}
 
+		// create api client for target node
+		if apiClient, err = cbcli_config.SpaceNodes.GetApiClientForSpace(tgt); err != nil {
+			cbcli_utils.ShowErrorAndExit(err.Error())
+		}
+		defer cbcli_config.SpaceNodes.ReleaseApiClientForSpace(apiClient)
+
 		if connectFlags.download {
 			home, _ := homedir.Dir()
 			downloadDir := filepath.Join(home, "Downloads")
@@ -95,7 +103,7 @@ func ConnectTarget(targetKey string) {
 			}
 			
 			// load target and retrieve vpn config
-			vpnConfigData, vpnConfig = getVPNConfig(tgt)
+			vpnConfigData, vpnConfig = getVPNConfig(apiClient, tgt)
 			// save retrieved config
 			if configInstructions, err = vpnConfig.Save(downloadDir); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
@@ -125,7 +133,7 @@ func ConnectTarget(targetKey string) {
 			}
 
 			// load target and retrieve vpn config
-			vpnConfigData, vpnConfig = getVPNConfig(tgt)
+			vpnConfigData, vpnConfig = getVPNConfig(apiClient, tgt)
 			// create vpn client using retrieve config
 			if vpnClient, err = vpnConfig.NewClient(cbcli_config.MonitorService); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
@@ -250,31 +258,15 @@ func ConnectTarget(targetKey string) {
 	)
 }
 
-func getVPNConfig(tgt *target.Target) (vpn.ConfigData, vpn.Config) {
+func getVPNConfig(apiClient *mycsnode.ApiClient, tgt *target.Target) (vpn.ConfigData, vpn.Config) {
 
 	var (
 		err error
-
-		apiClient       *mycsnode.ApiClient		
-		isAuthenticated bool
 
 		vpnConfigData vpn.ConfigData
 		vpnConfig     vpn.Config
 	)
 
-	if err = tgt.LoadRemoteRefs(); err != nil {
-		cbcli_utils.ShowErrorAndExit(err.Error())
-	}
-
-	if apiClient, err = mycsnode.NewApiClient(cbcli_config.Config, tgt); err != nil {
-		cbcli_utils.ShowErrorAndExit(err.Error())
-	}
-	if isAuthenticated, err = apiClient.Authenticate(); err != nil {
-		cbcli_utils.ShowErrorAndExit(err.Error())
-	}
-	if !isAuthenticated {
-		cbcli_utils.ShowErrorAndExit("Authenticate with space target failed.")
-	}
 	if vpnConfigData, err = vpn.NewVPNConfigData(apiClient); err != nil {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}	

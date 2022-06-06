@@ -122,8 +122,7 @@ func ManageSpace(space userspace.SpaceNode) {
 	var (
 		err error
 
-		apiClient       *mycsnode.ApiClient
-		isAuthenticated bool
+		apiClient *mycsnode.ApiClient
 
 		users []*userspace.SpaceUser
 
@@ -134,15 +133,13 @@ func ManageSpace(space userspace.SpaceNode) {
 	if space.GetStatus() != "running" {
 		cbcli_utils.ShowErrorAndExit("Space target node needs to be in a running state in order manage it.")
 	}
-	if apiClient, err = mycsnode.NewApiClient(cbcli_config.Config, space); err != nil {
+
+	// create api client for target node
+	if apiClient, err = cbcli_config.SpaceNodes.GetApiClientForSpace(space); err != nil {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}
-	if isAuthenticated, err = apiClient.Authenticate(); err != nil {
-		cbcli_utils.ShowErrorAndExit(err.Error())
-	}
-	if !isAuthenticated {
-		cbcli_utils.ShowErrorAndExit("Authenticate with space target failed.")
-	}
+	defer cbcli_config.SpaceNodes.ReleaseApiClientForSpace(apiClient)
+
 	if users, err = apiClient.GetSpaceUsers(); err != nil {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}

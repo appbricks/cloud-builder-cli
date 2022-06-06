@@ -318,8 +318,7 @@ func downloadConnectConfig(space userspace.SpaceNode) {
 		managedDeviceUser  *userspace.User
 		configInstructions string
 
-		apiClient       *mycsnode.ApiClient
-		isAuthenticated bool
+		apiClient *mycsnode.ApiClient
 
 		vpnConfigData vpn.ConfigData
 		vpnConfig     vpn.Config
@@ -372,16 +371,11 @@ func downloadConnectConfig(space userspace.SpaceNode) {
 		}
 	}
 	
-	// load target and retrieve vpn config
-	if apiClient, err = mycsnode.NewApiClient(cbcli_config.Config, space); err != nil {
+	// create api client for target node
+	if apiClient, err = cbcli_config.SpaceNodes.GetApiClientForSpace(space); err != nil {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}
-	if isAuthenticated, err = apiClient.Authenticate(); err != nil {
-		cbcli_utils.ShowErrorAndExit(err.Error())
-	}
-	if !isAuthenticated {
-		cbcli_utils.ShowErrorAndExit("Authenticate with space target failed.")
-	}
+	defer cbcli_config.SpaceNodes.ReleaseApiClientForSpace(apiClient)
 
 	if vpnConfigData, err = vpn.NewVPNConfigData(&nodeConnectService{
 		ApiClient:           apiClient,
