@@ -93,19 +93,20 @@ func DeleteTarget(targetKey string) {
 			if !deleteFlags.keep {
 				context.DeleteTarget(tgt.Key())
 
-				// delete target to MyCS account
-				spaceAPI := mycscloud.NewSpaceAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
+				// delete target from MyCS account
 				if tgt.Recipe.IsBastion() {
 					// only recipes with a bastion instance is considered
 					// a space. TBD: this criteria should be revisited
-			
+					spaceAPI := mycscloud.NewSpaceAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
 					if _, err = spaceAPI.DeleteSpace(tgt); err != nil {
 						cbcli_utils.ShowErrorAndExit(err.Error())
 					}
+
 				} else {
-					// if _, err = spaceAPI.DeleteApp(tgt); err != nil {
-					// 	cbcli_utils.ShowErrorAndExit(err.Error())
-					// }
+					appAPI := mycscloud.NewAppAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
+					if _, err = appAPI.DeleteApp(tgt); err != nil {
+						cbcli_utils.ShowErrorAndExit(err.Error())
+					}
 				}
 			}
 
