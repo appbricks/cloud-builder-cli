@@ -100,8 +100,10 @@ func SSHTarget(targetKey string) {
 			instanceIndex--
 			managedInstance = managedInstances[instanceIndex]
 
-		} else {
+		} else if len(managedInstances) > 0 {
 			managedInstance = managedInstances[0]
+		} else {
+			cbcli_utils.ShowErrorAndExit("No managed instances have been deployed.")
 		}
 
 		if state, err = managedInstance.Instance.State(); err != nil {
