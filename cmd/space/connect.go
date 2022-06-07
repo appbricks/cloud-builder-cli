@@ -17,7 +17,7 @@ import (
 	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/userspace"
 	"github.com/appbricks/mycloudspace-client/mycsnode"
-	"github.com/appbricks/mycloudspace-client/tailscale"
+	"github.com/appbricks/mycloudspace-client/network"
 	"github.com/appbricks/mycloudspace-common/vpn"
 	"github.com/mevansam/goutils/logger"
 	"github.com/mevansam/goutils/run"
@@ -90,8 +90,8 @@ func connectToSpaceNetwork(space userspace.SpaceNode) {
 		home    string
 		isAdmin bool
 
-		tsd *tailscale.TailscaleDaemon
-		tsc *tailscale.TailscaleClient
+		tsd *network.TailscaleDaemon
+		tsc *network.TailscaleClient
 
 		cachedIPs []string
 
@@ -188,7 +188,7 @@ func connectToSpaceNetwork(space userspace.SpaceNode) {
 	}()
 
 	// tailscale daemon starts background network mesh connection services
-	tsd = tailscale.NewTailscaleDaemon(
+	tsd = network.NewTailscaleDaemon(
 		filepath.Join(home, ".cb", strings.ToLower(deviceContext.GetDevice().Name)), 
 		cbcli_config.SpaceNodes, 
 		cbcli_config.MonitorService, 
@@ -202,7 +202,7 @@ func connectToSpaceNetwork(space userspace.SpaceNode) {
 			fmt.Sprintf("Error starting space network mesh connection daemon: %s", err.Error()))
 	}
 	// tailscale client to issue commands to the background service
-	tsc = tailscale.NewTailscaleClient(
+	tsc = network.NewTailscaleClient(
 		tsd.TunnelDeviceName(),
 		deviceContext.GetDevice().Name,
 		cbcli_config.SpaceNodes,
