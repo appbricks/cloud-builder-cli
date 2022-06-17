@@ -414,7 +414,12 @@ type nodeConnectService struct {
 }
 
 func (s *nodeConnectService) Connect() (*vpn.ServiceConfig, error) {
-	return s.CreateConnectConfig(s.managedDeviceID, s.managedDeviceUserID)
+	return s.CreateConnectConfig(
+		connectFlags.useSpaceDNS, 
+		connectFlags.egressViaSpace,
+		s.managedDeviceID, 
+		s.managedDeviceUserID,
+	)
 }
 
 func init() {
