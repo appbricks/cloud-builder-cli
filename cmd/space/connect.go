@@ -325,7 +325,7 @@ func downloadConnectConfig(space userspace.SpaceNode) {
 	)
 
 	deviceContext := cbcli_config.Config.DeviceContext()
-	if !auth.NewRoleMask(auth.Admin).LoggedInUserHasRole(deviceContext, space) {
+	if !auth.NewRoleMask(auth.Admin).LoggedInUserHasRole(deviceContext, nil /* only checking if device admin */) {
 		cbcli_utils.ShowErrorAndExit("Only device admins can download space connect configurations.")
 	}
 
