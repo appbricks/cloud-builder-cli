@@ -18,6 +18,8 @@ replace github.com/mevansam/goutils => ../../mevansam/goutils
 
 replace github.com/mevansam/termtables => ../../mevansam/termtables
 
+replace tailscale.com => ../tailscale
+
 require (
 	github.com/appbricks/cloud-builder v0.0.0-00010101000000-000000000000
 	github.com/appbricks/mycloudspace-client v0.0.0-00010101000000-000000000000
@@ -195,5 +197,5 @@ require (
 	inet.af/netaddr v0.0.0-20211027220019-c74959edd3b6 // indirect
 	inet.af/peercred v0.0.0-20210906144145-0893ea02156a // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
-	tailscale.com v1.26.0 // indirect
+	tailscale.com v1.22.0 // indirect
 )
