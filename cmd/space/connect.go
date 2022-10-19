@@ -12,6 +12,7 @@ import (
 	"github.com/eiannone/keyboard"
 	"github.com/gookit/color"
 	"github.com/mitchellh/go-homedir"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/appbricks/cloud-builder/auth"
@@ -282,11 +283,17 @@ func connectToSpaceNetwork(space userspace.SpaceNode) {
 				logger.DebugMessage("Error retrieving tailscale connection status: %s", err.Error())
 				s.Prefix = "\nUnable to retrieve connection status.\n"
 			}
-			s.Prefix = fmt.Sprintf(
-				"Connected: recd %s, sent %s ", 
-				utils.ByteCountIEC(sent), 
-				utils.ByteCountIEC(recd),
-			)	
+			if logrus.GetLevel()  == logrus.TraceLevel {
+				if s.Prefix, err = tsd.WireguardStatusText(); err != nil {
+					s.Prefix = fmt.Sprintf("Error retrieving connection status: %s", err.Error())
+				}
+			} else {
+				s.Prefix = fmt.Sprintf(
+					"Connected: recd %s, sent %s ", 
+					utils.ByteCountIEC(sent), 
+					utils.ByteCountIEC(recd),
+				)
+			}
 		} else {
 			s.Prefix = status + errStatus
 		}
