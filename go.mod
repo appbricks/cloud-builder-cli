@@ -91,7 +91,6 @@ require (
 	github.com/gin-gonic/gin v1.7.7 // indirect
 	github.com/go-multierror/multierror v1.0.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
-	github.com/go-ping/ping v0.0.0-20211130115550-779d1e919534 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-playground/validator/v10 v10.10.0 // indirect
