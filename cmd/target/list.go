@@ -2,8 +2,8 @@ package target
 
 import (
 	"fmt"
-	"os"
 	"strconv"
+	"sync"
 
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
@@ -13,7 +13,6 @@ import (
 	"github.com/appbricks/cloud-builder/target"
 	"github.com/appbricks/cloud-builder/userspace"
 	"github.com/mevansam/goutils/logger"
-	"github.com/mevansam/goutils/utils"
 	"github.com/mevansam/termtables"
 
 	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
@@ -118,6 +117,30 @@ func ListTargets() {
 		appsRecipes []cookbook.CookbookRecipeInfo
 	)
 	
+	// refresh all targets
+	fmt.Print("\rQuerying targets...")
+
+	tgtsWithError := make(map[string]bool)
+	wg := sync.WaitGroup{}
+	for _, tgt := range cbcli_config.Config.TargetContext().TargetSet().GetTargets() {
+		wg.Add(1)
+
+		go func(t *target.Target) {
+			defer wg.Done()
+
+			if err = t.LoadRemoteRefs(); err != nil {
+				logger.DebugMessage(
+					"Error loading target remote references for '%s': %s",
+					t.Key(), err.Error(),
+				)
+				tgtsWithError[t.Key()] = true
+
+			} else {
+				tgtsWithError[t.Key()] = false
+			}
+		}(tgt)
+	}
+
 	for _, r := range cbcli_config.Config.TargetContext().Cookbook().RecipeList() {
 		if r.IsBastion {
 			spacesRecipes = append(spacesRecipes, r)
@@ -126,11 +149,14 @@ func ListTargets() {
 		}
 	}
 
+	wg.Wait()
+	fmt.Print("\r                   ")
+
 	targetIndex = 0
 	targetList := []*target.Target{}
 
-	spacesTable := buildSpacesTable(spacesRecipes, &targetIndex, &targetList)
-	appsTable := buildAppsTable(appsRecipes, &targetIndex, &targetList)
+	spacesTable := buildSpacesTable(spacesRecipes, &targetIndex, &targetList, tgtsWithError)
+	appsTable := buildAppsTable(appsRecipes, &targetIndex, &targetList, tgtsWithError)
 
 	fmt.Println("\nThe following targets have been configured.")
 	fmt.Println(color.OpBold.Render("\nMy Cloud Spaces\n===============\n"))
@@ -188,12 +214,10 @@ func buildSpacesTable(
 	recipes []cookbook.CookbookRecipeInfo,
 	targetIndex *int,
 	targetList *[]*target.Target,
+	tgtsWithError map[string]bool,
 ) *termtables.Table  {
 
 	var (
-		err error
-		msg string
-
 		hasTargets bool
 
 		lastRecipeIndex,
@@ -238,14 +262,7 @@ func buildSpacesTable(
 
 					for _, tgt := range targets {
 
-						msg = fmt.Sprintf("\rQuerying %s...", tgt.Name())
-						fmt.Print(msg)
-
-						if err = tgt.LoadRemoteRefs(); err != nil {
-							logger.DebugMessage(
-								"Error loading target remote references for '%s': %s",
-								tgt.Key(), err.Error(),
-							)
+						if tgtsWithError[tgt.Key()] {
 							tableRow[5] = "error!"
 							tableRow[6] = ""
 
@@ -264,9 +281,6 @@ func buildSpacesTable(
 						tableRow[0] = ""
 						tableRow[1] = ""
 						tableRow[2] = ""
-
-						fmt.Print("\r")
-						utils.RepeatString(" ", len(msg), os.Stdout)
 					}
 					hasTargets = true
 				}
@@ -296,12 +310,10 @@ func buildAppsTable(
 	recipes []cookbook.CookbookRecipeInfo,
 	targetIndex *int,
 	targetList *[]*target.Target,
+	tgtsWithError map[string]bool,
 ) *termtables.Table {
 
 	var (
-		err error
-		msg string
-
 		hasTargets bool
 
 		lastRecipeIndex,
@@ -343,14 +355,7 @@ func buildAppsTable(
 			if len(targets) > 0 {
 				for _, tgt := range targets {
 
-					msg = fmt.Sprintf("\rQuerying %s...", tgt.Name())
-					fmt.Print(msg)
-
-					if err = tgt.LoadRemoteRefs(); err != nil {
-						logger.DebugMessage(
-							"Error loading target remote references for '%s': %s",
-							tgt.Key(), err.Error(),
-						)
+					if tgtsWithError[tgt.Key()] {						
 						tableRow[5] = "error!"
 						tableRow[6] = ""
 
@@ -376,9 +381,6 @@ func buildAppsTable(
 					}
 					tableRow[0] = ""
 					tableRow[1] = ""
-
-					fmt.Print("\r")
-					utils.RepeatString(" ", len(msg), os.Stdout)
 				}
 				hasTargets = true
 			}			
