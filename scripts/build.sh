@@ -15,7 +15,7 @@ fi
 [[ -e ${GOPATH}/bin/packr2 ]] || \
   go install github.com/gobuffalo/packr/v2/packr2@latest
 
-build_dir=${root_dir}/build
+build_dir=${root_dir}/.build
 if [[ $action == *:clean-all:* ]]; then
   # remove all build artifacts
   # and do a full build
