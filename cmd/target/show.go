@@ -57,9 +57,6 @@ func ShowTarget(targetKey string) {
 
 	if tgt, err = cbcli_config.Config.TargetContext().GetTarget(targetKey); err == nil && tgt != nil {
 
-		if err = tgt.LoadRemoteRefs(); err != nil {
-			cbcli_utils.ShowErrorAndExit(err.Error())
-		}
 		showNodeInfo(tgt)
 
 		if showFlags.config || showFlags.all {

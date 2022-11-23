@@ -51,15 +51,9 @@ func ResumeTarget(targetKey string) {
 
 	if tgt, err = cbcli_config.Config.TargetContext().GetTarget(targetKey); err == nil && tgt != nil {
 
-		if err = tgt.LoadRemoteRefs(); err != nil {
-			cbcli_utils.ShowErrorAndExit(err.Error())
-		}
 		if tgt.Status() == target.Shutdown {
 			fmt.Println()
-			if err = tgt.LoadRemoteRefs(); err != nil {
-				cbcli_utils.ShowErrorAndExit(err.Error())
-
-			} else if err = tgt.Resume(
+			if err = tgt.Resume(
 				func(name string, instance cloud.ComputeInstance) {
 					state, _ := instance.State()
 					if state == cloud.StateStopped {

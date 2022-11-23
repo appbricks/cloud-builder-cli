@@ -124,9 +124,6 @@ func LaunchTarget(targetKey string) {
 			tgt.CookbookTimestamp = tgt.Recipe.CookbookTimestamp()
 			context.SaveTarget(tgt.Key(), tgt)
 
-			if err = tgt.LoadRemoteRefs(); err != nil {
-				cbcli_utils.ShowErrorAndExit(err.Error())
-			}
 			showNodeInfo(tgt)
 		}
 		return

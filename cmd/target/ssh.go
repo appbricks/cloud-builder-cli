@@ -69,10 +69,6 @@ func SSHTarget(targetKey string) {
 	targets := cbcli_config.Config.TargetContext().TargetSet()
 	if tgt = targets.GetTarget(targetKey); tgt != nil {
 
-		if err = tgt.LoadRemoteRefs(); err != nil {
-			cbcli_utils.ShowErrorAndExit(err.Error())
-		}
-
 		managedInstances := tgt.ManagedInstances()
 		numInstances := len(managedInstances)
 		if numInstances > 1 {
