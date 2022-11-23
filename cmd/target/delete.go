@@ -21,7 +21,8 @@ import (
 var deleteFlags = struct {
 	commonFlags
 
-	keep bool
+	keep  bool
+	force bool
 }{}
 
 var deleteCommand = &cobra.Command{
@@ -74,7 +75,7 @@ func DeleteTarget(targetKey string) {
 		)
 
 		if response == tgt.DeploymentName() {
-			if tgt.Status() != target.Undeployed {
+			if deleteFlags.force || tgt.Status() != target.Undeployed {
 				if bldr, err = tgt.NewBuilder(os.Stdout, os.Stderr); err != nil {
 					cbcli_utils.ShowErrorAndExit(err.Error())
 				}
@@ -131,4 +132,5 @@ func init() {
 	bindCommonFlags(flags, &(deleteFlags.commonFlags))
 
 	flags.BoolVarP(&deleteFlags.keep, "keep", "k", false, "destroy deployed resources if any but do not delete the configuration")
+	flags.BoolVarP(&deleteFlags.force, "force", "f", false, "run delete on target even if status is undeployed")
 }
