@@ -167,7 +167,9 @@ jobs:
         body_path: doc/release-notes.md
         files: |
           .build/releases/cb_linux_amd64.zip
+          .build/releases/cb_linux_arm64.zip
           .build/releases/cb_darwin_amd64.zip
+          .build/releases/cb_darwin_arm64.zip
           .build/releases/cb_windows_amd64.zip
           LICENSE
       env:

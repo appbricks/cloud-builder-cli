@@ -131,9 +131,9 @@ else
   build_timestamp=$(date +'%B %d, %Y at %H:%M %Z')
 
   # build release binaries for all supported architectures
-  build "darwin" "amd64"
-  build "darwin" "arm64"
   build "linux" "amd64"
   build "linux" "arm64"
+  build "darwin" "amd64"
+  build "darwin" "arm64"
   build "windows" "amd64"
 fi
