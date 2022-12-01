@@ -106,7 +106,7 @@ jobs:
       uses: actions/upload-artifact@master
       with:
         name: cli-build-artifacts
-        path: ${{ github.workspace }}/go/src/github.com/appbricks/cloud-builder-cli/build/releases/
+        path: ${{ github.workspace }}/go/src/github.com/appbricks/cloud-builder-cli/.build/releases/
 
   release:
     needs: build
@@ -130,7 +130,7 @@ jobs:
       uses: actions/download-artifact@master
       with:
         name: cli-build-artifacts
-        path: build/releases
+        path: .build/releases
 
     # Create and tag release
     - name: Create release tag
@@ -166,9 +166,9 @@ jobs:
         prerelease: true
         body_path: doc/release-notes.md
         files: |
-          build/releases/cb_linux_amd64.zip
-          build/releases/cb_darwin_amd64.zip
-          build/releases/cb_windows_amd64.zip
+          .build/releases/cb_linux_amd64.zip
+          .build/releases/cb_darwin_amd64.zip
+          .build/releases/cb_windows_amd64.zip
           LICENSE
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
