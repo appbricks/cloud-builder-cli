@@ -20,6 +20,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime/pprof"
 	"syscall"
 
 	"github.com/gookit/color"
@@ -173,10 +174,12 @@ anonymized as it traverses the public provider networks.
 					// load space target nodes if 
 					// executing a target command
 					if _, isSpaceCmd := spaceCmds[cmdName]; isSpaceCmd {
+						fmt.Printf("Loading space targets...\r")
 						if cbcli_config.SpaceNodes, err = mycscloud.GetSpaceNodes(cbcli_config.Config, cbcli_config.AWS_USERSPACE_API_URL); err != nil {
 							logger.DebugMessage("Failed to load and merge remote space nodes with local targets: %s", err.Error())
 							cbcli_utils.ShowErrorAndExit("Failed to load user's space nodes.")
-						}								
+						}
+						fmt.Printf("                        \r")
 					}
 				}
 			}
@@ -188,7 +191,11 @@ func Execute() {
 
 	var (
 		err error
+
+		profileFile *os.File
 	)
+
+	profilingEnabled := false
 
 	defer func() {
 		if cbcli_config.MonitorService != nil {
@@ -196,6 +203,10 @@ func Execute() {
 		}
 		if cbcli_config.ShutdownSpinner != nil {
 			cbcli_config.ShutdownSpinner.Stop()
+		}
+
+		if profilingEnabled {
+			pprof.StopCPUProfile()
 		}
 	}()
 
@@ -212,6 +223,18 @@ func Execute() {
 				"Trace log-level is not supported in prod build. Resetting level to 'debug'.\n",
 			)
 			os.Setenv("CBS_LOGLEVEL", "debug")
+		}
+		
+	} else {		
+		profileFileName := os.Getenv("CBS_PROFILE_FILE")
+		if len(profileFileName) > 0 {
+			if profileFile, err = os.Create(profileFileName); err != nil {
+				cbcli_utils.ShowErrorAndExit(fmt.Sprintf("Unable to create CPU profile file: %s", err.Error()))
+			}
+			if err = pprof.StartCPUProfile(profileFile); err != nil {
+				cbcli_utils.ShowErrorAndExit(fmt.Sprintf("Unable to start profiling CB CLI executable: %s", err.Error()))
+			}
+			profilingEnabled = true
 		}
 	}
 	logger.Initialize()
@@ -350,7 +373,7 @@ func uploadConfig(key string, configData []byte, asOf int64) (int64, error) {
 }
 
 func setupCloseHandler() {
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
