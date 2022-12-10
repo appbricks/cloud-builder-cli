@@ -45,13 +45,31 @@ function build() {
     # remove embedded cookbook archive
     rm -fr ${root_dir}/cookbook/dist
 
+    cookbook_desc='This embedded cookbook contains recipes to launch MyCloudSpace space control nodes that manage the network of devices and applications connected to the space network mesh.'
+
     echo "Building cookbook at $cookbook_repo_path..."
     pushd $root_dir
     if [[ $action == *:clean:* ]]; then
       # clean will remove the cookbook build dist
-      $build_cookbook -r $cookbook_repo_path -b $cookbook_version -o $os -a $arch -c -v
+      $build_cookbook \
+        --recipe $cookbook_repo_path \
+        --git-branch $cookbook_version \
+        --cookbook-name spacenode \
+        --cookbook-desc "$cookbook_desc" \
+        --cookbook-version $cookbook_version \
+        --os-name $os \
+        --os-arch $arch \
+        --clean --verbose
     else
-      $build_cookbook -r $cookbook_repo_path -b $cookbook_version -o $os -a $arch -v
+      $build_cookbook \
+        --recipe $cookbook_repo_path \
+        --git-branch $cookbook_version \
+        --cookbook-name spacenode \
+        --cookbook-desc "$cookbook_desc" \
+        --cookbook-version $cookbook_version \
+        --os-name $os \
+        --os-arch $arch \
+        --verbose
     fi
     popd
 

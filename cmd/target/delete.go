@@ -79,7 +79,7 @@ func DeleteTarget(targetKey string) {
 				if bldr, err = tgt.NewBuilder(os.Stdout, os.Stderr); err != nil {
 					cbcli_utils.ShowErrorAndExit(err.Error())
 				}
-				if tgt.CookbookTimestamp != tgt.Recipe.CookbookTimestamp() {
+				if tgt.CookbookVersion != tgt.Recipe.CookbookVersion() {
 					// force re-initializing
 					if err = bldr.Initialize(); err != nil {
 						cbcli_utils.ShowErrorAndExit(err.Error())

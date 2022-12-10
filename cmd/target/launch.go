@@ -75,7 +75,7 @@ func LaunchTarget(targetKey string) {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
 		if launchFlags.init ||
-			tgt.CookbookTimestamp != tgt.Recipe.CookbookTimestamp() {
+			tgt.CookbookVersion != tgt.Recipe.CookbookVersion() {
 			// force re-initializing
 			if err = bldr.Initialize(); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
@@ -107,7 +107,7 @@ func LaunchTarget(targetKey string) {
 			if err = bldr.ShowLaunchPlan(); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
-			tgt.CookbookTimestamp = tgt.Recipe.CookbookTimestamp()
+			tgt.CookbookVersion = tgt.Recipe.CookbookVersion()
 			context.SaveTarget(tgt.Key(), tgt)
 
 		} else {
@@ -121,7 +121,7 @@ func LaunchTarget(targetKey string) {
 			logger.TraceMessage("Launch output: %# v", output)
 
 			tgt.Output = output
-			tgt.CookbookTimestamp = tgt.Recipe.CookbookTimestamp()
+			tgt.CookbookVersion = tgt.Recipe.CookbookVersion()
 			context.SaveTarget(tgt.Key(), tgt)
 
 			showNodeInfo(tgt)

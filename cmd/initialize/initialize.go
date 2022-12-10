@@ -3,7 +3,6 @@ package initialize
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -15,6 +14,7 @@ import (
 	"github.com/peterh/liner"
 	"github.com/spf13/cobra"
 
+	"github.com/appbricks/cloud-builder-cli/auth"
 	"github.com/appbricks/cloud-builder/userspace"
 	"github.com/appbricks/mycloudspace-client/api"
 	"github.com/appbricks/mycloudspace-client/mycscloud"
@@ -22,7 +22,6 @@ import (
 	"github.com/mevansam/goutils/crypto"
 	"github.com/mevansam/goutils/logger"
 
-	"github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
@@ -234,9 +233,7 @@ func initialize() {
 			if ownerKeyFile, err = line.Prompt("Path to save key file (you can drag/drop from a finder/explorer window to the terminal) : "); err != nil {
 				panic(err)
 			}
-			ownerKeyFile = strings.TrimSpace(
-				strings.TrimSuffix(strings.TrimSuffix(strings.TrimPrefix(strings.TrimPrefix(ownerKeyFile, "'"), "\""), "'"), "\""),
-			)
+			ownerKeyFile = strings.Trim(ownerKeyFile, " '\"")
 
 			if fi, err = os.Stat(ownerKeyFile); err != nil {
 				if os.IsNotExist(err) {
@@ -265,7 +262,7 @@ func initialize() {
 			if ownerKeyFilePEM, err = ownerKey.GetEncryptedPrivateKeyPEM([]byte(ownerKeyFilePassphrase)); err != nil {
 				panic(err)
 			}
-			if err = ioutil.WriteFile(ownerKeyFile, []byte(ownerKeyFilePEM), 0600); err != nil {
+			if err = os.WriteFile(ownerKeyFile, []byte(ownerKeyFilePEM), 0600); err != nil {
 				panic(err)
 			}
 

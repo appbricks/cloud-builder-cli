@@ -53,6 +53,9 @@ func authorizeSpaceNode(roleMask auth.RoleMask, commonFlags *commonFlags) func(c
 		var (
 			targetKey string
 		)
+
+		// ensure a user is logged in
+		cbcli_auth.AssertLoggedIn()(cmd, args)
 		
 		if len(commonFlags.region) == 0 {
 			cbcli_utils.ShowErrorAndExit("Please provide the region option for space lookup.")

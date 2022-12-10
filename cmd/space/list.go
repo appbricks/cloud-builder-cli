@@ -15,6 +15,7 @@ import (
 	"github.com/mevansam/goutils/run"
 	"github.com/mevansam/termtables"
 
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
@@ -32,6 +33,8 @@ List all available quick launch targets which are configured recipe
 instances. Targets will be enumerated only for clouds a recipe has
 been configured for.
 `,
+
+	PreRun: cbcli_auth.AssertLoggedIn(),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		ListSpaces()

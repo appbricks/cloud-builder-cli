@@ -58,20 +58,19 @@ func ListRecipes() {
 	spacesTable := buildTableOutput(spacesRecipes)
 	appsTable := buildTableOutput(appsRecipes)
 
-	fmt.Println("\nThis Cloud Builder cookbook supports launching the following recipes.")
+	fmt.Println("\nThis Cloud Builder configuration supports launching the following recipes.")
 	fmt.Println(color.OpBold.Render("\nSpaces\n======\n"))
 	if len(spacesRecipes) > 0 {
 		fmt.Println(spacesTable.Render())
 	} else {
-		cbcli_utils.ShowInfoMessage("No space recipes found...")
+		cbcli_utils.ShowInfoMessage("No space recipes found...\n")
 	}
 	fmt.Println(color.OpBold.Render("Applications\n============\n"))
 	if len(appsRecipes) > 0 {
 		fmt.Println(appsTable.Render())
 	} else {
-		cbcli_utils.ShowInfoMessage("No application recipes found...")
+		cbcli_utils.ShowInfoMessage("No application recipes found...\n")
 	}
-	fmt.Println()
 }
 
 func buildTableOutput(recipes []cookbook.CookbookRecipeInfo) *termtables.Table {
@@ -88,13 +87,15 @@ func buildTableOutput(recipes []cookbook.CookbookRecipeInfo) *termtables.Table {
 	table := termtables.CreateTable()
 	table.AddHeaders(
 		color.OpBold.Render("Name"),
+		color.OpBold.Render("Version"),
 		color.OpBold.Render("Description"),
 		color.OpBold.Render("Supported Clouds"),
 	)
 
-	tableRow := make([]interface{}, 3)
+	tableRow := make([]interface{}, 4)
 	for i, r := range recipes {
-		tableRow[0] = r.Name
+		tableRow[0] = r.RecipeKey
+		tableRow[1] = r.CookbookVersion
 
 		clouds = []string{}
 		for j, c := range r.IaaSList {
@@ -104,7 +105,7 @@ func buildTableOutput(recipes []cookbook.CookbookRecipeInfo) *termtables.Table {
 				// is assumed all iaas specific recipes will
 				// have the same description
 				recipe := cbcli_config.Config.TargetContext().
-					Cookbook().GetRecipe(r.Name, c.Name())
+					Cookbook().GetRecipe(r.RecipeKey, c.Name())
 				descLines = utils.SplitString(recipe.Description(), 0, 50)
 			}
 			clouds = append(clouds, c.Name())
@@ -112,7 +113,7 @@ func buildTableOutput(recipes []cookbook.CookbookRecipeInfo) *termtables.Table {
 
 		lenDescLines := len(descLines)
 		lenClouds := len(clouds)
-		if len(descLines) > len(clouds) {
+		if lenDescLines > lenClouds {
 			numLines = lenDescLines
 		} else {
 			numLines = lenClouds
@@ -120,17 +121,18 @@ func buildTableOutput(recipes []cookbook.CookbookRecipeInfo) *termtables.Table {
 
 		for j := 0; j < numLines; j++ {
 			if j < lenDescLines {
-				tableRow[1] = descLines[j]
-			} else {
-				tableRow[1] = ""
-			}
-			if j < lenClouds {
-				tableRow[2] = clouds[j]
+				tableRow[2] = descLines[j]
 			} else {
 				tableRow[2] = ""
 			}
+			if j < lenClouds {
+				tableRow[3] = clouds[j]
+			} else {
+				tableRow[3] = ""
+			}
 			table.AddRow(tableRow...)
 			tableRow[0] = ""
+			tableRow[1] = ""
 		}
 		if i < lastRecipesIndex {
 			table.AddSeparator()
@@ -154,7 +156,7 @@ func ListRecipesForCloud(cloud string) {
 
 			if c.Name() == cloud {
 				numClouds++
-				table.AddRow(r.Name)
+				table.AddRow(r.RecipeKey)
 				break
 			}
 		}

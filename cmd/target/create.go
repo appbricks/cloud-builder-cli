@@ -42,7 +42,7 @@ configured recipe template with a configured cloud template.
 	Args: cobra.ExactArgs(2),
 }
 
-func CreateTarget(recipeName, iaasName string) {
+func CreateTarget(recipeKey, iaasName string) {
 
 	var (
 		err error
@@ -62,7 +62,7 @@ func CreateTarget(recipeName, iaasName string) {
 	context := config.TargetContext()
 
 	if tgt, err = context.NewTarget(
-		recipeName, iaasName,
+		recipeKey, iaasName,
 	); err == nil && tgt != nil {
 
 		if _, err = tgt.UpdateKeys(); err != nil {
@@ -118,7 +118,7 @@ func CreateTarget(recipeName, iaasName string) {
 				if len(spaceTargets) == 0 {
 					cbcli_utils.ShowInfoMessage( 
 						"No space targets have been configured where application '%s' can be deployed to iaas '%s'.\n", 
-						recipeName, iaasName,
+						recipeKey, iaasName,
 					)
 					os.Exit(0)
 				}
@@ -195,7 +195,7 @@ func CreateTarget(recipeName, iaasName string) {
 			fmt.Sprintf(
 				"Unknown recipe \"%s\" for cloud \"%s\" given to the configure "+
 					"command. Run 'cb recipe list' to get list of available recipes.",
-				recipeName, iaasName,
+				recipeKey, iaasName,
 			),
 		)
 	}

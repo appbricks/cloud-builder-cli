@@ -316,9 +316,8 @@ func ImportPrivateKey(line *liner.State) (*crypto.RSAKey, error) {
 	if keyFile, err = line.Prompt("Path to key file (you can drag/drop from a finder/explorer window to the terminal) : "); err != nil {
 		return nil, err
 	}
-	keyFile = strings.TrimSpace(
-		strings.TrimSuffix(strings.TrimSuffix(strings.TrimPrefix(strings.TrimPrefix(keyFile, "'"), "\""), "'"), "\""),
-	)
+	keyFile = strings.Trim(keyFile, " '\"")
+	
 	if keyFilePassphrase, err = line.PasswordPrompt("Enter the key file passphrase : "); err != nil {
 		return nil, err
 	}
@@ -328,9 +327,37 @@ func ImportPrivateKey(line *liner.State) (*crypto.RSAKey, error) {
 	return key, nil
 }
 
+func AssertLoggedIn() func(cmd *cobra.Command, args []string) {
+	return func(cmd *cobra.Command, args []string) {
+		if !cbcli_config.Config.Initialized() {
+			cbcli_utils.ShowErrorAndExit(
+				fmt.Sprintf(
+					"You need to initialize the CLI and log in before you can invoke the command 'cb %s %s ...'", 
+					cmd.Parent().Name(), cmd.Name(),
+				),
+			)
+		}	
+		if !cbcli_config.Config.AuthContext().IsLoggedIn() {
+			cbcli_utils.ShowErrorAndExit(
+				fmt.Sprintf(
+					"You need to log in before you can invoke the command 'cb %s %s ...'", 
+					cmd.Parent().Name(), cmd.Name(),
+				),
+			)
+		}
+	}
+}
+
 func AssertAuthorized(roleMask auth.RoleMask, spaceNode userspace.SpaceNode) func(cmd *cobra.Command, args []string) {
 
 	return func(cmd *cobra.Command, args []string) {
+		if cbcli_config.Config.Initialized() {
+			return
+		}		
+		if spaceNode == nil {
+			// ensure a user is logged in
+			AssertLoggedIn()(cmd, args)
+		}
 		if !roleMask.LoggedInUserHasRole(cbcli_config.Config.DeviceContext(), spaceNode) {
 			
 			var accessType strings.Builder
@@ -345,20 +372,20 @@ func AssertAuthorized(roleMask auth.RoleMask, spaceNode userspace.SpaceNode) fun
 			if cmd.Parent() != nil {
 				cbcli_utils.ShowNoteMessage(
 					fmt.Sprintf(
-						"\nOnly %s can invoke command 'cb %s %s ...'\n", 
+						"\nOnly %s can invoke the command 'cb %s %s ...'\n", 
 						accessType.String(), cmd.Parent().Name(), cmd.Name(),
 					),
 				)		
 			} else {
 				cbcli_utils.ShowNoteMessage(
 					fmt.Sprintf(
-						"\nOnly %s can to invoke command 'cb %s'.\n", 
+						"\nOnly %s can to invoke the command 'cb %s'.\n", 
 						accessType.String(), cmd.Name(),
 					),
 				)
 			}
 			// reset command
-			cmd.Run = func(cmd *cobra.Command, args []string) {}			
+			cmd.Run = func(cmd *cobra.Command, args []string) {}
 		}	
 	}
 }

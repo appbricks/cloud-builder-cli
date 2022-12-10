@@ -212,7 +212,7 @@ func buildSpacesTable(
 
 	tableRow := make([]interface{}, 7)
 	for i, recipe := range recipes {
-		tableRow[0] = recipe.Name
+		tableRow[0] = recipe.RecipeKey
 
 		// flag to flag last row of the table which if not flagged
 		// will cause double separator lines at the end of the dable
@@ -225,7 +225,7 @@ func buildSpacesTable(
 
 			hasTargets = false
 			for _, region := range cloudProvider.GetRegions() {
-				targets := targets.Lookup(recipe.Name, cloudProvider.Name(), region.Name)
+				targets := targets.Lookup(recipe.RecipeKey, cloudProvider.Name(), region.Name)
 
 				if len(targets) > 0 {
 					tableRow[2] = region.Name
@@ -307,7 +307,7 @@ func buildAppsTable(
 
 	tableRow := make([]interface{}, 7)
 	for i, recipe := range recipes {
-		tableRow[0] = recipe.Name
+		tableRow[0] = recipe.RecipeKey
 
 		// flag to flag last row of the table which if not flagged
 		// will cause double separator lines at the end of the dable
@@ -319,7 +319,7 @@ func buildAppsTable(
 			tableRow[1] = cloudProvider.Name()
 
 			hasTargets = false
-			targets := targets.Lookup(recipe.Name, cloudProvider.Name())
+			targets := targets.Lookup(recipe.RecipeKey, cloudProvider.Name())
 
 			if len(targets) > 0 {
 				for _, tgt := range targets {

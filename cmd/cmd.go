@@ -32,6 +32,7 @@ import (
 	"github.com/mevansam/goutils/logger"
 	"github.com/mevansam/goutils/run"
 
+	"github.com/appbricks/cloud-builder-cli/cmd/app"
 	"github.com/appbricks/cloud-builder-cli/cmd/cloud"
 	"github.com/appbricks/cloud-builder-cli/cmd/device"
 	"github.com/appbricks/cloud-builder-cli/cmd/initialize"
@@ -393,6 +394,7 @@ func addCommands() {
 	rootCmd.AddCommand(logoutCommand)
 	rootCmd.AddCommand(cloud.CloudCommands)
 	rootCmd.AddCommand(device.DeviceCommands)
+	rootCmd.AddCommand(app.CookbookCommands)
 	rootCmd.AddCommand(recipe.RecipeCommands)
 	rootCmd.AddCommand(target.TargetCommands)
 	rootCmd.AddCommand(space.SpaceCommands)

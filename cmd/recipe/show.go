@@ -45,13 +45,13 @@ func ShowRecipe(name, cloud string) {
 	recipes := cookbook.RecipeList()
 
 	for _, r := range recipes {
-		if r.Name == name {
+		if r.RecipeKey == name {
 
 			validCloud := false
 			for _, c := range r.IaaSList {
 
 				if cloud == c.Name() {
-					recipe := cookbook.GetRecipe(r.Name, c.Name())
+					recipe := cookbook.GetRecipe(r.RecipeKey, c.Name())
 
 					if inputForm, err = recipe.InputForm(); err != nil {
 						// if this happens there is an internal
