@@ -54,7 +54,7 @@ func ResumeTarget(targetKey string) {
 		if tgt.Status() == target.Shutdown {
 			fmt.Println()
 			if err = tgt.Resume(
-				func(name string, instance cloud.ComputeInstance) {
+				func(name string, instance *target.ManagedInstance) {
 					state, _ := instance.State()
 					if state == cloud.StateStopped {
 						s = spinner.New(
@@ -67,7 +67,7 @@ func ResumeTarget(targetKey string) {
 						s.Start()	
 						
 					} else if len(instance.PublicIP()) > 0 {
-						for !instance.CanConnect(22) {
+						for !instance.CanConnect() {
 							time.Sleep(time.Second * 5)
 						}
 						s.Stop()

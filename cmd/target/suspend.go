@@ -54,7 +54,7 @@ func SuspendTarget(targetKey string) {
 		if tgt.Status() == target.Running {
 			fmt.Println()
 			if err = tgt.Suspend(
-				func(name string, instance cloud.ComputeInstance) {
+				func(name string, instance *target.ManagedInstance) {
 					state, _ := instance.State()
 					if state == cloud.StateRunning {						
 						s = spinner.New(
