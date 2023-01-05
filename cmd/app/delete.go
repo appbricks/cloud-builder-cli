@@ -58,6 +58,8 @@ func DeleteRecipe(cookbookName string) {
 		if err := cookbook.DeleteImportedCookbook(cookbookName); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
+	} else {
+		cbcli_utils.ShowWarningMessage("\nName entered does not match the cookbook to be deleted.")
 	}
 	fmt.Println()
 }
