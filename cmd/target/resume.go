@@ -10,6 +10,7 @@ import (
 	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
 	"github.com/mevansam/gocloud/cloud"
+	"github.com/mevansam/goutils/logger"
 
 	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
@@ -67,7 +68,14 @@ func ResumeTarget(targetKey string) {
 						s.Start()	
 						
 					} else if len(instance.PublicIP()) > 0 {
-						for !instance.CanConnect() {
+						for {
+							ok, err := instance.CanConnect()
+							if ok || err != nil {
+								if err != nil {
+									logger.ErrorMessage(err.Error())
+								}
+								break
+							}
 							time.Sleep(time.Second * 5)
 						}
 						s.Stop()
