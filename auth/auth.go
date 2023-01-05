@@ -101,6 +101,11 @@ func Authenticate(config config.Config, loginMessages ...string) error {
 		if err != nil {
 			return err
 		}
+		// update app config with cloud properties
+		cloudAPI := mycscloud.NewCloudAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
+		if err = cloudAPI.UpdateProperties(config); err != nil {
+			return err
+		}
 		s.Stop()
 	}
 
