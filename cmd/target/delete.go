@@ -76,7 +76,7 @@ func DeleteTarget(targetKey string) {
 
 		if response == tgt.DeploymentName() {
 			if deleteFlags.force || tgt.Status() != target.Undeployed {
-				if bldr, err = tgt.NewBuilder(os.Stdout, os.Stderr); err != nil {
+				if bldr, err = tgt.NewBuilder(config.ContextVars(), os.Stdout, os.Stderr); err != nil {
 					cbcli_utils.ShowErrorAndExit(err.Error())
 				}
 				if tgt.CookbookVersion != tgt.Recipe.CookbookVersion() {
@@ -106,7 +106,7 @@ func DeleteTarget(targetKey string) {
 				} else {
 					appAPI := mycscloud.NewAppAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
 					if _, err = appAPI.DeleteApp(tgt); err != nil {
-						cbcli_utils.ShowErrorAndExit(err.Error())
+						cbcli_utils.ShowNoteMessage("\nDeleting app registration failed. You may need to manually delete the app from the MyCS cloud dashboard.")
 					}
 				}
 			}

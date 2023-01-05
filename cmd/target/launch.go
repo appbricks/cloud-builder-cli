@@ -50,7 +50,8 @@ func LaunchTarget(targetKey string) {
 		tgt, spaceTgt *target.Target
 		bldr          *target.Builder
 	)
-	context := cbcli_config.Config.TargetContext()
+	config := cbcli_config.Config
+	context := config.TargetContext()
 
 	if tgt, err = context.GetTarget(targetKey); err == nil && tgt != nil {
 
@@ -64,7 +65,7 @@ func LaunchTarget(targetKey string) {
 			}
 		}
 
-		if bldr, err = tgt.NewBuilder(os.Stdout, os.Stderr); err != nil {
+		if bldr, err = tgt.NewBuilder(config.ContextVars(), os.Stdout, os.Stderr); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
 		fmt.Println()
