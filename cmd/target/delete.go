@@ -59,6 +59,15 @@ func DeleteTarget(targetKey string) {
 
 	if tgt, err = context.GetTarget(targetKey); err == nil && tgt != nil {
 
+		if tgt.HasDependents() {
+			cbcli_utils.ShowErrorAndExit(
+				fmt.Sprintf(
+					"Target '%s' has dependent targets. Please delete all dependent targets before deleting this target.",
+					tgt.DeploymentName(),
+				),
+			)
+		}
+
 		fmt.Println()
 		fmt.Print(
 			color.OpBold.Render(
