@@ -9,6 +9,11 @@ on:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        os: [ linux, darwin, windows ]
+        arch: [ amd64, arm64 ]
+
     runs-on: macos-latest
 
     defaults:
@@ -106,7 +111,7 @@ jobs:
         go version
         cd ${CLI_SRC_PATH}
         scripts/get-aws-env.sh -e ${ENV}
-        scripts/build.sh :clean-all:
+        scripts/build.sh :release:clean-all: ${{ matrix.os }} ${{ matrix.arch }}
 
     - name:  Upload dev binaries to S3
       run: |

@@ -1,9 +1,18 @@
 #!/bin/bash
 
+action=${1:-}
+os=${2:-}
+arch=${3:-}
+
+# skip windows arm
+[[ $os == windows && $arch == arm64 ]] && (
+  echo -e "\nSkipping unsupported build for '$os/$arch'.\n";
+  exit;
+)
+
 set -xeuo pipefail
 
 root_dir=$(cd $(dirname $BASH_SOURCE)/.. && pwd)
-action=${1:-}
 
 build_cookbook=../cloud-builder/scripts/build-cookbook.sh
 if [[ ! -e $build_cookbook ]]; then
@@ -142,16 +151,23 @@ if [[ $action == *:dev:* ]]; then
   build "$os" "$arch"
   ln -s ${release_dir}/${os}_${arch}/cb $GOPATH/bin/cb
 
-else
+elif [[ $action == *:release:* ]]; then
   # set version
   tag=${GITHUB_REF/refs\/tags\//}
   build_version=${tag:-0.0.0}
   build_timestamp=$(date +'%B %d, %Y at %H:%M %Z')
 
   # build release binaries for all supported architectures
-  build "linux" "amd64"
-  build "linux" "arm64"
-  build "darwin" "amd64"
-  build "darwin" "arm64"
-  build "windows" "amd64"
+  if [[ -n $os && -n $arch ]]; then
+    build "$os" "$arch"
+  else
+    build "linux" "amd64"
+    build "linux" "arm64"
+    build "darwin" "amd64"
+    build "darwin" "arm64"
+    build "windows" "amd64"
+  fi
+else
+  echo "ERROR! Invald build action: $action"
+  exit 1
 fi
