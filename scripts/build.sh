@@ -4,12 +4,6 @@ action=${1:-}
 os=${2:-}
 arch=${3:-}
 
-# skip windows arm
-[[ $os == windows && $arch == arm64 ]] && (
-  echo -e "\nSkipping unsupported build for '$os/$arch'.\n";
-  exit;
-)
-
 set -xeuo pipefail
 
 root_dir=$(cd $(dirname $BASH_SOURCE)/.. && pwd)
