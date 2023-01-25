@@ -9,6 +9,14 @@ on:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        os: [ linux, darwin, windows ]
+        arch: [ amd64, arm64 ]
+        exclude:
+          - os: windows
+            arch: arm64
+
     runs-on: ubuntu-latest
 
     defaults:
@@ -75,7 +83,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: appbricks/tailscale
-        ref: appbricks/dev
+        ref: appbricks/${{ github.base_ref }}
         path: go/src/github.com/appbricks/tailscale
 
     - name: Checking out termtables repository
@@ -101,4 +109,4 @@ jobs:
       run: |
         go version
         cd ${CLI_SRC_PATH}
-        scripts/build.sh :clean-all:
+        scripts/build.sh :release:clean-all: ${{ matrix.os }} ${{ matrix.arch }}
