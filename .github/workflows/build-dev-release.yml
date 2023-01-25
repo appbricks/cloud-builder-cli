@@ -1,4 +1,4 @@
-name: Build dev Cloud Build CLI release
+name: Build dev Cloud Builder CLI release
 
 on:
   workflow_dispatch:
@@ -37,68 +37,68 @@ jobs:
     steps:
 
     - name: Checking out cloud-builder-cli repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         path: go/src/github.com/appbricks/cloud-builder-cli
 
     - name: Checking out mycloudspace-client repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: appbricks/mycloudspace-client
         ref: main
         path: go/src/github.com/appbricks/mycloudspace-client
 
     - name: Checking out mycloudspace-common repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: appbricks/mycloudspace-common
         ref: main
         path: go/src/github.com/appbricks/mycloudspace-common
 
     - name: Checking out cloud-builder repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: appbricks/cloud-builder
         ref: master
         path: go/src/github.com/appbricks/cloud-builder
 
     - name: Checking out gocloud repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: mevansam/gocloud
         ref: master
         path: go/src/github.com/mevansam/gocloud
 
     - name: Checking out goforms repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: mevansam/goforms
         ref: master
         path: go/src/github.com/mevansam/goforms
 
     - name: Checking out goutils repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: mevansam/goutils
         ref: master
         path: go/src/github.com/mevansam/goutils
 
     - name: Checking out tailscale repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: appbricks/tailscale
         ref: appbricks/dev
         path: go/src/github.com/appbricks/tailscale
 
     - name: Checking out termtables repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: mevansam/termtables
         ref: master
         path: go/src/github.com/mevansam/termtables
 
     - name: Checking out terraform config inspect repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: mevansam/terraform-config-inspect
         ref: master
