@@ -3,7 +3,7 @@ name: Build prod Cloud Builder CLI release
 on:
   workflow_dispatch:
   push:
-    branches: [ master ]
+    branches: [ main ]
     paths:
     - 'docs/release-notes.md'
     - '**.go'
