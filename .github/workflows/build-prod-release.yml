@@ -86,6 +86,7 @@ jobs:
       uses: actions/checkout@v3
       with:
         ref: ${{ needs.create-release-tag.outputs.version }}
+        path: go/src/github.com/appbricks/cloud-builder-cli
 
     - name: Checking out mycloudspace-client repository
       uses: actions/checkout@v3
