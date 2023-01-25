@@ -1,6 +1,7 @@
 # Cloud Builder Automation Command Line Interface
 
-[![Build Status](https://travis-ci.org/appbricks/cloud-builder-cli.svg?branch=master)](https://travis-ci.org/appbricks/cloud-builder-cli)
+[![Build Status](https://github.com/appbricks/cloud-builder-cli/actions/workflows/build-dev-release.yml/badge.svg)](https://github.com/appbricks/cloud-builder-cli/actions/workflows/build-dev-release.yml)
+[![Build Status](https://github.com/appbricks/cloud-builder-cli/actions/workflows/build-prod-release.yml/badge.svg)](https://github.com/appbricks/cloud-builder-cli/actions/workflows/build-prod-release.yml)
 
 ## Overview
 
