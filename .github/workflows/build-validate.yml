@@ -28,7 +28,7 @@ jobs:
       GOPATH: ${{ github.workspace }}/go
       CLI_SRC_PATH: ${{ github.workspace }}/go/src/github.com/appbricks/cloud-builder-cli
       COOKBOOK_REPO_PATH: https://github.com/appbricks/vpn-server/cloud/recipes
-      COOKBOOK_VERSION: 0.0.10
+      COOKBOOK_VERSION: dev
 
     steps:
 
