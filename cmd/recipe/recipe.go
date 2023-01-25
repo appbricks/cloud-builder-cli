@@ -7,7 +7,7 @@ import (
 var RecipeCommands = &cobra.Command{
 	Use: "recipe",
 
-	Short: "List, show detail of recipes and configure launch targets.",
+	Short: "List, show detail of recipes and configure recipe defaults.",
 	Long: `
 The cloud-build CLI include a set of recipes which contain 
 instructions on how to launch services in the cloud. The sub-commands

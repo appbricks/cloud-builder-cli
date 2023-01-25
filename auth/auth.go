@@ -1,12 +1,14 @@
 package auth
 
 import (
+	"bytes"
 	"encoding/base64"
 	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -18,7 +20,10 @@ import (
 	"github.com/appbricks/mycloudspace-client/mycscloud"
 	"github.com/briandowns/spinner"
 	"github.com/gookit/color"
+	"github.com/mevansam/goutils/crypto"
 	"github.com/mevansam/goutils/logger"
+	"github.com/peterh/liner"
+	"github.com/spf13/cobra"
 
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
@@ -83,7 +88,7 @@ func Authenticate(config config.Config, loginMessages ...string) error {
 		}
 		
 		s := spinner.New(
-			spinner.CharSets[39], 
+			spinner.CharSets[cbcli_config.SpinnerNetworkType], 
 			100*time.Millisecond,
 			spinner.WithSuffix(" Waiting for authentication to complete."),
 			spinner.WithFinalMSG(color.Green.Render("Authentication is complete. You are now signed in.\n")),
@@ -94,6 +99,11 @@ func Authenticate(config config.Config, loginMessages ...string) error {
 			wait, err = authn.WaitForOAuthFlowCompletion(time.Second)
 		}
 		if err != nil {
+			return err
+		}
+		// update app config with cloud properties
+		cloudAPI := mycscloud.NewCloudAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
+		if err = cloudAPI.UpdateProperties(config); err != nil {
 			return err
 		}
 		s.Stop()
@@ -127,17 +137,18 @@ func logoRequestHandler() (string, func(http.ResponseWriter, *http.Request)) {
 		}
 }
 
-func openBrowser(url string) error {
+func openBrowser(url string) (err error) {
 	switch runtime.GOOS {
 		case "linux":
-			return exec.Command("xdg-open", url).Run()
+			err = exec.Command("xdg-open", url).Run()
 		case "windows":
-			return exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Run()
+			err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Run()
 		case "darwin":
-			return exec.Command("open", url).Run()
+			err = exec.Command("open", url).Run()
 		default:
-			return fmt.Errorf("unsupported platform")
+			err = fmt.Errorf("unsupported platform")
 	}
+	return
 }
 
 func GetAuthenticatedToken(config config.Config, forceLogin bool, loginMessages ...string) (*AWSCognitoJWT, error) {
@@ -161,7 +172,9 @@ func GetAuthenticatedToken(config config.Config, forceLogin bool, loginMessages 
 		logger.DebugMessage("ERROR! Failed to extract auth token: %s", err.Error())	
 		return nil, err
 	}
-	config.DeviceContext().SetLoggedInUser(awsAuth.UserID(), awsAuth.Username())
+	if err = config.SetLoggedInUser(awsAuth.UserID(), awsAuth.Username()); err != nil {
+		return nil, err
+	}
 	return awsAuth, nil
 }
 
@@ -172,9 +185,14 @@ func AuthorizeDeviceAndUser(config config.Config) error {
 
 		awsAuth *AWSCognitoJWT
 
+		user *userspace.User
+
 		userID, 
-		userName string
-		user     *userspace.User
+		userName,
+		ownerUserID string
+		ownerConfig []byte
+
+		ownerKey *crypto.RSAKey
 
 		requestAccess bool
 	)
@@ -192,43 +210,45 @@ func AuthorizeDeviceAndUser(config config.Config) error {
 	// authenticate device and user
 	if err = deviceAPI.UpdateDeviceContext(deviceContext); err != nil {
 
-		if err.Error() == "unauthorized" {
+		errStr := err.Error()
+		if errStr == "unauthorized(pending)" {
 			fmt.Println()
-			
-			if user, _ = deviceContext.GetGuestUser(userName); user == nil || user.Active /* device was deactivated in mycs account but not in device context */ {
-				cbcli_utils.ShowNoticeMessage("User \"%s\" is not authorized to use this device.", userName)
+			cbcli_utils.ShowNoticeMessage("User \"%s\" is not authorized to use this device. A request to grant access to this device is still pending.", userName)
 
-				fmt.Println()				
-				if requestAccess, err = cbcli_utils.GetYesNoUserInput("Do you wish to request access to this device : ", false); err != nil {
-					return err
-				}
-				if (requestAccess) {
+		} else if errStr == "unauthorized" {
+			fmt.Println()
+			cbcli_utils.ShowNoticeMessage("User \"%s\" is not authorized to use this device.", userName)			
+
+			fmt.Println()				
+			if requestAccess, err = cbcli_utils.GetYesNoUserInput("Do you wish to request access to this device : ", false); err != nil {
+				return err
+			}
+			if (requestAccess) {
+				if user, _ = deviceContext.GetGuestUser(userName); user == nil {
 					if user, err = deviceContext.NewGuestUser(userID, userName); err != nil {
 						return err
-					}						
-					if _, _, err = deviceAPI.AddDeviceUser(deviceContext.GetDevice().DeviceID, user.WGPublickKey); err != nil {
-						return err
 					}
-					fmt.Println()
-					cbcli_utils.ShowNoticeMessage("A request to grant user \"%s\" access to this device has been submitted.", userName)	
 				} else {
-					return fmt.Errorf("access request declined")
+					user.Active = false
 				}
+				if _, _, err = deviceAPI.AddDeviceUser(deviceContext.GetDevice().DeviceID, ""); err != nil {
+					return err
+				}
+				fmt.Println()
+				cbcli_utils.ShowNoticeMessage("A request to grant user \"%s\" access to this device has been submitted.", user.Name)
 
-			} else if (!user.Active) {
-				cbcli_utils.ShowNoticeMessage("User \"%s\" is not authorized to use this device. A request to grant access to this device is still pending.", userName)
+			} else {
+				return fmt.Errorf("access request declined")
 			}
 			
-			fmt.Println()
 			return nil
-
 		} else {
 			return err
 		}
 	}
 
 	// ensure that the device has an owner
-	_, isOwnerSet := deviceContext.GetOwnerUserName()
+	ownerUserID, isOwnerSet := deviceContext.GetOwnerUserID()
 	if !isOwnerSet {
 		fmt.Println()
 		cbcli_utils.ShowCommentMessage(
@@ -239,5 +259,138 @@ func AuthorizeDeviceAndUser(config config.Config) error {
 		os.Exit(1)
 	}
 
+	// if logged in user is the owner ensure 
+	// owner is intialized and config is latest
+	if userID == ownerUserID {
+		owner := deviceContext.GetOwner()
+
+		if len(owner.RSAPrivateKey) == 0 {
+			fmt.Println()
+
+			line := liner.NewLiner()
+			line.SetCtrlCAborts(true)
+			if ownerKey, err = ImportPrivateKey(line); err != nil {
+				cbcli_utils.ShowErrorAndExit(
+					fmt.Sprintf("User's private key import failed with error: %s", err.Error()),
+				)
+			}
+			if err = owner.SetKey(ownerKey); err != nil {
+				cbcli_utils.ShowErrorAndExit("Failed to validate provided private key with user's known public key.")
+			}		
+		}
+		if config.GetConfigAsOf() < awsAuth.ConfigTimestamp() {
+			userAPI := mycscloud.NewUserAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
+	
+			if ownerConfig, err = userAPI.GetUserConfig(owner); err != nil {
+				return err
+			}
+			if err = config.TargetContext().Reset(); err != nil {
+				cbcli_utils.ShowErrorAndExit(
+					fmt.Sprintf(
+						"Failed to reset current config as a change was detected: %s", 
+						err.Error(),
+					),
+				)
+			}
+			if err = config.TargetContext().Load(bytes.NewReader(ownerConfig)); err != nil {
+				cbcli_utils.ShowErrorAndExit(
+					fmt.Sprintf(
+						"Failed to reset load updated config: %s", 
+						err.Error(),
+					),
+				)
+			}
+			config.SetConfigAsOf(awsAuth.ConfigTimestamp())
+		}
+	} 
+
 	return nil
+}
+
+func ImportPrivateKey(line *liner.State) (*crypto.RSAKey, error) {
+
+	var (
+		err error
+
+		keyFile,
+		keyFilePassphrase string
+
+		key *crypto.RSAKey
+	)
+
+	if keyFile, err = line.Prompt("Path to key file (you can drag/drop from a finder/explorer window to the terminal) : "); err != nil {
+		return nil, err
+	}
+	keyFile = strings.Trim(keyFile, " '\"")
+	
+	if keyFilePassphrase, err = line.PasswordPrompt("Enter the key file passphrase : "); err != nil {
+		return nil, err
+	}
+	if key, err = crypto.NewRSAKeyFromFile(keyFile, []byte(keyFilePassphrase)); err != nil {
+		return nil, err
+	}
+	return key, nil
+}
+
+func AssertLoggedIn() func(cmd *cobra.Command, args []string) {
+	return func(cmd *cobra.Command, args []string) {
+		if !cbcli_config.Config.Initialized() {
+			cbcli_utils.ShowErrorAndExit(
+				fmt.Sprintf(
+					"You need to initialize the CLI and log in before you can invoke the command 'cb %s %s ...'", 
+					cmd.Parent().Name(), cmd.Name(),
+				),
+			)
+		}	
+		if !cbcli_config.Config.AuthContext().IsLoggedIn() {
+			cbcli_utils.ShowErrorAndExit(
+				fmt.Sprintf(
+					"You need to log in before you can invoke the command 'cb %s %s ...'", 
+					cmd.Parent().Name(), cmd.Name(),
+				),
+			)
+		}
+	}
+}
+
+func AssertAuthorized(roleMask auth.RoleMask, spaceNode userspace.SpaceNode) func(cmd *cobra.Command, args []string) {
+
+	return func(cmd *cobra.Command, args []string) {
+		if cbcli_config.Config.Initialized() {
+			return
+		}		
+		if spaceNode == nil {
+			// ensure a user is logged in
+			AssertLoggedIn()(cmd, args)
+		}
+		if !roleMask.LoggedInUserHasRole(cbcli_config.Config.DeviceContext(), spaceNode) {
+			
+			var accessType strings.Builder
+			if roleMask.HasRole(auth.Admin) {
+				accessType.WriteString("device ")
+			}
+			if roleMask.HasRole(auth.Manager) {
+				accessType.WriteString("and space ")
+			}
+			accessType.WriteString("admins")
+
+			if cmd.Parent() != nil {
+				cbcli_utils.ShowNoteMessage(
+					fmt.Sprintf(
+						"\nOnly %s can invoke the command 'cb %s %s ...'\n", 
+						accessType.String(), cmd.Parent().Name(), cmd.Name(),
+					),
+				)		
+			} else {
+				cbcli_utils.ShowNoteMessage(
+					fmt.Sprintf(
+						"\nOnly %s can to invoke the command 'cb %s'.\n", 
+						accessType.String(), cmd.Name(),
+					),
+				)
+			}
+			// reset command
+			cmd.Run = func(cmd *cobra.Command, args []string) {}
+		}	
+	}
 }

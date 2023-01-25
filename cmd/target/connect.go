@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/briandowns/spinner"
@@ -13,10 +14,13 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
-	"github.com/appbricks/mycloudspace-client/vpn"
+	"github.com/appbricks/mycloudspace-client/mycsnode"
+	"github.com/appbricks/mycloudspace-common/vpn"
 	"github.com/mevansam/goutils/utils"
 
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
@@ -24,7 +28,6 @@ import (
 var connectFlags = struct {
 	commonFlags
 
-	superUser bool
 	download  bool
 }{}
 
@@ -33,15 +36,17 @@ var connectCommand = &cobra.Command{
 
 	Short: "Connect to an existing target.",
 	Long: `
-Use this command to securly connect to your cloud space. This command
-will establish a VPN connection to the bastion instance of the target
-cloud space you specify. Once established the connection will pass
-all traffic originating at your machine via the bastion gateway,
-resolving any resource requests to cloud space resources or 
-forwarding them to the internet. You can effectively use this 
+Use this command to securely connect to your cloud space. This
+command will establish a VPN connection to the bastion instance of
+the target cloud space you specify. Once established the connection
+will pass all traffic originating at your machine via the bastion
+gateway, resolving any resource requests to cloud space resources or
+forwarding them to the internet. You can effectively use this
 connection as a traditional VPN to access the internet anonymously or
 securely access your cloud space resources.
 `,
+
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		ConnectTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(connectFlags.commonFlags)))
@@ -55,12 +60,14 @@ func ConnectTarget(targetKey string) {
 		err error
 
 		tgt *target.Target
-		user, passwd string
 
-		isAdmin bool
+		isAdmin bool 
 
-		vpnConfig vpn.Config
-		vpnClient vpn.Client
+		apiClient *mycsnode.ApiClient
+
+		vpnConfigData vpn.ConfigData
+		vpnConfig     vpn.Config
+		vpnClient     vpn.Client
 
 		fileInfo           os.FileInfo
 		configInstructions string
@@ -70,50 +77,34 @@ func ConnectTarget(targetKey string) {
 		sent, recd int64
 	)
 
-	if tgt, err = cbcli_config.Config.Context().GetTarget(targetKey); err == nil && tgt != nil {
-		if err = tgt.LoadRemoteRefs(); err != nil {
-			cbcli_utils.ShowErrorAndExit(err.Error())
-		}
-	
-		instance := tgt.ManagedInstance("bastion")
-		if instance == nil {
-			cbcli_utils.ShowErrorAndExit(
-				fmt.Sprintf(
-					"Unable to locate a deployed bastion instance within the space target \"%s\".",
-					targetKey,
-				),
-			)
-		}
+	if tgt, err = cbcli_config.Config.TargetContext().GetTarget(targetKey); err == nil && tgt != nil {
 
-		if tgt.Status() != target.Running {
+		if tgt.GetStatus() != "running" {
 			ResumeTarget(targetKey)
 		}
-		
-		if connectFlags.superUser {
-			user = instance.RootUser()
-			passwd = instance.RootPassword()
-		} else {
-			user = instance.NonRootUser()
-			passwd = instance.NonRootPassword()
+
+		// create api client for target node
+		if apiClient, err = cbcli_config.SpaceNodes.GetApiClientForSpace(tgt); err != nil {
+			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
-		if vpnConfig, err = vpn.NewConfigFromTarget(tgt, user, passwd); err != nil {
-			logger.DebugMessage("Error loading VPN configuration: %s", err.Error())
-			cbcli_utils.ShowErrorAndExit("Unable to retrieve VPN configuration. This could be because your VPN server is still starting up or in the process of shutting down. Please try again.")
-		}
-		
+		defer cbcli_config.SpaceNodes.ReleaseApiClientForSpace(apiClient)
+
 		if connectFlags.download {
 			home, _ := homedir.Dir()
 			downloadDir := filepath.Join(home, "Downloads")
 			if fileInfo, err = os.Stat(downloadDir); err != nil {
 				if os.IsNotExist(err) {
 					downloadDir = home
+				} else if fileInfo != nil && !fileInfo.IsDir() {
+					downloadDir = home
 				} else {
 					cbcli_utils.ShowErrorAndExit(err.Error())
 				}
 			}
-			if !fileInfo.IsDir() {
-				downloadDir = home
-			}
+			
+			// load target and retrieve vpn config
+			vpnConfigData, vpnConfig = getVPNConfig(apiClient, tgt)
+			// save retrieved config
 			if configInstructions, err = vpnConfig.Save(downloadDir); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
@@ -127,7 +118,7 @@ func ConnectTarget(targetKey string) {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
 			if !isAdmin {
-				cbcli_utils.ShowWarningMessage("\nPlease enter you password for admin priveleges required to update the network configuration, if requested.")
+				cbcli_utils.ShowWarningMessage("\nPlease enter you password for admin privileges required to update the network configuration, if requested.")
 				if err = run.RunAsAdmin(os.Stdout, os.Stderr); err != nil {
 					logger.DebugMessage(
 						"Execution of CLI command with elevated privileges failed with error: %s", 
@@ -141,35 +132,90 @@ func ConnectTarget(targetKey string) {
 				cbcli_utils.ShowInfoMessage("\nStarting VPN connection.")
 			}
 
-			if vpnClient, err = vpnConfig.NewClient(); err != nil {
+			// load target and retrieve vpn config
+			vpnConfigData, vpnConfig = getVPNConfig(apiClient, tgt)
+			// create vpn client using retrieve config
+			if vpnClient, err = vpnConfig.NewClient(cbcli_config.MonitorService); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
 			if err = vpnClient.Connect(); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
+
+			// trap keyboard exit/termination event
+			disconnect := make(chan bool)
+
+			if runtime.GOOS == "windows" {
+				// ctrl-c is not trapped correctly in windows
+				// as we also wait on keyboard. this handler
+				// traps the event at the win32 API and handles
+				// the interrupt to the connection.
+				if err = run.HandleInterruptEvent(
+					func() bool {
+						disconnect <- true
+						return true
+					},
+				); err != nil {
+					cbcli_utils.ShowErrorAndExit(err.Error())	
+				}	
+			}
+			
 			if err := keyboard.Open(); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
-			defer func() {
-				_ = keyboard.Close()
-				if err = vpnClient.Disconnect(); err != nil {
-					logger.DebugMessage("Error disconnecting from VPN: %s", err.Error())
-				}
-			}()
-
-			disconnect := make(chan bool)
 			go func() {
-				for key != keyboard.KeyCtrlX && key != keyboard.KeyCtrlC {
-					if _, key, err = keyboard.GetKey(); err != nil {
-						cbcli_utils.ShowErrorAndExit(err.Error())
-					}
+				if runtime.GOOS == "windows" {
+					// don't handle ctrl-c for windows as that
+					// is handled via the interrupt event handler
+					for key != keyboard.KeyCtrlX {
+						if _, key, err = keyboard.GetKey(); err != nil {
+							if err.Error() != "operation canceled" {
+								logger.ErrorMessage(
+									"ConnectSpace: Unable to pause for key input. Received error: %s", 
+									err.Error(),
+								)	
+							}
+							break
+						}
+					}	
+				} else {
+					for key != keyboard.KeyCtrlX && key != keyboard.KeyCtrlC {
+						if _, key, err = keyboard.GetKey(); err != nil {
+							logger.ErrorMessage(
+								"ConnectSpace: Unable to pause for key input. Received error: %s", 
+								err.Error(),
+							)
+							break
+						}
+					}	
 				}
 				disconnect <- true
 			}()
-			
+
+			defer func() {
+				_ = keyboard.Close()
+
+				cbcli_config.ShutdownSpinner = spinner.New(
+					spinner.CharSets[cbcli_config.SpinnerShutdownType], 
+					100*time.Millisecond,
+					spinner.WithSuffix(" Shutting down background services."),
+					spinner.WithFinalMSG(""),
+					spinner.WithHiddenCursor(true),
+				)
+				cbcli_config.ShutdownSpinner.Start()
+
+				if err = vpnClient.Disconnect(); err != nil {
+					logger.DebugMessage("Error disconnecting from VPN: %s", err.Error())
+				}
+				// delete vpn configuration
+				if err = vpnConfigData.Delete(); err != nil {
+					logger.DebugMessage("connect(): Error deleting vpn config data: %s", err.Error())
+				}				
+			}()
+
 			fmt.Println()
 			s := spinner.New(
-				spinner.CharSets[39], 
+				spinner.CharSets[cbcli_config.SpinnerNetworkType], 
 				100*time.Millisecond,
 				spinner.WithSuffix(" Press CTRL-x or CTRL-c to disconnect."),
 				spinner.WithFinalMSG("VPN connection has been disconnected.\n"),
@@ -182,7 +228,7 @@ func ConnectTarget(targetKey string) {
 					s.Prefix = "\nUnable to retrieve connection status.\n"
 				}
 				s.Prefix = fmt.Sprintf(
-					"recd %s, sent %s: ", 
+					"recd %s, sent %s ", 
 					utils.ByteCountIEC(sent), 
 					utils.ByteCountIEC(recd),
 				)
@@ -196,7 +242,7 @@ func ConnectTarget(targetKey string) {
 					s.Stop()
 					fmt.Println()
 					return
-				case <-time.After(time.Millisecond * 100):					
+				case <-time.After(time.Millisecond * 500):					
 				}
 				setStatus()
 			}
@@ -212,13 +258,30 @@ func ConnectTarget(targetKey string) {
 	)
 }
 
+func getVPNConfig(apiClient *mycsnode.ApiClient, tgt *target.Target) (vpn.ConfigData, vpn.Config) {
+
+	var (
+		err error
+
+		vpnConfigData vpn.ConfigData
+		vpnConfig     vpn.Config
+	)
+
+	if vpnConfigData, err = vpn.NewVPNConfigData(apiClient); err != nil {
+		cbcli_utils.ShowErrorAndExit(err.Error())
+	}	
+	if vpnConfig, err = vpn.NewConfigFromTarget(vpnConfigData); err != nil {
+		logger.DebugMessage("Error loading VPN configuration: %s", err.Error())
+		cbcli_utils.ShowErrorAndExit("Unable to retrieve VPN configuration. This could be because your VPN server is still starting up or in the process of shutting down. Please try again.")
+	}
+	return vpnConfigData, vpnConfig
+}
+
 func init() {
 	flags := connectCommand.Flags()
 	flags.SortFlags = false
 	bindCommonFlags(flags, &(connectFlags.commonFlags))
 
-	flags.BoolVarP(&connectFlags.superUser, "super", "u", false, 
-		"connect as a super user with no restrictions")
 	flags.BoolVarP(&connectFlags.download, "download", "d", false, 
 		"download the VPN configuration file instead of\nestablishing a connection")
 }

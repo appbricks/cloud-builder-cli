@@ -7,9 +7,11 @@ import (
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/mevansam/termtables"
 
-	"github.com/appbricks/cloud-builder-cli/config"
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 )
 
 var listFlags = struct {
@@ -27,6 +29,8 @@ need ensure your public account credentials have been configured with
 the correct permissions.
 `,
 
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
+
 	Run: func(cmd *cobra.Command, args []string) {
 		if listFlags.region {
 			ListCloudsByRegion()
@@ -38,7 +42,7 @@ the correct permissions.
 
 func ListClouds() {
 
-	cloudList := config.Config.Context().CloudProviderTemplates()
+	cloudList := cbcli_config.Config.TargetContext().CloudProviderTemplates()
 
 	table := termtables.CreateTable()
 	table.AddHeaders(
@@ -71,7 +75,7 @@ func ListClouds() {
 
 func ListCloudsByRegion() {
 
-	cloudList := config.Config.Context().CloudProviderTemplates()
+	cloudList := cbcli_config.Config.TargetContext().CloudProviderTemplates()
 
 	fmt.Printf("\nThis Cloud Builder cookbook supports launching recipes in the public cloud regions listed below.\n\n")
 	for _, cp := range cloudList {

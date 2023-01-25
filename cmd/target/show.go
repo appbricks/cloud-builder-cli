@@ -7,15 +7,16 @@ import (
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 
+	"github.com/appbricks/cloud-builder/auth"
+	"github.com/appbricks/cloud-builder/target"
 	"github.com/mevansam/gocloud/cloud"
 	"github.com/mevansam/goforms/forms"
 	"github.com/mevansam/goforms/ux"
 	"github.com/mevansam/goutils/term"
 	"github.com/mevansam/goutils/utils"
 
-	"github.com/appbricks/cloud-builder-cli/config"
-	"github.com/appbricks/cloud-builder/target"
-
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
@@ -37,6 +38,8 @@ return an error. Run 'cb target list' to view the list of configured
 targets.
 `,
 
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
+
 	Run: func(cmd *cobra.Command, args []string) {
 		ShowTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(showFlags.commonFlags)))
 	},
@@ -52,11 +55,8 @@ func ShowTarget(targetKey string) {
 		inputForm forms.InputForm
 	)
 
-	if tgt, err = config.Config.Context().GetTarget(targetKey); err == nil && tgt != nil {
+	if tgt, err = cbcli_config.Config.TargetContext().GetTarget(targetKey); err == nil && tgt != nil {
 
-		if err = tgt.LoadRemoteRefs(); err != nil {
-			cbcli_utils.ShowErrorAndExit(err.Error())
-		}
 		showNodeInfo(tgt)
 
 		if showFlags.config || showFlags.all {

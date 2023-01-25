@@ -1,10 +1,11 @@
 # Cloud Builder Automation Command Line Interface
 
-[![Build Status](https://travis-ci.org/appbricks/cloud-builder-cli.svg?branch=master)](https://travis-ci.org/appbricks/cloud-builder-cli)
+[![Build Status](https://github.com/appbricks/cloud-builder-cli/actions/workflows/build-dev-release.yml/badge.svg)](https://github.com/appbricks/cloud-builder-cli/actions/workflows/build-dev-release.yml)
+[![Build Status](https://github.com/appbricks/cloud-builder-cli/actions/workflows/build-prod-release.yml/badge.svg)](https://github.com/appbricks/cloud-builder-cli/actions/workflows/build-prod-release.yml)
 
 ## Overview
 
-This CLI allows you to launch [Cloud automation](https://github.com/appbricks/cloud-builder) recipes from within your local shell. It saves your cloud credentials and configurations locally and will execute recipes saving their deployment state remotely based on the recipe's specification. Cloud credentials are encrypted and saved locally using a key you provide at initialization. Once recipes have been deployed the CLI can be used to managed the life-cycle of the deployed services. 
+This CLI allows you to launch [Cloud automation](https://github.com/appbricks/cloud-builder) recipes from within your local shell. It saves your cloud credentials and configurations locally and will execute recipes saving their deployment state remotely based on the recipe's specification. Cloud credentials are encrypted and saved locally using a key you provide at initialization. Once recipes have been deployed the CLI can be used to managed the life-cycle of the deployed services.
 
 Future iterations of the CLI will included a registration requirement, which will Single Sign-On (SSO) with the [AppBricks.io](https://appbricks.io) domain. This will require you maintain a subscription account in order to access advance features such as a cost optimization engine, the ability to view telemetry on deployed services, and be alerted on events that might impact the cost, performance and security of services in your sandbox. The subscription will provide a free tier which will allow you to launch and run basic services such as the VPN in your sandbox.
 
@@ -24,7 +25,7 @@ Alternatively copy the CLI binary to a user directory and add it to the system p
 
 ## Creating your Public Cloud Accounts
 
-In order to deploy your sandbox in one of the public cloud regions you need to have an active account in all or one of the following cloud providers. 
+In order to deploy your sandbox in one of the public cloud regions you need to have an active account in all or one of the following cloud providers.
 
 * [Amazon Web Services (AWS)](doc/aws.md)
 * [Microsft Azure](doc/azure.md)
@@ -32,7 +33,7 @@ In order to deploy your sandbox in one of the public cloud regions you need to h
 
 ## Usage
 
-Once the Cloud Builder CLI has been downloaded and extracted into your system path you can invoke it from shell or command window from you home folder. You can retrieve help for any command or sub-command by adding the global option `--help` to any command. It is recommended that you run `cb init` before configuring the CLI as that will configure encryption of your cloud credentials and target state. 
+Once the Cloud Builder CLI has been downloaded and extracted into your system path you can invoke it from shell or command window from you home folder. You can retrieve help for any command or sub-command by adding the global option `--help` to any command. It is recommended that you run `cb init` before configuring the CLI as that will configure encryption of your cloud credentials and target state.
 
 > The current release of the `cb` CLI does not ask you to register or associate with an [AppBricks.IO](https://appbricks.io) account when you run `init`. This may change in future releases.
 
@@ -312,9 +313,11 @@ The `cb target ...` sub-commands are used to manage the lifecycle of configured 
 
 ## Command Reference Tree
 
+The following command reference outlines all the available CLI commands and indicates which ones are available for space admins vs. guests.
+
 ```
   cb
-   ├─ init - This will register or associate a cloud builder user with all CLI 
+   ├─ init - This will register or associate a cloud builder user with all CLI
    │         sessions. You need to register if you would like to share access to
    │         targets or would like to synchronize access to configurations across
    │         all your devices. It will also create client specific keys for
@@ -325,8 +328,10 @@ The `cb target ...` sub-commands are used to manage the lifecycle of configured 
    │         store. You will need to add this key to each of your devices from
    │         which you want to interact with or control your launch targets.
    │
-   ├─ cloud - The cloud-builder CLI includes a set of recipes that can be launched
-   │    │     in the public cloud. The commands below allow you to retrieve
+   ├─ logout - Signs out the current user in context.
+   │
+   ├─ cloud - (admin) The cloud-builder CLI includes a set of recipes that can be
+   │    │     launched in the public cloud. The commands below allow you to retrieve
    │    │     information regarding these cloud environments and configure them as
    │    │     launch targets for the recipes.
    │    │
@@ -344,10 +349,10 @@ The `cb target ...` sub-commands are used to manage the lifecycle of configured 
    │                   be used to configure your cloud credentials for the cloud environments
    │                   you wish to target.
    │
-   ├─ recipe - The cloud-build CLI includes a set of recipes which contain
+   ├─ recipe - (admin) The cloud-build CLI includes a set of recipes which contain
    │    │      instructions on launching a services in the cloud. The sub-commands
    │    │      below allow interaction with recipe templates to create customized
-   │    │      targets which can be launched on demand. 
+   │    │      targets which can be launched on demand.
    │    │
    │    ├─ list - Lists the recipes bundled with the CLI that can be launched in any
    │    │         one of the supported public clouds.
@@ -365,45 +370,67 @@ The `cb target ...` sub-commands are used to manage the lifecycle of configured 
    │                   which can be further customized when configuring a target.
    │
    └─ target - A target is an instance of a recipe that can be launched with a single
-        │      click to a cloud region. When a recipe is configured for a particular 
+        │      click to a cloud region. When a recipe is configured for a particular
         │      cloud it will  enumerate all the regions of that cloud as quick lauch
         │      targets. The sub-commands below allow you to launch and view the status
         │      of targets.
         │
         ├─ list - List all available quick launch targets which are configured recipe
         │         instances. Targets will be enumerated only for clouds a recipe has
-        │         been configured for.
+        │         been configured for and the logged in user has access to.
         │
         ├─ show - Show the deployment configuration values for the target. If the
         │         target has not been created and configured then this sub-command will
         │         return an error. Run 'cb target list' to view the list of configured
         │         targets.
         │
-        ├─ create - Creates and configures a quick launch target for a given recipe and 
-        │           cloud.
+        ├─ create - (admin) Creates and configures a quick launch target for a given recipe
+        │           and cloud.
         │
-        ├─ configure - Configures an existing quick launch target. Once configure target
-        │              will need to be re-launched for any configuration changes to take
-        │              effect.
+        ├─ configure - (admin) Configures an existing quick launch target. Once configure
+        │              target will need to be re-launched for any configuration changes to
+        │              take effect.
         │
-        ├─ launch - Deploys a quick launch target or re-applies any configuration updates.
+        ├─ launch - (admin) Deploys a quick launch target or re-applies any configuration
+        │           updates.
         │
-        ├─ ssh - SSH to the target environment. This is for advance users as well as 
-        │        for troubleshooting any configuration errors at the target. If the 
-        │        target consists of more than one instance this will create a secure
-        │        shell to primary instance identified by the cloud recipe of the 
-        │        target.
+        ├─ delete - (admin) Deletes a deployed target.
         │
-        ├─ suspend - Suspends all instance resources deployed to a target.
+        ├─ suspend - (admin) Suspends all instance resources deployed to a target.
         │
-        ├─ resume - Resumes hibernated resources at a deployed target.
+        ├─ resume - (admin) Resumes hibernated resources at a deployed target.
         │
-        ├─ **migrate - Migrates services at a given target to different target.
+        ├─ connect - Securely connects to a deployed target space.
         │
-        ├─ **share - Shares access to a target with another registered user.
+        ├─ ssh - (admin) SSH to the target environment. This is for advance users as
+        │        well as for troubleshooting any configuration errors at the target.
+        │        If the target consists of more than one instance this will create a
+        │        secure shell to primary instance identified by the cloud recipe of
+        │        the target.
         │
-        └─ delete - Deletes a deployed target.
+        ├─ **migrate - (admin) Migrates services at a given target to different target.
+        │
+        └─ **share - (admin) Shares access to a target with another registered user.
 
 ```
 
 > ** Sub-command still to be implemented
+
+## Generating User Private Keys
+
+When a client device is setup with a device owner the CLI will check if the user is
+associated with a key. If the user has not been setup with a key then the CLI will
+request a new key be imported or generated. If you wish to create the key manually
+you can do it via the following `openssl` commands.
+
+```
+openssl genrsa -passout pass:x -out my-private-key-temp.pem -aes256 4096
+openssl pkcs8 -topk8 -v2 aes256 -passin pass:x -passout pass:MYSECRET -in my-private-key-temp.pem -out my-private-key.pem
+rm my-private-key-temp.pem
+```
+
+The second command is required to convert the key to a format the CLI can read. The
+key file created would be `my-private-key.pem` from the above example. Once created
+you should save the generated key file in a secure location preferrably offline
+on a USB stick which can be locked away. You will need this key in the future to 
+unlock configurations and claim additional devices.

@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
+	"github.com/appbricks/mycloudspace-client/api"
+	"github.com/appbricks/mycloudspace-client/mycscloud"
 	"github.com/mevansam/gocloud/provider"
 	"github.com/mevansam/goforms/config"
 	"github.com/mevansam/goforms/forms"
@@ -12,6 +15,7 @@ import (
 	"github.com/mevansam/goutils/logger"
 	"github.com/spf13/cobra"
 
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
@@ -30,13 +34,15 @@ cloud. Use this sub-command to create a named target by associating a
 configured recipe template with a configured cloud template.
 `,
 
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
+
 	Run: func(cmd *cobra.Command, args []string) {
 		CreateTarget(args[0], args[1])
 	},
 	Args: cobra.ExactArgs(2),
 }
 
-func CreateTarget(recipeName, iaasName string) {
+func CreateTarget(recipeKey, iaasName string) {
 
 	var (
 		err error
@@ -52,11 +58,16 @@ func CreateTarget(recipeName, iaasName string) {
 		region      *string
 		regionField *forms.InputField
 	)
-	contect := cbcli_config.Config.Context()
+	config := cbcli_config.Config
+	context := config.TargetContext()
 
-	if tgt, err = contect.NewTarget(
-		recipeName, iaasName,
+	if tgt, err = context.NewTarget(
+		recipeKey, iaasName,
 	); err == nil && tgt != nil {
+
+		if _, err = tgt.UpdateKeys(); err != nil {
+			cbcli_utils.ShowErrorAndExit(err.Error())
+		}
 
 		if !tgt.Provider.IsValid() {
 			cbcli_utils.ShowErrorAndExit(
@@ -93,7 +104,7 @@ func CreateTarget(recipeName, iaasName string) {
 		} else {
 			// non-bastion nodes install to a bastion node's space, 
 			// so need a target bastion node to deploy recipe to
-			targets := contect.TargetSet()
+			targets := context.TargetSet()
 
 			if len(createFlags.dependentTarget) == 0 {
 				fmt.Println()
@@ -107,14 +118,15 @@ func CreateTarget(recipeName, iaasName string) {
 				if len(spaceTargets) == 0 {
 					cbcli_utils.ShowInfoMessage( 
 						"No space targets have been configured where application '%s' can be deployed to iaas '%s'.\n", 
-						recipeName, iaasName,
+						recipeKey, iaasName,
 					)
 					os.Exit(0)
 				}
 				spaceTgtKey = cbcli_utils.GetUserInputFromList(
-					"Please tab through to select the target space to deploy application to: ",
+					"User <TAB> to scroll through and select from the list of target spaces to deploy application to: ",
 					spaceTargets[0],
 					spaceTargets,
+					true,
 				)
 			} else {
 				spaceTgtKey = createFlags.dependentTarget
@@ -157,6 +169,22 @@ func CreateTarget(recipeName, iaasName string) {
 		}
 
 		configureTarget(tgt, "target-undeployed")
+
+		// add target to MyCS account
+		if tgt.Recipe.IsBastion() {
+			// only recipes with a bastion instance is considered
+			// a space. TBD: this criteria should be revisited
+			spaceAPI := mycscloud.NewSpaceAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
+			if err = spaceAPI.AddSpace(tgt, true); err != nil {
+				cbcli_utils.ShowErrorAndExit(err.Error())
+			}	
+
+		} else {			
+			appAPI := mycscloud.NewAppAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
+			if err = appAPI.AddApp(tgt, spaceTgt.GetSpaceID()); err != nil {
+				cbcli_utils.ShowErrorAndExit(err.Error())
+			}	
+		}
 		return
 	}
 
@@ -167,7 +195,7 @@ func CreateTarget(recipeName, iaasName string) {
 			fmt.Sprintf(
 				"Unknown recipe \"%s\" for cloud \"%s\" given to the configure "+
 					"command. Run 'cb recipe list' to get list of available recipes.",
-				recipeName, iaasName,
+				recipeKey, iaasName,
 			),
 		)
 	}

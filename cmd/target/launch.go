@@ -7,9 +7,11 @@ import (
 	"github.com/mevansam/goutils/logger"
 	"github.com/spf13/cobra"
 
-	"github.com/appbricks/cloud-builder-cli/config"
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
 
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
@@ -32,6 +34,8 @@ updates. Rebuild and Clean-rebuild options are complementary and
 clean-rebuild takes precedence. 
 `,
 
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
+
 	Run: func(cmd *cobra.Command, args []string) {
 		LaunchTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(launchFlags.commonFlags)))
 	},
@@ -46,7 +50,8 @@ func LaunchTarget(targetKey string) {
 		tgt, spaceTgt *target.Target
 		bldr          *target.Builder
 	)
-	context := config.Config.Context()
+	config := cbcli_config.Config
+	context := config.TargetContext()
 
 	if tgt, err = context.GetTarget(targetKey); err == nil && tgt != nil {
 
@@ -60,7 +65,7 @@ func LaunchTarget(targetKey string) {
 			}
 		}
 
-		if bldr, err = tgt.NewBuilder(os.Stdout, os.Stderr); err != nil {
+		if bldr, err = tgt.NewBuilder(config.ContextVars(), os.Stdout, os.Stderr); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
 		fmt.Println()
@@ -71,7 +76,7 @@ func LaunchTarget(targetKey string) {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
 		if launchFlags.init ||
-			tgt.CookbookTimestamp != tgt.Recipe.CookbookTimestamp() {
+			tgt.CookbookVersion != tgt.Recipe.CookbookVersion() {
 			// force re-initializing
 			if err = bldr.Initialize(); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
@@ -103,7 +108,7 @@ func LaunchTarget(targetKey string) {
 			if err = bldr.ShowLaunchPlan(); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
-			tgt.CookbookTimestamp = tgt.Recipe.CookbookTimestamp()
+			tgt.CookbookVersion = tgt.Recipe.CookbookVersion()
 			context.SaveTarget(tgt.Key(), tgt)
 
 		} else {
@@ -117,12 +122,9 @@ func LaunchTarget(targetKey string) {
 			logger.TraceMessage("Launch output: %# v", output)
 
 			tgt.Output = output
-			tgt.CookbookTimestamp = tgt.Recipe.CookbookTimestamp()
+			tgt.CookbookVersion = tgt.Recipe.CookbookVersion()
 			context.SaveTarget(tgt.Key(), tgt)
 
-			if err = tgt.LoadRemoteRefs(); err != nil {
-				cbcli_utils.ShowErrorAndExit(err.Error())
-			}
 			showNodeInfo(tgt)
 		}
 		return

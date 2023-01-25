@@ -9,10 +9,10 @@ var CloudCommands = &cobra.Command{
 
 	Short: "List, show and configure clouds to launch recipes in.",
 	Long: `
-The cloud sub-commands below allow you to retrieve information 
-regarding the available public clouds where you can launch recipes. 
-You should also use the "configure" sub-command to set-up your cloud
-account access credentials required to create resources in the cloud.
+The cloud-builder CLI allows you to launch applications and services
+in the public cloud. The sub-commands below below allow you to 
+view information regarding the available public clouds as well as
+configure access to them in order to launch cloud recipes.
 `,
 }
 

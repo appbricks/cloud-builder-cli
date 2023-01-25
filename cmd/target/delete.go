@@ -8,16 +8,21 @@ import (
 	"github.com/mevansam/goutils/utils"
 	"github.com/spf13/cobra"
 
-	"github.com/appbricks/cloud-builder-cli/config"
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
+	"github.com/appbricks/mycloudspace-client/api"
+	"github.com/appbricks/mycloudspace-client/mycscloud"
 
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
 var deleteFlags = struct {
 	commonFlags
 
-	keep bool
+	keep  bool
+	force bool
 }{}
 
 var deleteCommand = &cobra.Command{
@@ -30,6 +35,8 @@ deployed and removes the launch configuration. If you wish to retain
 the configuration in order to re-launch the target at a latter date
 then provide the --keep flag.
 `,
+
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		DeleteTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(deleteFlags.commonFlags)))
@@ -47,9 +54,19 @@ func DeleteTarget(targetKey string) {
 
 		response string
 	)
-	context := config.Config.Context()
+	config := cbcli_config.Config
+	context := config.TargetContext()
 
 	if tgt, err = context.GetTarget(targetKey); err == nil && tgt != nil {
+
+		if tgt.HasDependents() {
+			cbcli_utils.ShowErrorAndExit(
+				fmt.Sprintf(
+					"Target '%s' has dependent targets. Please delete all dependent targets before deleting this target.",
+					tgt.DeploymentName(),
+				),
+			)
+		}
 
 		fmt.Println()
 		fmt.Print(
@@ -67,11 +84,11 @@ func DeleteTarget(targetKey string) {
 		)
 
 		if response == tgt.DeploymentName() {
-			if tgt.Status() != target.Undeployed {
-				if bldr, err = tgt.NewBuilder(os.Stdout, os.Stderr); err != nil {
+			if deleteFlags.force || tgt.Status() != target.Undeployed {
+				if bldr, err = tgt.NewBuilder(config.ContextVars(), os.Stdout, os.Stderr); err != nil {
 					cbcli_utils.ShowErrorAndExit(err.Error())
 				}
-				if tgt.CookbookTimestamp != tgt.Recipe.CookbookTimestamp() {
+				if tgt.CookbookVersion != tgt.Recipe.CookbookVersion() {
 					// force re-initializing
 					if err = bldr.Initialize(); err != nil {
 						cbcli_utils.ShowErrorAndExit(err.Error())
@@ -84,8 +101,25 @@ func DeleteTarget(targetKey string) {
 				context.SaveTarget(tgt.Key(), tgt)
 			}
 			if !deleteFlags.keep {
-				context.TargetSet().DeleteTarget(tgt.Key())
+				context.DeleteTarget(tgt.Key())
+
+				// delete target from MyCS account
+				if tgt.Recipe.IsBastion() {
+					// only recipes with a bastion instance is considered
+					// a space. TBD: this criteria should be revisited
+					spaceAPI := mycscloud.NewSpaceAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
+					if _, err = spaceAPI.DeleteSpace(tgt); err != nil {
+						cbcli_utils.ShowErrorAndExit(err.Error())
+					}
+
+				} else {
+					appAPI := mycscloud.NewAppAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
+					if _, err = appAPI.DeleteApp(tgt); err != nil {
+						cbcli_utils.ShowNoteMessage("\nDeleting app registration failed. You may need to manually delete the app from the MyCS cloud dashboard.")
+					}
+				}
 			}
+
 			fmt.Print(color.Green.Render("\nTarget has been deleted.\n\n"))
 		} else {
 			fmt.Print(color.Red.Render("\nTarget has not been deleted.\n\n"))
@@ -107,4 +141,5 @@ func init() {
 	bindCommonFlags(flags, &(deleteFlags.commonFlags))
 
 	flags.BoolVarP(&deleteFlags.keep, "keep", "k", false, "destroy deployed resources if any but do not delete the configuration")
+	flags.BoolVarP(&deleteFlags.force, "force", "f", false, "run delete on target even if status is undeployed")
 }

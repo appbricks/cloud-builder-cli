@@ -1,9 +1,12 @@
 #!/bin/bash
 
+action=${1:-}
+os=${2:-}
+arch=${3:-}
+
 set -xeuo pipefail
 
 root_dir=$(cd $(dirname $BASH_SOURCE)/.. && pwd)
-action=${1:-}
 
 build_cookbook=../cloud-builder/scripts/build-cookbook.sh
 if [[ ! -e $build_cookbook ]]; then
@@ -13,9 +16,9 @@ fi
 
 # install packrv2
 [[ -e ${GOPATH}/bin/packr2 ]] || \
-  go get -u github.com/gobuffalo/packr/v2/packr2
+  go install github.com/gobuffalo/packr/v2/packr2@latest
 
-build_dir=${root_dir}/build
+build_dir=${root_dir}/.build
 if [[ $action == *:clean-all:* ]]; then
   # remove all build artifacts
   # and do a full build
@@ -23,6 +26,8 @@ if [[ $action == *:clean-all:* ]]; then
 fi
 release_dir=${build_dir}/releases
 mkdir -p ${release_dir}
+
+WINTUN_VER=0.14.1
 
 function build() {
 
@@ -43,13 +48,31 @@ function build() {
     # remove embedded cookbook archive
     rm -fr ${root_dir}/cookbook/dist
 
+    cookbook_desc='This embedded cookbook contains recipes to launch MyCloudSpace space control nodes that manage the network of devices and applications connected to the space network mesh.'
+
     echo "Building cookbook at $cookbook_repo_path..."
     pushd $root_dir
     if [[ $action == *:clean:* ]]; then
       # clean will remove the cookbook build dist
-      $build_cookbook -r $cookbook_repo_path -b $cookbook_version -o $os -c -v
+      $build_cookbook \
+        --recipe $cookbook_repo_path \
+        --git-branch $cookbook_version \
+        --cookbook-name spacenode \
+        --cookbook-desc "$cookbook_desc" \
+        --cookbook-version $cookbook_version \
+        --os-name $os \
+        --os-arch $arch \
+        --clean --verbose
     else
-      $build_cookbook -r $cookbook_repo_path -b $cookbook_version -o $os -v
+      $build_cookbook \
+        --recipe $cookbook_repo_path \
+        --git-branch $cookbook_version \
+        --cookbook-name spacenode \
+        --cookbook-desc "$cookbook_desc" \
+        --cookbook-version $cookbook_version \
+        --os-name $os \
+        --os-arch $arch \
+        --verbose
     fi
     popd
 
@@ -90,12 +113,30 @@ function build() {
   # build and package release binary
   mkdir -p ${release_dir}/${os}_${arch}
   pushd ${release_dir}/${os}_${arch}
-  GOOS=$os GOARCH=$arch go build ${root_dir}/cmd/cb
+
+  versionFlags="-X \"github.com/appbricks/cloud-builder-cli/config.Version=$build_version\" -X \"github.com/appbricks/cloud-builder-cli/config.BuildTimestamp=$build_timestamp\""
+  
+  if [[ $action == *:dev:* ]]; then
+    GOOS=$os GOARCH=$arch go build -ldflags "$versionFlags" ${root_dir}/cmd/cb
+  else
+    GOOS=$os GOARCH=$arch go build -ldflags "-s -w $versionFlags" ${root_dir}/cmd/cb
+  fi
+  if [[ $os == windows ]]; then
+    curl -OL https://www.wintun.net/builds/wintun-${WINTUN_VER}.zip
+    unzip wintun-${WINTUN_VER}.zip
+    rm wintun-${WINTUN_VER}.zip
+    cp wintun/bin/${arch}/wintun.dll .
+    rm -fr wintun
+  fi
   zip -r ${release_dir}/cb_${os}_${arch}.zip .
   popd
 }
 
 if [[ $action == *:dev:* ]]; then
+  # set version
+  build_version=dev
+  build_timestamp=$(date +'%B %d, %Y at %H:%M %Z')
+
   # build binary for a dev environment
   rm -f $GOPATH/bin/cb
 
@@ -104,29 +145,23 @@ if [[ $action == *:dev:* ]]; then
   build "$os" "$arch"
   ln -s ${release_dir}/${os}_${arch}/cb $GOPATH/bin/cb
 
-else
+elif [[ $action == *:release:* ]]; then
   # set version
-  build_version=${TRAVIS_TAG:-0.0.2}
+  tag=${GITHUB_REF/refs\/tags\//}
+  build_version=${tag:-0.0.0}
   build_timestamp=$(date +'%B %d, %Y at %H:%M %Z')
 
-  if [[ `go env GOOS` == darwin ]]; then
-    sed -i '' \
-      "s|^const VERSION = \`.*\`$|const VERSION = \`$build_version\`|" \
-      ${root_dir}/cmd/version.go
-    sed -i '' \
-      "s|^const BUILD_TIMESTAMP = \`.*\`$|const BUILD_TIMESTAMP = \`$build_timestamp\`|" \
-      ${root_dir}/cmd/version.go
-  else
-    sed -i \
-      "s|^const VERSION = \`.*\`$|const VERSION = \`$build_version\`|" \
-      ${root_dir}/cmd/version.go
-    sed -i \
-      "s|^const BUILD_TIMESTAMP = \`.*\`$|const BUILD_TIMESTAMP = \`$build_timestamp\`|" \
-      ${root_dir}/cmd/version.go
-  fi
-
   # build release binaries for all supported architectures
-  build "darwin" "amd64"
-  build "linux" "amd64"
-  build "windows" "amd64"
+  if [[ -n $os && -n $arch ]]; then
+    build "$os" "$arch"
+  else
+    build "linux" "amd64"
+    build "linux" "arm64"
+    build "darwin" "amd64"
+    build "darwin" "arm64"
+    build "windows" "amd64"
+  fi
+else
+  echo "ERROR! Invald build action: $action"
+  exit 1
 fi

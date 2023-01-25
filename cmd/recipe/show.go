@@ -8,9 +8,10 @@ import (
 	"github.com/mevansam/goforms/forms"
 	"github.com/mevansam/goforms/ux"
 
-	"github.com/appbricks/cloud-builder-cli/config"
-
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
+	"github.com/appbricks/cloud-builder/auth"
 )
 
 var showCommand = &cobra.Command{
@@ -22,6 +23,8 @@ Show information regarding the given cloud recipe. This sub-command
 will show help for the recipe inputs including defaults that can be
 provided to customize the deployment of the recipe.
 `,
+
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		ShowRecipe(args[0], args[1])
@@ -38,17 +41,17 @@ func ShowRecipe(name, cloud string) {
 		textForm  *ux.TextForm
 	)
 
-	cookbook := config.Config.Context().Cookbook()
+	cookbook := cbcli_config.Config.TargetContext().Cookbook()
 	recipes := cookbook.RecipeList()
 
 	for _, r := range recipes {
-		if r.Name == name {
+		if r.RecipeKey == name {
 
 			validCloud := false
 			for _, c := range r.IaaSList {
 
 				if cloud == c.Name() {
-					recipe := cookbook.GetRecipe(r.Name, c.Name())
+					recipe := cookbook.GetRecipe(r.RecipeKey, c.Name())
 
 					if inputForm, err = recipe.InputForm(); err != nil {
 						// if this happens there is an internal

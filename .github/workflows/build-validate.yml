@@ -3,12 +3,20 @@ name: Validate build passes on pull request
 on:
   workflow_dispatch:
   pull_request:
-    branches: [ master, main, dev ]
+    branches: [ main, dev ]
     paths:
     - '**.go'
 
 jobs:
   build:
+    strategy:
+      matrix:
+        os: [ linux, darwin, windows ]
+        arch: [ amd64, arm64 ]
+        exclude:
+          - os: windows
+            arch: arm64
+
     runs-on: ubuntu-latest
 
     defaults:
@@ -20,7 +28,7 @@ jobs:
       GOPATH: ${{ github.workspace }}/go
       CLI_SRC_PATH: ${{ github.workspace }}/go/src/github.com/appbricks/cloud-builder-cli
       COOKBOOK_REPO_PATH: https://github.com/appbricks/vpn-server/cloud/recipes
-      COOKBOOK_VERSION: 0.0.10
+      COOKBOOK_VERSION: dev
 
     steps:
 
@@ -28,13 +36,20 @@ jobs:
       uses: actions/checkout@v2
       with:
         path: go/src/github.com/appbricks/cloud-builder-cli
-        
+
     - name: Checking out mycloudspace-client repository
       uses: actions/checkout@v2
       with:
         repository: appbricks/mycloudspace-client
         ref: main
         path: go/src/github.com/appbricks/mycloudspace-client
+
+    - name: Checking out mycloudspace-common repository
+      uses: actions/checkout@v2
+      with:
+        repository: appbricks/mycloudspace-common
+        ref: main
+        path: go/src/github.com/appbricks/mycloudspace-common
 
     - name: Checking out cloud-builder repository
       uses: actions/checkout@v2
@@ -51,33 +66,47 @@ jobs:
         path: go/src/github.com/mevansam/gocloud
 
     - name: Checking out goforms repository
-      uses: actions/checkout@v2    
+      uses: actions/checkout@v2
       with:
         repository: mevansam/goforms
         ref: master
         path: go/src/github.com/mevansam/goforms
 
     - name: Checking out goutils repository
-      uses: actions/checkout@v2    
+      uses: actions/checkout@v2
       with:
         repository: mevansam/goutils
         ref: master
         path: go/src/github.com/mevansam/goutils
 
+    - name: Checking out tailscale repository
+      uses: actions/checkout@v2
+      with:
+        repository: appbricks/tailscale
+        ref: appbricks/${{ github.base_ref }}
+        path: go/src/github.com/appbricks/tailscale
+
     - name: Checking out termtables repository
-      uses: actions/checkout@v2    
+      uses: actions/checkout@v2
       with:
         repository: mevansam/termtables
         ref: master
         path: go/src/github.com/mevansam/termtables
 
+    - name: Checking out terraform config inspect repository
+      uses: actions/checkout@v2
+      with:
+        repository: mevansam/terraform-config-inspect
+        ref: master
+        path: go/src/github.com/mevansam/terraform-config-inspect
+
     - name: Setup Go
       uses: actions/setup-go@v2
       with:
-        go-version: '^1.16.0'
+        go-version: '^1.19'
 
     - name: Run build
       run: |
         go version
         cd ${CLI_SRC_PATH}
-        scripts/build.sh :clean-all:
+        scripts/build.sh :release:clean-all: ${{ matrix.os }} ${{ matrix.arch }}

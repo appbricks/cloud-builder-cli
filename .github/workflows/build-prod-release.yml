@@ -1,126 +1,34 @@
-name: Build prod Cloud Build CLI release
+name: Build prod Cloud Builder CLI release
 
 on:
   workflow_dispatch:
   push:
-    branches: [ master ]
+    branches: [ main ]
     paths:
     - 'docs/release-notes.md'
     - '**.go'
 
 jobs:
-  build:
+  create-release-tag:
     runs-on: ubuntu-latest
+    outputs: 
+      version: ${{steps.release-tag.outputs.version}}
 
     defaults:
       run:
         shell: bash
-
-    # Setup default environment for build
-    env:
-      GOPATH: ${{ github.workspace }}/go
-      CLI_SRC_PATH: ${{ github.workspace }}/go/src/github.com/appbricks/cloud-builder-cli
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION: us-east-1
-      COOKBOOK_REPO_PATH: https://github.com/appbricks/vpn-server/cloud/recipes
-      COOKBOOK_VERSION: 0.0.10
-      ENV: prod
-
-    steps:
-
-    - name: Checking out cloud-builder-cli repository
-      uses: actions/checkout@v2
-      with:
-        path: go/src/github.com/appbricks/cloud-builder-cli
-        
-    - name: Checking out mycloudspace-client repository
-      uses: actions/checkout@v2
-      with:
-        repository: appbricks/mycloudspace-client
-        ref: main
-        path: go/src/github.com/appbricks/mycloudspace-client
-
-    - name: Checking out cloud-builder repository
-      uses: actions/checkout@v2
-      with:
-        repository: appbricks/cloud-builder
-        ref: master
-        path: go/src/github.com/appbricks/cloud-builder
-
-    - name: Checking out gocloud repository
-      uses: actions/checkout@v2
-      with:
-        repository: mevansam/gocloud
-        ref: master
-        path: go/src/github.com/mevansam/gocloud
-
-    - name: Checking out goforms repository
-      uses: actions/checkout@v2    
-      with:
-        repository: mevansam/goforms
-        ref: master
-        path: go/src/github.com/mevansam/goforms
-
-    - name: Checking out goutils repository
-      uses: actions/checkout@v2    
-      with:
-        repository: mevansam/goutils
-        ref: master
-        path: go/src/github.com/mevansam/goutils
-
-    - name: Checking out termtables repository
-      uses: actions/checkout@v2    
-      with:
-        repository: mevansam/termtables
-        ref: master
-        path: go/src/github.com/mevansam/termtables
-
-    - name: Setup Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: '^1.16.0'
-
-    - name: Run build
-      run: |
-        go version
-        cd ${CLI_SRC_PATH}
-        scripts/get-aws-env.sh
-        scripts/build.sh :clean-all:
-
-    - name: Upload built binaries for publishing
-      uses: actions/upload-artifact@master
-      with:
-        name: cli-build-artifacts
-        path: ${{ github.workspace }}/go/src/github.com/appbricks/cloud-builder-cli/build/releases/
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        shell: bash
-
+    
     env:
       VERSION: '0.0'
-
+    
     steps:
 
-    # Checkout the repository to the GitHub Actions runner
     - name: Checkout
-      uses: actions/checkout@v2
-
-    # Retrieve build results from previous job
-    - name: Download built binaries for release
-      uses: actions/download-artifact@master
-      with:
-        name: cli-build-artifacts
-        path: build/releases
+      uses: actions/checkout@v3
 
     # Create and tag release
     - name: Create release tag
-      id: release_tag
+      id: release-tag
       run: |
         git config user.email "$(git log -1 --pretty=format:'%an')"
         git config user.name "$(git log -1 --pretty=format:'%ae')"
@@ -143,18 +51,182 @@ jobs:
         git tag -a ${release_tag} -m "$last_commit_msg"
         git push --follow-tags
 
-        echo "::set-output name=value::$(echo ${release_tag})"
+        echo "version=${release_tag}" >> $GITHUB_OUTPUT
+
+  build:
+    strategy:
+      matrix:
+        os: [ linux, darwin, windows ]
+        arch: [ amd64, arm64 ]
+        exclude:
+          - os: windows
+            arch: arm64
+
+    needs: create-release-tag
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    # Setup default environment for build
+    env:
+      GOPATH: ${{ github.workspace }}/go
+      CLI_SRC_PATH: ${{ github.workspace }}/go/src/github.com/appbricks/cloud-builder-cli
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
+      COOKBOOK_REPO_PATH: https://github.com/appbricks/vpn-server/cloud/recipes
+      COOKBOOK_VERSION: 0.0.4
+      ENV: prod
+
+    steps:
+
+    - name: Checking out cloud-builder-cli repository
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ needs.create-release-tag.outputs.version }}
+
+    - name: Checking out mycloudspace-client repository
+      uses: actions/checkout@v3
+      with:
+        repository: appbricks/mycloudspace-client
+        ref: main
+        path: go/src/github.com/appbricks/mycloudspace-client
+
+    - name: Checking out mycloudspace-common repository
+      uses: actions/checkout@v3
+      with:
+        repository: appbricks/mycloudspace-common
+        ref: main
+        path: go/src/github.com/appbricks/mycloudspace-common
+
+    - name: Checking out cloud-builder repository
+      uses: actions/checkout@v3
+      with:
+        repository: appbricks/cloud-builder
+        ref: master
+        path: go/src/github.com/appbricks/cloud-builder
+
+    - name: Checking out gocloud repository
+      uses: actions/checkout@v3
+      with:
+        repository: mevansam/gocloud
+        ref: master
+        path: go/src/github.com/mevansam/gocloud
+
+    - name: Checking out goforms repository
+      uses: actions/checkout@v3
+      with:
+        repository: mevansam/goforms
+        ref: master
+        path: go/src/github.com/mevansam/goforms
+
+    - name: Checking out goutils repository
+      uses: actions/checkout@v3
+      with:
+        repository: mevansam/goutils
+        ref: master
+        path: go/src/github.com/mevansam/goutils
+
+    - name: Checking out tailscale repository
+      uses: actions/checkout@v3
+      with:
+        repository: appbricks/tailscale
+        ref: appbricks/main
+        path: go/src/github.com/appbricks/tailscale
+
+    - name: Checking out termtables repository
+      uses: actions/checkout@v3
+      with:
+        repository: mevansam/termtables
+        ref: master
+        path: go/src/github.com/mevansam/termtables
+
+    - name: Checking out terraform config inspect repository
+      uses: actions/checkout@v3
+      with:
+        repository: mevansam/terraform-config-inspect
+        ref: master
+        path: go/src/github.com/mevansam/terraform-config-inspect
+
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '^1.19'
+
+    - name: Run build
+      run: |
+        go version
+        cd ${CLI_SRC_PATH}
+        scripts/get-aws-env.sh -e ${ENV}
+        scripts/build.sh :release:clean-all: ${{ matrix.os }} ${{ matrix.arch }}
+
+    - name: Upload built binaries for publishing
+      uses: actions/upload-artifact@master
+      with:
+        name: cli-build-artifacts-${{ matrix.os }}-${{ matrix.arch }}
+        path: ${{ github.workspace }}/go/src/github.com/appbricks/cloud-builder-cli/.build/releases/*.zip
+
+  release:
+    needs: 
+    - create-release-tag
+    - build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    env:
+      VERSION: '0.0'
+
+    steps:
+
+    # Checkout the repository to the GitHub Actions runner
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    # Retrieve build results from previous job
+    - name: Download built binaries for release linux/amd64
+      uses: actions/download-artifact@master
+      with:
+        name: cli-build-artifacts-linux-amd64
+        path: .build/releases
+    - name: Download built binaries for release linux/arm64
+      uses: actions/download-artifact@master
+      with:
+        name: cli-build-artifacts-linux-arm64
+        path: .build/releases
+    - name: Download built binaries for release darwin/amd64
+      uses: actions/download-artifact@master
+      with:
+        name: cli-build-artifacts-darwin-amd64
+        path: .build/releases
+    - name: Download built binaries for release darwin/arm64
+      uses: actions/download-artifact@master
+      with:
+        name: cli-build-artifacts-darwin-arm64
+        path: .build/releases
+    - name: Download built binaries for release windows/amd64
+      uses: actions/download-artifact@master
+      with:
+        name: cli-build-artifacts-windows-amd64
+        path: .build/releases
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: ${{ steps.release_tag.outputs.value }}
-        prerelease: true
+        tag_name: ${{ needs.create-release-tag.outputs.version }}
+        prerelease: false
+        draft: true
         body_path: doc/release-notes.md
         files: |
-          build/releases/cb_linux_amd64.zip
-          build/releases/cb_darwin_amd64.zip
-          build/releases/cb_windows_amd64.zip
+          .build/releases/cb_linux_amd64.zip
+          .build/releases/cb_linux_arm64.zip
+          .build/releases/cb_darwin_amd64.zip
+          .build/releases/cb_darwin_arm64.zip
+          .build/releases/cb_windows_amd64.zip
           LICENSE
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"runtime/pprof"
 	"syscall"
 
 	"github.com/gookit/color"
@@ -30,12 +32,18 @@ import (
 	"github.com/mevansam/goutils/logger"
 	"github.com/mevansam/goutils/run"
 
+	"github.com/appbricks/cloud-builder-cli/cmd/app"
 	"github.com/appbricks/cloud-builder-cli/cmd/cloud"
+	"github.com/appbricks/cloud-builder-cli/cmd/device"
 	"github.com/appbricks/cloud-builder-cli/cmd/initialize"
 	"github.com/appbricks/cloud-builder-cli/cmd/recipe"
+	"github.com/appbricks/cloud-builder-cli/cmd/space"
 	"github.com/appbricks/cloud-builder-cli/cmd/target"
 	"github.com/appbricks/cloud-builder/config"
 	"github.com/appbricks/cloud-builder/cookbook"
+	"github.com/appbricks/mycloudspace-client/api"
+	"github.com/appbricks/mycloudspace-client/mycscloud"
+	"github.com/appbricks/mycloudspace-common/monitors"
 
 	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
@@ -44,6 +52,7 @@ import (
 )
 
 var (
+	isProd  string
 	cfgFile string
 )
 
@@ -54,6 +63,11 @@ var noauthCmds = map[string]bool{
 	"version": true,
 	"init": true,
 	"logout": true,
+}
+
+var spaceCmds = map[string]bool{
+	"target": true,
+	"space": true,
 }
 
 var rootCmd = &cobra.Command{
@@ -88,6 +102,7 @@ anonymized as it traverses the public provider networks.
 				"Do you agree to the terms: ",
 				"yes",
 				[]string{"no", "yes"},
+				true,
 			)
 			if response == "yes" {
 				cbcli_config.Config.SetEULAAccepted()
@@ -96,7 +111,14 @@ anonymized as it traverses the public provider networks.
 			}
 		}
 
-		if _, noauth := noauthCmds[cmd.Name()]; !noauth {
+		// retrieve the command
+		// to check against
+		cmdName := cmd.Name()
+		if cmd.Parent() != nil && cmd.Parent().Parent() != nil {
+			cmdName = cmd.Parent().Name()
+		}
+
+		if _, noauth := noauthCmds[cmdName]; !noauth {
 			if !cbcli_config.Config.Initialized() {
 				fmt.Println(
 					color.OpReverse.Render(
@@ -104,7 +126,13 @@ anonymized as it traverses the public provider networks.
 							"\n>> Please initialize the Cloud Builder client to secure configuration settings.",
 						),
 					),
-				)	
+				)
+				// load space target nodes if 
+				// executing a target command
+				if cmd.Parent() != nil && cmd.Parent().Name() == "target" {
+					cbcli_config.SpaceNodes = mycscloud.NewSpaceNodes(cbcli_config.Config)
+				}
+
 			} else {
 
 				var (
@@ -113,19 +141,48 @@ anonymized as it traverses the public provider networks.
 					awsAuth *cbcli_auth.AWSCognitoJWT
 				)
 				if awsAuth, err = cbcli_auth.GetAuthenticatedToken(cbcli_config.Config, false); err != nil {
-					logger.DebugMessage("Authentication returned error: %s", err.Error())
+					logger.ErrorMessage(
+						"rootCmd.PersistentPreRun(): Authentication returned error: %s", 
+						err.Error(),
+					)
 					cbcli_utils.ShowErrorAndExit("My Cloud Space user authentication failed.")
 				}
 				if err = cbcli_auth.AuthorizeDeviceAndUser(cbcli_config.Config); err != nil {
-					logger.DebugMessage("Authorizing logged in user on this device returned error: %s", err.Error())
+					logger.ErrorMessage(
+						"rootCmd.PersistentPreRun(): Authorizing logged in user on this device returned error: %s", 
+						err.Error(),
+					)
 					cbcli_utils.ShowErrorAndExit("My Cloud Space device and user authorization failed.")
 				}
 				if !cbcli_config.Config.DeviceContext().IsAuthorizedUser(awsAuth.Username()) {
-					// reset command
+					// user is valid but is pending being granted access to this
+					// device. reset command so login context is saved but commend
+					// is not executed.
+					cmd.PreRun = nil
 					cmd.Run = func(cmd *cobra.Command, args []string) {}
+					fmt.Println()
+					
+				} else {
+					// show logged in message only if cli 
+					// is being run via a non-root user				
+					if isAdmin, _ := run.IsAdmin(); !isAdmin {
+						fmt.Println()
+						deviceName, _ := cbcli_config.Config.DeviceContext().GetDeviceName()
+						cbcli_utils.ShowNoticeMessage(
+							"You are logged in as \"%s\" on device \"%s\".", 
+							awsAuth.Username(), deviceName)
+					}
+					// load space target nodes if 
+					// executing a target command
+					if _, isSpaceCmd := spaceCmds[cmdName]; isSpaceCmd {
+						fmt.Printf("Loading space targets...\r")
+						if cbcli_config.SpaceNodes, err = mycscloud.GetSpaceNodes(cbcli_config.Config, cbcli_config.AWS_USERSPACE_API_URL); err != nil {
+							logger.DebugMessage("Failed to load and merge remote space nodes with local targets: %s", err.Error())
+							cbcli_utils.ShowErrorAndExit("Failed to load user's space nodes.")
+						}
+						fmt.Printf("                        \r")
+					}
 				}
-				fmt.Println()
-				cbcli_utils.ShowNoticeMessage("You are logged in as \"%s\".", awsAuth.Username())
 			}
 		}
 	},
@@ -135,8 +192,52 @@ func Execute() {
 
 	var (
 		err error
+
+		profileFile *os.File
 	)
 
+	profilingEnabled := false
+
+	defer func() {
+		if cbcli_config.MonitorService != nil {
+			cbcli_config.MonitorService.Stop()
+		}
+		if cbcli_config.ShutdownSpinner != nil {
+			cbcli_config.ShutdownSpinner.Stop()
+		}
+
+		if profilingEnabled {
+			pprof.StopCPUProfile()
+		}
+	}()
+
+	if isProd == "yes" {
+		logLevel := os.Getenv("CBS_LOGLEVEL")
+		if len(logLevel) == 0 {
+			// default is error but for prod builds we do 
+			// not want to show errors unless requested
+			os.Setenv("CBS_LOGLEVEL", "fatal")
+
+		} else if logLevel == "trace" {
+			// reset trace log level if set for prod builds
+			cbcli_utils.ShowWarningMessage(
+				"Trace log-level is not supported in prod build. Resetting level to 'debug'.\n",
+			)
+			os.Setenv("CBS_LOGLEVEL", "debug")
+		}
+		
+	} else {		
+		profileFileName := os.Getenv("CBS_PROFILE_FILE")
+		if len(profileFileName) > 0 {
+			if profileFile, err = os.Create(profileFileName); err != nil {
+				cbcli_utils.ShowErrorAndExit(fmt.Sprintf("Unable to create CPU profile file: %s", err.Error()))
+			}
+			if err = pprof.StartCPUProfile(profileFile); err != nil {
+				cbcli_utils.ShowErrorAndExit(fmt.Sprintf("Unable to start profiling CB CLI executable: %s", err.Error()))
+			}
+			profilingEnabled = true
+		}
+	}
 	logger.Initialize()
 
 	if err = rootCmd.Execute(); err != nil {
@@ -144,13 +245,13 @@ func Execute() {
 		os.Exit(1)
 	}
 
-	if cbcli_config.Config != nil {		
-		if admin, _ := run.IsAdmin(); !admin {
+	if cbcli_config.Config != nil {
+		if admin, _ := run.IsAdmin(); admin && os.Getenv("__CB_RUN_AS_ROOT__") == "1" {
+			logger.TraceMessage("Config has not been saved as CLI was re-spawned as root or with elevated privileges.")
+		} else {
 			if err = cbcli_config.Config.Save(); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
-			}	
-		} else {
-			logger.TraceMessage("Config has not been saved as CLI was run as root or with elevated privileges.")
+			}
 		}
 	}
 }
@@ -182,7 +283,7 @@ func init() {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", home+"/.cb/config.yml", "config file")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", filepath.Join(home, ".cb", "config.yml"), "config file")
 }
 
 // read in config file and ENV variables if set.
@@ -199,13 +300,26 @@ func initConfig() {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}
 	// initialize / load config file
-	if cbcli_config.Config, err = config.InitFileConfig(cfgFile, cbCookbook, getPassphrase); err != nil {
+	if cbcli_config.Config, err = config.InitFileConfig(cfgFile, cbCookbook, getPassphrase, uploadConfig); err != nil {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}
 	if err = cbcli_config.Config.Load(); err != nil {
 		logger.DebugMessage("Error loading the configuration: %s", err.Error())
 
 		fmt.Println("Failed to unlock configuration file!")
+		os.Exit(1)
+	}
+
+	eventPublisher := mycscloud.NewEventPublisher(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config)
+	cbcli_config.MonitorService = monitors.NewMonitorService(
+		eventPublisher, 
+		1 /* num of collections before publishing */, 
+		5000 /* collect counter metrics every 5s */,
+	)
+	if err = cbcli_config.MonitorService.Start(); err != nil {
+		logger.DebugMessage("Failed to start monitor service: %s", err.Error())
+
+		fmt.Println("Failed to start internal telemetry services!")
 		os.Exit(1)
 	}
 }
@@ -242,8 +356,25 @@ func getPassphrase() string {
 	return passphrase
 }
 
+// encrypt and upload configuration to cloud
+func uploadConfig(key string, configData []byte, asOf int64) (int64, error) {
+
+	if key == "targetContext" {
+		logger.TraceMessage("uploadConfig(): Uploading encrypted config data for key '%s'.", key)
+
+		user := cbcli_config.Config.DeviceContext().GetOwner()
+		userAPI := mycscloud.NewUserAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config))
+		
+		return userAPI.UpdateUserConfig(user, configData, asOf)
+
+	} else {
+		logger.TraceMessage("uploadConfig(): Request to upload config key '%s' will be ignored.", key)
+	}
+	return 0, nil
+}
+
 func setupCloseHandler() {
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
@@ -262,6 +393,9 @@ func addCommands() {
 	rootCmd.AddCommand(initialize.InitCommand)
 	rootCmd.AddCommand(logoutCommand)
 	rootCmd.AddCommand(cloud.CloudCommands)
+	rootCmd.AddCommand(device.DeviceCommands)
+	rootCmd.AddCommand(app.CookbookCommands)
 	rootCmd.AddCommand(recipe.RecipeCommands)
 	rootCmd.AddCommand(target.TargetCommands)
+	rootCmd.AddCommand(space.SpaceCommands)
 }

@@ -17,15 +17,15 @@ var TargetCommands = &cobra.Command{
 A target is an instance of a recipe that can be launched with a 
 single click to a cloud region. When a recipe is configured for a
 particular cloud it will enumerate all the regions of that cloud as
-quick lauch targets. The sub-commands below allow you to launch and
-view the status targets.
+quick lauch targets. The sub-commands below allow you to launch, view
+amd manage these target spaces.
 `,
 }
 
 func init() {
+	TargetCommands.AddCommand(createCommand)
 	TargetCommands.AddCommand(listCommand)
 	TargetCommands.AddCommand(showCommand)
-	TargetCommands.AddCommand(createCommand)
 	TargetCommands.AddCommand(configureCommand)
 	TargetCommands.AddCommand(launchCommand)
 	TargetCommands.AddCommand(deleteCommand)

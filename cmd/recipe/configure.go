@@ -8,9 +8,11 @@ import (
 	"github.com/mevansam/goforms/forms"
 	"github.com/mevansam/goforms/ux"
 
-	"github.com/appbricks/cloud-builder-cli/config"
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/cookbook"
 
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
@@ -23,6 +25,8 @@ Recipes are parameterized to accomodate different configurations in
 the cloud. This sub-command can be used to configure a common recipe
 template which can be further customized when configuring a target.
 `,
+
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		ConfigureRecipe(args[0], args[1])
@@ -39,7 +43,7 @@ func ConfigureRecipe(name, cloud string) {
 		inputForm forms.InputForm
 	)
 
-	if recipe, err = config.Config.Context().GetCookbookRecipe(name, cloud); err == nil && recipe != nil {
+	if recipe, err = cbcli_config.Config.TargetContext().GetCookbookRecipe(name, cloud); err == nil && recipe != nil {
 
 		if inputForm, err = recipe.InputForm(); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
@@ -52,7 +56,7 @@ func ConfigureRecipe(name, cloud string) {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
 
-		config.Config.Context().SaveCookbookRecipe(recipe)
+		cbcli_config.Config.TargetContext().SaveCookbookRecipe(recipe)
 		fmt.Print("\nConfiguration input saved\n\n")
 		return
 	}

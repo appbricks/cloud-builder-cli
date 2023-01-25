@@ -1,4 +1,4 @@
-name: Build dev Cloud Build CLI release
+name: Build dev Cloud Builder CLI release
 
 on:
   workflow_dispatch:
@@ -9,6 +9,14 @@ on:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        os: [ linux, darwin, windows ]
+        arch: [ amd64, arm64 ]
+        exclude:
+          - os: windows
+            arch: arm64
+
     runs-on: ubuntu-latest
 
     defaults:
@@ -23,91 +31,93 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: us-east-1
       COOKBOOK_REPO_PATH: https://github.com/appbricks/vpn-server/cloud/recipes
-      COOKBOOK_VERSION: 0.0.10
+      COOKBOOK_VERSION: dev
       ENV: dev
 
     steps:
 
     - name: Checking out cloud-builder-cli repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         path: go/src/github.com/appbricks/cloud-builder-cli
-        
+
     - name: Checking out mycloudspace-client repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: appbricks/mycloudspace-client
         ref: main
         path: go/src/github.com/appbricks/mycloudspace-client
 
+    - name: Checking out mycloudspace-common repository
+      uses: actions/checkout@v3
+      with:
+        repository: appbricks/mycloudspace-common
+        ref: main
+        path: go/src/github.com/appbricks/mycloudspace-common
+
     - name: Checking out cloud-builder repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: appbricks/cloud-builder
         ref: master
         path: go/src/github.com/appbricks/cloud-builder
 
     - name: Checking out gocloud repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: mevansam/gocloud
         ref: master
         path: go/src/github.com/mevansam/gocloud
 
     - name: Checking out goforms repository
-      uses: actions/checkout@v2    
+      uses: actions/checkout@v3
       with:
         repository: mevansam/goforms
         ref: master
         path: go/src/github.com/mevansam/goforms
 
     - name: Checking out goutils repository
-      uses: actions/checkout@v2    
+      uses: actions/checkout@v3
       with:
         repository: mevansam/goutils
         ref: master
         path: go/src/github.com/mevansam/goutils
 
+    - name: Checking out tailscale repository
+      uses: actions/checkout@v3
+      with:
+        repository: appbricks/tailscale
+        ref: appbricks/dev
+        path: go/src/github.com/appbricks/tailscale
+
     - name: Checking out termtables repository
-      uses: actions/checkout@v2    
+      uses: actions/checkout@v3
       with:
         repository: mevansam/termtables
         ref: master
         path: go/src/github.com/mevansam/termtables
 
+    - name: Checking out terraform config inspect repository
+      uses: actions/checkout@v3
+      with:
+        repository: mevansam/terraform-config-inspect
+        ref: master
+        path: go/src/github.com/mevansam/terraform-config-inspect
+
     - name: Setup Go
       uses: actions/setup-go@v2
       with:
-        go-version: '^1.16.0'
+        go-version: '^1.19'
 
     - name: Run build
       run: |
         go version
         cd ${CLI_SRC_PATH}
-        scripts/get-aws-env.sh
-        scripts/build.sh :clean-all:
+        scripts/get-aws-env.sh -e ${ENV}
+        scripts/build.sh :release:clean-all: ${{ matrix.os }} ${{ matrix.arch }}
 
     - name:  Upload dev binaries to S3
       run: |
         mkdir releases
-        cp -r ${CLI_SRC_PATH}/build/releases/*.zip releases/
+        cp -r ${CLI_SRC_PATH}/.build/releases/*.zip releases/
         aws s3 sync releases s3://mycs${ENV}-deploy-artifacts/releases
-
-    # - name: Stage Release
-    #   uses: softprops/action-gh-release@v1
-    #   if: startsWith(github.ref, 'refs/tags/')
-    #   with:
-    #     prerelease: true
-    #     body: |
-    #       To install, download the correct file for you system 
-    #       and extract the binary to the system path or any path 
-    #       that is mapped to the system's PATH variable.
-    #     body_path: doc/release-notes.md
-    #     files: |
-    #       build/releases/cb_darwin_amd64.zip
-    #       build/releases/cb_linux_amd64.zip
-    #       build/releases/cb_windows_amd64.zip
-    #       LICENSE
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #     GITHUB_REPOSITORY: appbricks/cloud-builder-cli

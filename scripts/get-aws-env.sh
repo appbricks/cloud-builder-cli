@@ -62,7 +62,7 @@ api_outputs=$(aws --region ${aws_region} \
   | jq '.Stacks[0].Outputs[]' \
   | sed 's|\\n|\\\\n|g')
 
-# Update Hosted UI for CLI client
+# Determine MyCS service endpoints and credentials
 cognitoRegion=$(echo "$identity_outputs" | jq -r 'select(.OutputKey=="Region") | .OutputValue')
 userPoolId=$(echo "$identity_outputs" | jq -r 'select(.OutputKey=="UserPoolId") | .OutputValue')
 cliClientID=$(echo "$identity_outputs" | jq -r 'select(.OutputKey=="UserPoolCLIClientId") | .OutputValue')
@@ -70,7 +70,7 @@ cliClientSecret=$(echo "$identity_outputs" | jq -r 'select(.OutputKey=="UserPool
 appsyncRegion=$(echo "$api_outputs" | jq -r 'select(.OutputKey=="Region") | .OutputValue')
 userSpaceApiUrl=$(echo "$api_outputs" | jq -r 'select(.OutputKey=="UserSpaceApiUrl") | .OutputValue')
 
-# aws amplify config for mycloudspace web app
+# aws config for cloudbuilder cli
 cat << ---EOF > ${home_dir}/config/aws.go
 package config
 

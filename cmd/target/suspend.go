@@ -8,9 +8,11 @@ import (
 	"github.com/mevansam/gocloud/cloud"
 	"github.com/spf13/cobra"
 
-	"github.com/appbricks/cloud-builder-cli/config"
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
 
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
@@ -30,6 +32,8 @@ suspend a specific instance provide the instance name via the
 '-i|--instance' option.
 `,
 
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
+
 	Run: func(cmd *cobra.Command, args []string) {
 		SuspendTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(suspendFlags.commonFlags)))
 	},
@@ -45,25 +49,19 @@ func SuspendTarget(targetKey string) {
 		s   *spinner.Spinner
 	)
 
-	if tgt, err = config.Config.Context().GetTarget(targetKey); err == nil && tgt != nil {
+	if tgt, err = cbcli_config.Config.TargetContext().GetTarget(targetKey); err == nil && tgt != nil {
 
-		if err = tgt.LoadRemoteRefs(); err != nil {
-			cbcli_utils.ShowErrorAndExit(err.Error())
-		}
 		if tgt.Status() == target.Running {
 			fmt.Println()
-			if err = tgt.LoadRemoteRefs(); err != nil {
-				cbcli_utils.ShowErrorAndExit(err.Error())
-
-			} else if err = tgt.Suspend(
-				func(name string, instance cloud.ComputeInstance) {
+			if err = tgt.Suspend(
+				func(name string, instance *target.ManagedInstance) {
 					state, _ := instance.State()
 					if state == cloud.StateRunning {						
 						s = spinner.New(
-							spinner.CharSets[39], 
+							spinner.CharSets[cbcli_config.SpinnerNetworkType], 
 							100*time.Millisecond,
 							spinner.WithSuffix(fmt.Sprintf(" Stopping instance \"%s\".", name)),
-							spinner.WithFinalMSG(fmt.Sprintf("Instance \"%s\" stopped.\n", name)),
+							spinner.WithFinalMSG(fmt.Sprintf("Instance \"%s\" stopped.\n\n", name)),
 							spinner.WithHiddenCursor(true),
 						)
 						s.Start()						

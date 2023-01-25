@@ -7,15 +7,15 @@ import (
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
 
-	"github.com/mevansam/gocloud/backend"
-	"github.com/mevansam/gocloud/provider"
 	"github.com/mevansam/goforms/forms"
 	"github.com/mevansam/goforms/ux"
 	"github.com/mevansam/goutils/utils"
 
-	"github.com/appbricks/cloud-builder-cli/config"
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
 
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
@@ -35,6 +35,8 @@ re-apply this changes to the deployment if the target has already
 been launched.
 `,
 
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
+
 	Run: func(cmd *cobra.Command, args []string) {
 		ConfigureTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(configureFlags.commonFlags)))
 	},
@@ -49,7 +51,7 @@ func ConfigureTarget(targetKey string) {
 		tgt *target.Target
 	)
 
-	if tgt, err = config.Config.Context().GetTarget(targetKey); err == nil && tgt != nil {
+	if tgt, err = cbcli_config.Config.TargetContext().GetTarget(targetKey); err == nil && tgt != nil {
 
 		if tgt.Status() == target.Undeployed {
 			if configureFlags.all {
@@ -139,10 +141,9 @@ func configureTarget(tgt *target.Target, tags ...string) {
 	}
 	if len(backendInputForm.EnabledInputs(true, "target-undeployed")) > 0 {
 
-		backend := tgt.Backend.(backend.CloudBackend)
-		if !backend.IsValid() {
-			if err = backend.Configure(
-				tgt.Provider.(provider.CloudProvider),
+		if !tgt.Backend.IsValid() {
+			if err = tgt.Backend.Configure(
+				tgt.Provider,
 				tgt.DeploymentName(), tgt.RecipeName,
 			); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
@@ -162,7 +163,7 @@ func configureTarget(tgt *target.Target, tags ...string) {
 	}
 
 	// save target
-	if config.Config.Context().HasTarget(tgt.Key()) {
+	if cbcli_config.Config.TargetContext().HasTarget(tgt.Key()) {
 
 		fmt.Print(utils.FormatMessage(7, 80, false, true, tgt.Name()))
 		fmt.Println(" exists.")
@@ -170,6 +171,7 @@ func configureTarget(tgt *target.Target, tags ...string) {
 			"Do you wish to overwrite it (yes/no)? ",
 			"yes",
 			[]string{"no", "yes"},
+			true,
 		)
 
 		if len(response) > 0 && response != "yes" {
@@ -177,7 +179,7 @@ func configureTarget(tgt *target.Target, tags ...string) {
 			return
 		}
 	}
-	config.Config.Context().SaveTarget(targetKey, tgt)
+	cbcli_config.Config.TargetContext().SaveTarget(targetKey, tgt)
 	fmt.Print(color.Green.Render("\nConfiguration for target saved.\n\n"))
 }
 

@@ -5,12 +5,13 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/mevansam/gocloud/provider"
 	"github.com/mevansam/goforms/forms"
 	"github.com/mevansam/goforms/ux"
 
-	"github.com/appbricks/cloud-builder-cli/config"
-
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
+	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
 
@@ -25,6 +26,8 @@ or more of the clouds the recipe can be launched in. This sub-command
 can be used to configure your cloud credentials for the cloud
 environments you wish to target.
 `,
+
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		ConfigureCloud(args[0])
@@ -41,7 +44,7 @@ func ConfigureCloud(name string) {
 		inputForm forms.InputForm
 	)
 
-	if provider, err = config.Config.Context().GetCloudProvider(name); err == nil && provider != nil {
+	if provider, err = cbcli_config.Config.TargetContext().GetCloudProvider(name); err == nil && provider != nil {
 
 		if inputForm, err = provider.InputForm(); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
@@ -54,7 +57,7 @@ func ConfigureCloud(name string) {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
 
-		config.Config.Context().SaveCloudProvider(provider)
+		cbcli_config.Config.TargetContext().SaveCloudProvider(provider)
 		fmt.Print("\nConfiguration input saved\n\n")
 		return
 	}

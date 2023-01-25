@@ -28,17 +28,22 @@ Signs out the current user in context.
 
 		config := cbcli_config.Config
 		
-		if !config.AuthContext().IsLoggedIn() {
-			cbcli_utils.ShowErrorAndExit("No user logged in.")
-		}
-		if awsAuth, err = cbcli_auth.NewAWSCognitoJWT(config); err != nil {
-			cbcli_utils.ShowErrorAndExit(err.Error())
+		if config.AuthContext().IsLoggedIn() {
+			if awsAuth, err = cbcli_auth.NewAWSCognitoJWT(config); err != nil {
+				cbcli_utils.ShowErrorAndExit(err.Error())
+			}
 		}
 		if err = config.AuthContext().Reset(); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
+		config.DeviceContext().SetLoggedInUser("", "")
+		
 		fmt.Println()
-		cbcli_utils.ShowNoteMessage("User \"%s\" has been logged out.", awsAuth.Username())
+		if awsAuth != nil {
+			cbcli_utils.ShowNoteMessage("User \"%s\" has been logged out.", awsAuth.Username())
+		} else {
+			cbcli_utils.ShowNoteMessage("Logout complete.")
+		}
 		fmt.Println()
 	},
 }

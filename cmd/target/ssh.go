@@ -11,12 +11,14 @@ import (
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/term"
 
+	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/target"
 	"github.com/mevansam/gocloud/cloud"
 	"github.com/mevansam/goutils/logger"
 	"github.com/mevansam/goutils/streams"
 	"github.com/mevansam/goutils/utils"
 
+	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
 	cbcli_config "github.com/appbricks/cloud-builder-cli/config"
 	cbcli_utils "github.com/appbricks/cloud-builder-cli/utils"
 )
@@ -41,6 +43,8 @@ internal then this command can only be run once the VPN connection to
 the cloud space sandbox VPN has been establised.
 `,
 
+	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
+
 	Run: func(cmd *cobra.Command, args []string) {
 		SSHTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(sshFlags.commonFlags)))
 	},
@@ -62,12 +66,8 @@ func SSHTarget(targetKey string) {
 		instanceIndex   int
 	)
 
-	targets := cbcli_config.Config.Context().TargetSet()
+	targets := cbcli_config.Config.TargetContext().TargetSet()
 	if tgt = targets.GetTarget(targetKey); tgt != nil {
-
-		if err = tgt.LoadRemoteRefs(); err != nil {
-			cbcli_utils.ShowErrorAndExit(err.Error())
-		}
 
 		managedInstances := tgt.ManagedInstances()
 		numInstances := len(managedInstances)
@@ -86,18 +86,20 @@ func SSHTarget(targetKey string) {
 
 			if response = cbcli_utils.GetUserInputFromList(
 				"Enter # of instance to SSH to or (q)uit: ",
-				"", options); response == "q" {
+				"", options, false); response == "q" {
 				return
 			}
 			if instanceIndex, err = strconv.Atoi(response); err != nil ||
 				instanceIndex < 1 || instanceIndex > numInstances {
-				cbcli_utils.ShowErrorAndExit("invalid option provided")
+				cbcli_utils.ShowErrorAndExit("invalid entry")
 			}
 			instanceIndex--
 			managedInstance = managedInstances[instanceIndex]
 
-		} else {
+		} else if len(managedInstances) > 0 {
 			managedInstance = managedInstances[0]
+		} else {
+			cbcli_utils.ShowErrorAndExit("No managed instances have been deployed.")
 		}
 
 		if state, err = managedInstance.Instance.State(); err != nil {
