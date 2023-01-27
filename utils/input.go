@@ -98,7 +98,7 @@ func GetUserInputFromList(
 	return response
 }
 
-func GetYesNoUserInput(prompt string, defaultRespone bool) (bool, error) {
+func GetYesNoUserInput(prompt string, defaultRespone bool) bool {
 
 	var(
 		err error
@@ -123,13 +123,20 @@ func GetYesNoUserInput(prompt string, defaultRespone bool) (bool, error) {
 	}
 
 	if input, err = line.PromptWithSuggestion(prompt, defaultInput, -1); err != nil {
-		return defaultRespone, err
+
+		if err == liner.ErrPromptAborted {
+			fmt.Println(color.Red.Render("\nInput aborted.\n"))
+			os.Exit(1)
+		} else {
+			ShowErrorAndExit(err.Error())
+		}
 	}
 	line.SetCompleter(nil)
 
 	input = strings.ToLower(input)
 	if match, err := regexp.Match(`^((y(es)?)|(no?))$`, []byte(input)); !match || err != nil {
-		return defaultRespone, fmt.Errorf("invalid input.")
+		fmt.Println(color.Red.Render("\nInvalid input.\n"))
+		os.Exit(1)
 	}
-	return input == "yes" || input == "y", nil
+	return input == "yes" || input == "y"
 }

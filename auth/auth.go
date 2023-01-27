@@ -218,11 +218,9 @@ func AuthorizeDeviceAndUser(config config.Config) error {
 		} else if errStr == "unauthorized" {
 			fmt.Println()
 			cbcli_utils.ShowNoticeMessage("User \"%s\" is not authorized to use this device.", userName)			
-
-			fmt.Println()				
-			if requestAccess, err = cbcli_utils.GetYesNoUserInput("Do you wish to request access to this device : ", false); err != nil {
-				return err
-			}
+			fmt.Println()
+			
+			requestAccess = cbcli_utils.GetYesNoUserInput("Do you wish to request access to this device : ", false)			
 			if (requestAccess) {
 				if user, _ = deviceContext.GetGuestUser(userName); user == nil {
 					if user, err = deviceContext.NewGuestUser(userID, userName); err != nil {
