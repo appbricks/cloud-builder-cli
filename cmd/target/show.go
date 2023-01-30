@@ -134,7 +134,7 @@ func showNodeInfo(tgt *target.Target) {
 		fmt.Println(color.OpBold.Render(text.String()))
 
 		fmt.Print("\nState: ")
-		if state, err = managedInstance.Instance.State(); err == nil {
+		if state, err = managedInstance.State(); err == nil {
 			switch state {
 			case cloud.StateRunning:
 				fmt.Println(
