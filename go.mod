@@ -203,5 +203,5 @@ require (
 	inet.af/peercred v0.0.0-20210906144145-0893ea02156a // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
 	software.sslmate.com/src/go-pkcs12 v0.2.0 // indirect
-	tailscale.com v1.22.0 // indirect
+	tailscale.com v0.0.0-00010101000000-000000000000 // indirect
 )
