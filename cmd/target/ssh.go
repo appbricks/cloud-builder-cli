@@ -102,7 +102,7 @@ func SSHTarget(targetKey string) {
 			cbcli_utils.ShowErrorAndExit("No managed instances have been deployed.")
 		}
 
-		if state, err = managedInstance.Instance.State(); err != nil {
+		if state, err = managedInstance.State(); err != nil {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
 		if state == cloud.StateRunning {

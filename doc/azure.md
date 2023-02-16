@@ -65,3 +65,7 @@ az ad app permission admin-consent --id=$ARM_CLIENT_ID
 ```
 
 > Examples for [az add app permission ...](https://learn.microsoft.com/en-us/cli/azure/ad/app/permission?view=azure-cli-latest)
+
+Verify the above permissions have been applied via the portal.
+
+![alt text](images/azure-app-api-perm.png "Azure App Api Permissions")

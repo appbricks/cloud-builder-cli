@@ -29,10 +29,17 @@ mkdir -p ${release_dir}
 
 WINTUN_VER=0.14.1
 
+MYCS_NODE_IMAGE=null
+
 function build() {
 
   local os=$1
   local arch=$2
+
+  [[ -n $MYCS_NODE_IMAGE && $MYCS_NODE_IMAGE != null ]] || ( \
+    echo "ERROR! Invalid MyCS node image name.";
+    exit 1;
+  )
   
   # build cookbook and binary package for given os and arch
   if [[ ! -e ${build_dir}/cookbook/dist/cookbook-${os}_${arch}.zip || $action == *:cookbook:* ]]; then
@@ -60,6 +67,7 @@ function build() {
         --cookbook-name spacenode \
         --cookbook-desc "$cookbook_desc" \
         --cookbook-version $cookbook_version \
+        --env-arg "bastion_image_name=${MYCS_NODE_IMAGE}" \
         --os-name $os \
         --os-arch $arch \
         --clean --verbose
@@ -70,6 +78,7 @@ function build() {
         --cookbook-name spacenode \
         --cookbook-desc "$cookbook_desc" \
         --cookbook-version $cookbook_version \
+        --env-arg "bastion_image_name=${MYCS_NODE_IMAGE}" \
         --os-name $os \
         --os-arch $arch \
         --verbose
@@ -132,7 +141,18 @@ function build() {
   popd
 }
 
+# List of available MyCS node images. The latest one for
+# the environment is passed to the cookbook build to included
+# as an environment variable.
+mycs_node_images=$(aws ec2 describe-images --output json \
+  --region us-east-1 --filters "Name=name,Values=appbricks-bastion*")
+
 if [[ $action == *:dev:* ]]; then
+
+  # Determine MyCS bastion image for dev environment
+  dev_images=$(echo "$mycs_node_images" | jq '[.Images[] | select(.Name|test("appbricks-bastion_D.*"))]')
+  MYCS_NODE_IMAGE=$(echo "$dev_images" | jq -r 'sort_by(.Name | split("_D.")[1] | split(".") | map(tonumber))[-1] | .Name')
+
   # set version
   build_version=dev
   build_timestamp=$(date +'%B %d, %Y at %H:%M %Z')
@@ -146,6 +166,11 @@ if [[ $action == *:dev:* ]]; then
   ln -s ${release_dir}/${os}_${arch}/cb $GOPATH/bin/cb
 
 elif [[ $action == *:release:* ]]; then
+
+  # Determine MyCS bastion image for prod environment
+  prod_images=$(echo "$mycs_node_images" | jq '[.Images[] | select(.Name|test("appbricks-bastion_\\d+\\.\\d+\\.\\d+"))'])
+  MYCS_NODE_IMAGE=$(echo "$prod_images" | jq -r 'sort_by(.Name | split("_")[1] | split(".") | map(tonumber))[-1] | .Name')
+
   # set version
   tag=${GITHUB_REF/refs\/tags\//}
   build_version=${tag:-0.0.0}

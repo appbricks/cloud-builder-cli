@@ -118,9 +118,8 @@ func initialize() {
 	resetConfig = true
 	if deviceOwner, isSet := deviceContext.GetOwnerUserName(); isSet {
 		fmt.Println()
-		if resetConfig, err = cbcli_utils.GetYesNoUserInput("Do you wish to reset the primary user : ", false); err != nil {
-			panic(err)
-		}
+
+		resetConfig = cbcli_utils.GetYesNoUserInput("Do you wish to reset the primary user : ", false)
 		if resetConfig {
 			// confirm device owner by forcing user to re-login
 			fmt.Println()
@@ -204,12 +203,10 @@ func initialize() {
 				),
 			)
 			fmt.Println()
-			if importKey, err = cbcli_utils.GetYesNoUserInput(
+			importKey = cbcli_utils.GetYesNoUserInput(
 				fmt.Sprintf("Do you wish to import a private key for user '%s' : ", userName),
 				false,
-			); err != nil {
-				panic(err)
-			}
+			)
 
 		} else {
 			fmt.Println()
@@ -374,9 +371,7 @@ func initialize() {
 
 	resetPassphrase = true
 	if config.Initialized() {		
-		if resetPassphrase, err = cbcli_utils.GetYesNoUserInput("Do you wish to reset the passphrase : ", false); err != nil {
-			panic(err)
-		}
+		resetPassphrase = cbcli_utils.GetYesNoUserInput("Do you wish to reset the passphrase : ", false)
 	}
 	if resetPassphrase {
 		fmt.Println()

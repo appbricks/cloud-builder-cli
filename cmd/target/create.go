@@ -50,7 +50,8 @@ func CreateTarget(recipeKey, iaasName string) {
 		tgt, spaceTgt *target.Target
 		spaceTgtKey string
 
-		spaceTgtProvider config.Configurable
+		copySpaceTgtProvider bool
+		spaceTgtProvider     config.Configurable
 
 		recipeInputForm,
 		providerInputForm forms.InputForm
@@ -86,24 +87,11 @@ func CreateTarget(recipeKey, iaasName string) {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
 
-		// new target so provider configuration needs to be completed
-		if tgt.Recipe.IsBastion() {
-			// bastion nodes build the space virtual private cloud network
-			// so their providers need to be configured individually
-			if err = ux.GetFormInput(providerInputForm,
-				fmt.Sprintf(
-					"Configure Cloud Provider \"%s\" for New Target",
-					tgt.RecipeIaas,
-				),
-				"CONFIGURATION DATA INPUT",
-				2, 80, "target-undeployed",
-			); err != nil {
-				cbcli_utils.ShowErrorAndExit(err.Error())
-			}
+		configureProvider := providerInputForm != nil
 
-		} else {
-			// non-bastion nodes install to a bastion node's space, 
-			// so need a target bastion node to deploy recipe to
+		// non-bastion nodes need to be associated with a space
+		// node that provides the space networking services
+		if !tgt.Recipe.IsBastion() {
 			targets := context.TargetSet()
 
 			if len(createFlags.dependentTarget) == 0 {
@@ -111,14 +99,14 @@ func CreateTarget(recipeKey, iaasName string) {
 
 				spaceTargets := []string{}
 				for _, t := range targets.GetTargets() {
-					if t.Provider.Name() == iaasName && t.Recipe.IsBastion() {
+					if t.Recipe.IsBastion() {
 						spaceTargets = append(spaceTargets, t.Key())
 					}
 				}
 				if len(spaceTargets) == 0 {
 					cbcli_utils.ShowInfoMessage( 
-						"No space targets have been configured where application '%s' can be deployed to iaas '%s'.\n", 
-						recipeKey, iaasName,
+						"No space targets have been configured where application '%s' can be deployed to.\n", 
+						recipeKey,
 					)
 					os.Exit(0)
 				}
@@ -136,14 +124,37 @@ func CreateTarget(recipeKey, iaasName string) {
 			}
 			tgt.DependentTargets = []string{spaceTgtKey}
 			
-			// application target needs to have same provider configuration 
-			// as that of the space to which it will be deployed
-			if spaceTgtProvider, err = spaceTgt.Provider.Copy(); err != nil {
-				cbcli_utils.ShowErrorAndExit(err.Error())
+			if iaasName == spaceTgt.Provider.Name() {
+				// if iaas' match then the application target can reuse the
+				// same provider configuration as that of the space to which 
+				// it will be deployed to
+				copySpaceTgtProvider = cbcli_utils.GetYesNoUserInput(
+					"Do you wish deploy to the same cloud environment as the space node : ", 
+					false,
+				)
+				if copySpaceTgtProvider {
+					if spaceTgtProvider, err = spaceTgt.Provider.Copy(); err != nil {
+						cbcli_utils.ShowErrorAndExit(err.Error())
+					}
+					tgt.Provider = spaceTgtProvider.(provider.CloudProvider)
+				}
+				configureProvider = false
 			}
-			tgt.Provider = spaceTgtProvider.(provider.CloudProvider)
 		}
 
+		// configure the target recipe's provider if required
+		if configureProvider {
+			if err = ux.GetFormInput(providerInputForm,
+				fmt.Sprintf(
+					"Configure Cloud Provider \"%s\" for New Target",
+					tgt.RecipeIaas,
+				),
+				"CONFIGURATION DATA INPUT",
+				2, 80, "target-undeployed",
+			); err != nil {
+				cbcli_utils.ShowErrorAndExit(err.Error())
+			}
+		}
 		// set the target's recipe region variable
 		// to be same value as that of the provider
 		if region = tgt.Provider.Region(); region != nil {

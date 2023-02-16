@@ -136,30 +136,32 @@ func configureTarget(tgt *target.Target, tags ...string) {
 	}
 
 	// configure the recipe backend
-	if backendInputForm, err = tgt.Backend.InputForm(); err != nil {
-		cbcli_utils.ShowErrorAndExit(err.Error())
-	}
-	if len(backendInputForm.EnabledInputs(true, "target-undeployed")) > 0 {
-
-		if !tgt.Backend.IsValid() {
-			if err = tgt.Backend.Configure(
-				tgt.Provider,
-				tgt.DeploymentName(), tgt.RecipeName,
+	if tgt.Backend != nil {		
+		if backendInputForm, err = tgt.Backend.InputForm(); err != nil {
+			cbcli_utils.ShowErrorAndExit(err.Error())
+		}
+		if len(backendInputForm.EnabledInputs(true, "target-undeployed")) > 0 {
+	
+			if !tgt.Backend.IsValid() {
+				if err = tgt.Backend.Configure(
+					tgt.Provider,
+					tgt.DeploymentName(), tgt.RecipeName,
+				); err != nil {
+					cbcli_utils.ShowErrorAndExit(err.Error())
+				}
+			}
+	
+			if err = ux.GetFormInput(backendInputForm,
+				fmt.Sprintf(
+					"Target's Backend \"%s\" Configuration",
+					tgt.Backend.Name(),
+				),
+				"CONFIGURATION DATA INPUT",
+				2, 80, "target-undeployed",
 			); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
-		}
-
-		if err = ux.GetFormInput(backendInputForm,
-			fmt.Sprintf(
-				"Target's Backend \"%s\" Configuration",
-				tgt.Backend.Name(),
-			),
-			"CONFIGURATION DATA INPUT",
-			2, 80, "target-undeployed",
-		); err != nil {
-			cbcli_utils.ShowErrorAndExit(err.Error())
-		}
+		}	
 	}
 
 	// save target
