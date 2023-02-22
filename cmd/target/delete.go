@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/gookit/color"
+	"github.com/mevansam/goutils/logger"
 	"github.com/mevansam/goutils/utils"
 	"github.com/spf13/cobra"
 
@@ -109,12 +110,14 @@ func DeleteTarget(targetKey string) {
 					// a space. TBD: this criteria should be revisited
 					spaceAPI := mycscloud.NewSpaceAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
 					if _, err = spaceAPI.DeleteSpace(tgt); err != nil {
-						cbcli_utils.ShowErrorAndExit(err.Error())
+						logger.ErrorMessage("DeleteTarget(): Error attempting to delete space registration: %s", err.Error())
+						cbcli_utils.ShowNoteMessage("\nDeleting space registration failed. You may need to manually delete the space from the MyCS cloud dashboard.")
 					}
 
 				} else {
 					appAPI := mycscloud.NewAppAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
 					if _, err = appAPI.DeleteApp(tgt); err != nil {
+						logger.ErrorMessage("DeleteTarget(): Error attempting to delete app registration: %s", err.Error())
 						cbcli_utils.ShowNoteMessage("\nDeleting app registration failed. You may need to manually delete the app from the MyCS cloud dashboard.")
 					}
 				}
