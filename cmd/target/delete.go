@@ -94,6 +94,11 @@ func DeleteTarget(targetKey string) {
 					if err = bldr.Initialize(); err != nil {
 						cbcli_utils.ShowErrorAndExit(err.Error())
 					}
+				} else {
+					// initialize if required
+					if err = bldr.AutoInitialize(); err != nil {
+						cbcli_utils.ShowErrorAndExit(err.Error())
+					}
 				}
 				if err = bldr.Delete(); err != nil {
 					cbcli_utils.ShowErrorAndExit(err.Error())
