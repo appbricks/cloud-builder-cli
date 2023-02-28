@@ -69,7 +69,7 @@ func authorizeSpaceNode(roleMask auth.RoleMask, commonFlags *commonFlags) func(c
 		if spaceNode == nil {
 			cbcli_utils.ShowErrorAndExit(
 				fmt.Sprintf(
-					"Space target \"%s\" does not exist. Run 'cb target list' to list the shared or owned space targets",
+					"Space target \"%s\" does not exist. Run 'cb space list' to list the shared or owned space targets",
 					targetKey,
 				),
 			)
