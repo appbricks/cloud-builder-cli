@@ -107,6 +107,12 @@ func DeleteTarget(targetKey string) {
 				context.SaveTarget(tgt.Key(), tgt)
 			}
 			if !deleteFlags.keep {
+				// delete target backend storage
+				if err = tgt.DeleteBackend(); err != nil {
+					logger.ErrorMessage("DeleteTarget(): Error deleting target's deployment state remote storage: %s", err.Error())
+					cbcli_utils.ShowNoteMessage("\nDeleting target's deployment state remote storage failed. You need to delete it manually from your cloud provider console.")
+				}
+				// delete target from config context
 				context.DeleteTarget(tgt.Key())
 
 				// delete target from MyCS account
