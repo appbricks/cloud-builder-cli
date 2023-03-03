@@ -17,6 +17,8 @@ import (
 
 	"github.com/appbricks/cloud-builder/auth"
 	"github.com/appbricks/cloud-builder/userspace"
+	"github.com/appbricks/mycloudspace-client/api"
+	"github.com/appbricks/mycloudspace-client/mycscloud"
 	"github.com/appbricks/mycloudspace-client/mycsnode"
 	"github.com/appbricks/mycloudspace-client/network"
 	"github.com/appbricks/mycloudspace-common/vpn"
@@ -33,6 +35,8 @@ var connectFlags = struct {
 
 	managedDevice     string
 	managedDeviceUser string
+	expirationTimeout int
+	inactivityTimeout int	
 
 	useSpaceDNS    bool
 	egressViaSpace bool
@@ -325,7 +329,7 @@ func downloadConnectConfig(space userspace.SpaceNode) {
 		managedDeviceUser  *userspace.User
 		configInstructions string
 
-		apiClient *mycsnode.ApiClient
+		nodeAPIClient *mycsnode.ApiClient
 
 		vpnConfigData vpn.ConfigData
 		vpnConfig     vpn.Config
@@ -379,37 +383,52 @@ func downloadConnectConfig(space userspace.SpaceNode) {
 	}
 	
 	// create api client for target node
-	if apiClient, err = cbcli_config.SpaceNodes.GetApiClientForSpace(space); err != nil {
+	if nodeAPIClient, err = cbcli_config.SpaceNodes.GetApiClientForSpace(space); err != nil {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}
-	defer cbcli_config.SpaceNodes.ReleaseApiClientForSpace(apiClient)
+	defer cbcli_config.SpaceNodes.ReleaseApiClientForSpace(nodeAPIClient)
 
 	if vpnConfigData, err = vpn.NewVPNConfigData(&nodeConnectService{
-		ApiClient:           apiClient,
+		ApiClient:           nodeAPIClient,
 		managedDeviceID:     managedDevice.DeviceID,
 		managedDeviceUserID: managedDeviceUser.UserID,
 	}); err != nil {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}	
 	if vpnConfig, err = vpn.NewConfigFromTarget(vpnConfigData); err != nil {
-		logger.DebugMessage("Error loading VPN configuration: %s", err.Error())
+		logger.ErrorMessage("Error loading VPN configuration: %s", err.Error())
 		cbcli_utils.ShowErrorAndExit(
 			"Unable to retrieve VPN configuration. This could be because your VPN server " + 
 			"is still starting up or in the process of shutting down. Please try again.")
 	}
 
-	// save retrieved config
+	// save retrieved config to local file system
 	if configInstructions, err = vpnConfig.Save(downloadDir); err != nil {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}
 	fmt.Println()
 	fmt.Println(configInstructions)
-	cbcli_utils.ShowWarningMessage(
-		"If the space does not have an amin network configured this configuration " + 
-		"will fail next team the space node is restarted. To use static native " + 
-		"configurations the space network must be configured with an admin network " + 
-		"which will ensure the node has a static external IP.",
-	)
+
+	// save retrieved config data to MyCS cloud 
+	// so it can be shared with the device user
+	mycsAPIClient := api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config)
+	deviceAPI := mycscloud.NewDeviceAPI(mycsAPIClient)
+	if err = deviceAPI.SetDeviceWireguardConfig(
+		managedDeviceUser.UserID,
+		managedDevice.DeviceID, 
+		space.GetSpaceID(),
+		vpnConfigData.Name(),
+		string(vpnConfigData.Data()),
+		connectFlags.expirationTimeout * 24, // hours
+		connectFlags.inactivityTimeout * 24, // hours
+	); err != nil {
+		logger.ErrorMessage("Error uploading wireguard config to MyCS cloud for sharing: %s", err.Error())
+		cbcli_utils.ShowInfoMessage(
+			"Failed to upload config so it can be shared with device users via " + 
+			"the MyCS cloud dashboard. Please share downloaded config manually.",
+		)
+	}
+
 	fmt.Println()
 }
 
@@ -438,6 +457,10 @@ func init() {
 		"managed device to download connection config for (device admins only)")
 	flags.StringVarP(&connectFlags.managedDeviceUser, "user", "u", "", 
 		"user of managed device to create connection config for (device admins only)")
+	flags.IntVarP(&connectFlags.expirationTimeout, "expiration", "x", 30, 
+		"managed device config expiration timeout in days")
+	flags.IntVarP(&connectFlags.inactivityTimeout, "inactivity", "a", 7, 
+		"managed device config inactivity timeout in days")
 
 	flags.BoolVarP(&connectFlags.useSpaceDNS, "user-space-dns", "n", false, 
 		"use space DNS services")
