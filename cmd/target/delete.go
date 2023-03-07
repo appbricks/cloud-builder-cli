@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/gookit/color"
+	"github.com/mevansam/goutils/logger"
 	"github.com/mevansam/goutils/utils"
 	"github.com/spf13/cobra"
 
@@ -93,6 +94,11 @@ func DeleteTarget(targetKey string) {
 					if err = bldr.Initialize(); err != nil {
 						cbcli_utils.ShowErrorAndExit(err.Error())
 					}
+				} else {
+					// initialize if required
+					if err = bldr.AutoInitialize(); err != nil {
+						cbcli_utils.ShowErrorAndExit(err.Error())
+					}
 				}
 				if err = bldr.Delete(); err != nil {
 					cbcli_utils.ShowErrorAndExit(err.Error())
@@ -101,6 +107,12 @@ func DeleteTarget(targetKey string) {
 				context.SaveTarget(tgt.Key(), tgt)
 			}
 			if !deleteFlags.keep {
+				// delete target backend storage
+				if err = tgt.DeleteBackend(); err != nil {
+					logger.ErrorMessage("DeleteTarget(): Error deleting target's deployment state remote storage: %s", err.Error())
+					cbcli_utils.ShowNoteMessage("\nDeleting target's deployment state remote storage failed. You need to delete it manually from your cloud provider console.")
+				}
+				// delete target from config context
 				context.DeleteTarget(tgt.Key())
 
 				// delete target from MyCS account
@@ -109,12 +121,14 @@ func DeleteTarget(targetKey string) {
 					// a space. TBD: this criteria should be revisited
 					spaceAPI := mycscloud.NewSpaceAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
 					if _, err = spaceAPI.DeleteSpace(tgt); err != nil {
-						cbcli_utils.ShowErrorAndExit(err.Error())
+						logger.ErrorMessage("DeleteTarget(): Error attempting to delete space registration: %s", err.Error())
+						cbcli_utils.ShowNoteMessage("\nDeleting space registration failed. You may need to manually delete the space from the MyCS cloud dashboard.")
 					}
 
 				} else {
 					appAPI := mycscloud.NewAppAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
 					if _, err = appAPI.DeleteApp(tgt); err != nil {
+						logger.ErrorMessage("DeleteTarget(): Error attempting to delete app registration: %s", err.Error())
 						cbcli_utils.ShowNoteMessage("\nDeleting app registration failed. You may need to manually delete the app from the MyCS cloud dashboard.")
 					}
 				}

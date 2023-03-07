@@ -60,7 +60,7 @@ func AddDevice(deviceName string, deviceType string) {
 	if _, device.DeviceID, err = deviceAPI.RegisterDevice(
 		device.Name, 
 		device.Type,
-		"",
+		"wireguard (managed)",
 		"", 
 		device.RSAPublicKey, 
 		primaryDeviceID,
