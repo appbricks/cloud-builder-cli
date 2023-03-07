@@ -2,6 +2,12 @@ name: Build prod Cloud Builder CLI release
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: Sandbox Cookbook Version
+        required: true
+        default: '0.0.6'
+        type: string
   push:
     branches: [ main ]
     paths:
@@ -77,7 +83,7 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: us-east-1
       COOKBOOK_REPO_PATH: https://github.com/appbricks/vpn-server/cloud/recipes
-      COOKBOOK_VERSION: 0.0.5
+      COOKBOOK_VERSION: ${{ inputs.version }}
       ENV: prod
 
     steps:
