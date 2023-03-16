@@ -44,20 +44,6 @@ type userSelectorArgs struct {
 var userSelector = cbcli_utils.OptionSelector{
 	Options: []cbcli_utils.Option{
 		{
-			Text: " - Enable Admin Access",
-			Command: func(data interface{}) error {
-				args := data.(*manageActionArgs)
-				return enableAdminAccess(args.apiClient, args.user, true)
-			},
-		},
-		{
-			Text: " - Disable Admin Access",
-			Command: func(data interface{}) error {
-				args := data.(*manageActionArgs)
-				return enableAdminAccess(args.apiClient, args.user, false)
-			},
-		},
-		{
 			Text: " - Enable Device Access to Space",
 			Command: func(data interface{}) error {
 				args := data.(*manageActionArgs)
@@ -75,19 +61,64 @@ var userSelector = cbcli_utils.OptionSelector{
 		},
 	},
 	OptionListFilter: map[string][]int{
-		"userAdmin_devices":         {1, 2, 3},
-		"userAdmin_enabledDevices":  {1, 3},
-		"userAdmin_disabledDevices": {1, 2},
-		"userGuest_devices":         {0, 2, 3},
-		"userGuest_enabledDevices":  {0, 3},
-		"userGuest_disabledDevices": {0, 2},
+		"devices":         {0, 1},
+		"enabledDevices":  {1},
+		"disabledDevices": {0},
 	},
 	OptionRoleFilter:  map[auth.Role]map[int]bool{
 		auth.Manager: {
-			0: true, 1: true, 2: true, 3: true,
+			0: true, 1: true,
 		},
 	},
 }
+
+// var userSelector = cbcli_utils.OptionSelector{
+// 	Options: []cbcli_utils.Option{
+// 		{
+// 			Text: " - Enable Admin Access",
+// 			Command: func(data interface{}) error {
+// 				args := data.(*manageActionArgs)
+// 				return enableAdminAccess(args.apiClient, args.user, true)
+// 			},
+// 		},
+// 		{
+// 			Text: " - Disable Admin Access",
+// 			Command: func(data interface{}) error {
+// 				args := data.(*manageActionArgs)
+// 				return enableAdminAccess(args.apiClient, args.user, false)
+// 			},
+// 		},
+// 		{
+// 			Text: " - Enable Device Access to Space",
+// 			Command: func(data interface{}) error {
+// 				args := data.(*manageActionArgs)
+// 				deviceName := selectDeviceFromList("enable", args.disabledDeviceNames)
+// 				return enableDeviceAccess(args.apiClient, args.user, deviceName, true)
+// 			},
+// 		},
+// 		{
+// 			Text: " - Disable Device Access to Space",
+// 			Command: func(data interface{}) error {
+// 				args := data.(*manageActionArgs)
+// 				deviceName := selectDeviceFromList("enable", args.enabledDeviceNames)
+// 				return enableDeviceAccess(args.apiClient, args.user, deviceName, false)
+// 			},
+// 		},
+// 	},
+// 	OptionListFilter: map[string][]int{
+// 		"userAdmin_devices":         {1, 2, 3},
+// 		"userAdmin_enabledDevices":  {1, 3},
+// 		"userAdmin_disabledDevices": {1, 2},
+// 		"userGuest_devices":         {0, 2, 3},
+// 		"userGuest_enabledDevices":  {0, 3},
+// 		"userGuest_disabledDevices": {0, 2},
+// 	},
+// 	OptionRoleFilter:  map[auth.Role]map[int]bool{
+// 		auth.Manager: {
+// 			0: true, 1: true, 2: true, 3: true,
+// 		},
+// 	},
+// }
 
 var manageCommand = &cobra.Command{
 	Use: "manage [recipe] [cloud] [deployment name]",
@@ -103,11 +134,24 @@ of their space by default. Users can be permanently removed from the
 authorized list via the MyCS Account Manager console.
 
 The following manage actions (flag -a/--action) are supported:
-- enableAdmin: grant user admin access to the space
-- disableAdmin: disable admin access
 - enableDevice: allow a user's device to connect to the space
 - disableDevice: disable a user's device
-`,
+`,	
+// 	Long: `
+// This sub-command can be used to manage users' access to a space
+// target space. Once a user has accepted an invite to a space that user
+// will need to be enabled as either an admin or guest for the space
+// before they can connect to it. Any user that is an admin of the space
+// can enable users for that space. All space owners are default admins
+// of their space by default. Users can be permanently removed from the
+// authorized list via the MyCS Account Manager console.
+
+// The following manage actions (flag -a/--action) are supported:
+// - enableAdmin: grant user admin access to the space
+// - disableAdmin: disable admin access
+// - enableDevice: allow a user's device to connect to the space
+// - disableDevice: disable a user's device
+// `,
 
 	PreRun: authorizeSpaceNode(auth.NewRoleMask(auth.Admin, auth.Manager), &(manageFlags.commonFlags)),
 
@@ -215,12 +259,12 @@ func ManageSpace(space userspace.SpaceNode) {
 
 		user := lookupUser()
 		switch manageFlags.action {
-			case "enableAdmin": {
-				err = enableAdminAccess(apiClient, user, true)
-			}
-			case "disableAdmin": {
-				err = enableAdminAccess(apiClient, user, false)
-			}
+			// case "enableAdmin": {
+			// 	err = enableAdminAccess(apiClient, user, true)
+			// }
+			// case "disableAdmin": {
+			// 	err = enableAdminAccess(apiClient, user, false)
+			// }
 			case "enableDevice": {
 				deviceNameRequired()
 				err = enableDeviceAccess(apiClient, user, manageFlags.device, true)
@@ -314,17 +358,24 @@ func buildUserDevicesTable(
 		}
 
 		// determine manage options filter
-		args.filterKey = "userGuest"
-		if user.IsAdmin {
-			args.filterKey = "userAdmin"
-		}
 		if len(args.disabledDeviceNames) == 0 {
-			args.filterKey = args.filterKey + "_enabledDevices"
+			args.filterKey = args.filterKey + "enabledDevices"
 		} else if len(args.enabledDeviceNames) == 0 {
-			args.filterKey = args.filterKey + "_disabledDevices"
+			args.filterKey = args.filterKey + "disabledDevices"
 		} else {
-			args.filterKey = args.filterKey + "_devices"
-		}		
+			args.filterKey = args.filterKey + "devices"
+		}
+		// args.filterKey = "userGuest"
+		// if user.IsAdmin {
+		// 	args.filterKey = "userAdmin"
+		// }
+		// if len(args.disabledDeviceNames) == 0 {
+		// 	args.filterKey = args.filterKey + "_enabledDevices"
+		// } else if len(args.enabledDeviceNames) == 0 {
+		// 	args.filterKey = args.filterKey + "_disabledDevices"
+		// } else {
+		// 	args.filterKey = args.filterKey + "_devices"
+		// }		
 		*argsList = append(*argsList, args)
 		
 		first = false
@@ -333,18 +384,18 @@ func buildUserDevicesTable(
 	return table
 }
 
-func enableAdminAccess(
-	apiClient *mycsnode.ApiClient,
-	user *userspace.SpaceUser,
-	enable bool,
-) (err error) {
+// func enableAdminAccess(
+// 	apiClient *mycsnode.ApiClient,
+// 	user *userspace.SpaceUser,
+// 	enable bool,
+// ) (err error) {
 
-	if _, err = apiClient.UpdateSpaceUser(user.UserID, enable, !enable); err != nil {
-		return err
-	}
-	fmt.Println("\nSpace user's configuration updated.")
-	return nil
-}
+// 	if _, err = apiClient.UpdateSpaceUser(user.UserID, enable, !enable); err != nil {
+// 		return err
+// 	}
+// 	fmt.Println("\nSpace user's configuration updated.")
+// 	return nil
+// }
 
 func enableDeviceAccess(
 	apiClient *mycsnode.ApiClient,
