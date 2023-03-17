@@ -296,7 +296,7 @@ func buildAppsTable(
 	table.AddHeaders(
 		color.OpBold.Render("Name"),
 		color.OpBold.Render("Cloud"),
-		color.OpBold.Render("Attached to Targets"),
+		color.OpBold.Render("Attached to Target"),
 		color.OpBold.Render("Deployed App Name"),
 		color.OpBold.Render("Version"),
 		color.OpBold.Render("Status"),
