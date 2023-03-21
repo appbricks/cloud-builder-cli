@@ -31,8 +31,6 @@ import (
 )
 
 var connectFlags = struct {
-	commonFlags
-
 	managedDevice     string
 	managedDeviceUser string
 	expirationTimeout int
@@ -43,7 +41,7 @@ var connectFlags = struct {
 }{}
 
 var connectCommand = &cobra.Command{
-	Use: "connect [recipe] [cloud] [deployment name]",
+	Use: "connect [deployment name]",
 
 	Short: "Connect to the space mesh network.",
 	Long: `
@@ -56,12 +54,12 @@ permissions can be managed via the MyCloudSpace account and space
 management dashboard.
 `,
 
-	PreRun: authorizeSpaceNode(auth.NewRoleMask(auth.Admin, auth.Manager, auth.Guest), &(connectFlags.commonFlags)),
+	PreRun: authorizeSpaceNode(auth.NewRoleMask(auth.Admin, auth.Manager, auth.Guest)),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		ConnectSpace(spaceNode)
 	},
-	Args: cobra.ExactArgs(3),
+	Args: cobra.ExactArgs(1),
 }
 
 func ConnectSpace(space userspace.SpaceNode) {
@@ -451,7 +449,6 @@ func (s *nodeConnectService) Connect() (*vpn.ServiceConfig, error) {
 func init() {
 	flags := connectCommand.Flags()
 	flags.SortFlags = false
-	bindCommonFlags(flags, &(connectFlags.commonFlags))
 
 	flags.StringVarP(&connectFlags.managedDevice, "device", "d", "", 
 		"managed device to download connection config for (device admins only)")

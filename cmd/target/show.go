@@ -28,7 +28,7 @@ var showFlags = struct {
 }{}
 
 var showCommand = &cobra.Command{
-	Use: "show [recipe] [cloud] [deployment name]",
+	Use: "show [deployment name]",
 
 	Short: "Show configuration data for a target.",
 	Long: `
@@ -41,9 +41,9 @@ targets.
 	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
-		ShowTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(showFlags.commonFlags)))
+		ShowTarget(getTargetKeyFromArgs(args[0], &(showFlags.commonFlags)))
 	},
-	Args: cobra.ExactArgs(3),
+	Args: cobra.ExactArgs(1),
 }
 
 func ShowTarget(targetKey string) {

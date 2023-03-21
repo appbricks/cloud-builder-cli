@@ -24,7 +24,7 @@ var resumeFlags = struct {
 }{}
 
 var resumeCommand = &cobra.Command{
-	Use: "resume [recipe] [cloud] [deployment name]",
+	Use: "resume [deployment name]",
 
 	Short: "Resumes a suspended target.",
 	Long: `
@@ -36,9 +36,9 @@ resume a specific instance provide the instance name via the
 	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
-		ResumeTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(resumeFlags.commonFlags)))
+		ResumeTarget(getTargetKeyFromArgs(args[0], &(resumeFlags.commonFlags)))
 	},
-	Args: cobra.ExactArgs(3),
+	Args: cobra.ExactArgs(1),
 }
 
 func ResumeTarget(targetKey string) {

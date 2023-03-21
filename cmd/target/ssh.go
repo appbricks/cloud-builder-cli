@@ -30,7 +30,7 @@ var sshFlags = struct {
 }{}
 
 var sshCommand = &cobra.Command{
-	Use: "ssh [recipe] [cloud] [deployment name]",
+	Use: "ssh [deployment name]",
 
 	Short: "SSH to a launch target's resource.",
 	Long: `
@@ -46,9 +46,9 @@ the cloud space sandbox VPN has been establised.
 	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
-		SSHTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(sshFlags.commonFlags)))
+		SSHTarget(getTargetKeyFromArgs(args[0], &(sshFlags.commonFlags)))
 	},
-	Args: cobra.ExactArgs(3),
+	Args: cobra.ExactArgs(1),
 }
 
 func SSHTarget(targetKey string) {

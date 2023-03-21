@@ -32,7 +32,7 @@ var connectFlags = struct {
 }{}
 
 var connectCommand = &cobra.Command{
-	Use: "connect [recipe] [cloud] [deployment name]",
+	Use: "connect [deployment name]",
 
 	Short: "Connect to an existing target.",
 	Long: `
@@ -49,9 +49,9 @@ securely access your cloud space resources.
 	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
-		ConnectTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(connectFlags.commonFlags)))
+		ConnectTarget(getTargetKeyFromArgs(args[0], &(connectFlags.commonFlags)))
 	},
-	Args: cobra.ExactArgs(3),
+	Args: cobra.ExactArgs(1),
 }
 
 func ConnectTarget(targetKey string) {

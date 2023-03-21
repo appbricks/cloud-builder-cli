@@ -120,7 +120,7 @@ func CreateTarget(recipeKey, iaasName string) {
 				spaceTgtKey = createFlags.dependentTarget
 			}
 			if spaceTgt = targets.GetTarget(spaceTgtKey); spaceTgt == nil || !spaceTgt.Recipe.IsBastion() {
-				cbcli_utils.ShowErrorAndExit(fmt.Sprintf("Invalid space target key '%s'.", spaceTgtKey))
+				cbcli_utils.ShowErrorAndExit(fmt.Sprintf("Invalid space target '%s'.", spaceTgtKey))
 			}
 			tgt.DependentTargets = []string{spaceTgtKey}
 			
@@ -130,7 +130,7 @@ func CreateTarget(recipeKey, iaasName string) {
 				// it will be deployed to
 				copySpaceTgtProvider = cbcli_utils.GetYesNoUserInput(
 					"Do you wish deploy to the same cloud environment as the space node : ", 
-					false,
+					true,
 				)
 				if copySpaceTgtProvider {
 					if spaceTgtProvider, err = spaceTgt.Provider.Copy(); err != nil {
@@ -138,7 +138,7 @@ func CreateTarget(recipeKey, iaasName string) {
 					}
 					tgt.Provider = spaceTgtProvider.(provider.CloudProvider)
 				}
-				configureProvider = false
+				configureProvider = !copySpaceTgtProvider
 			}
 		}
 

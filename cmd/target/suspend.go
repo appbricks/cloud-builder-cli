@@ -23,7 +23,7 @@ var suspendFlags = struct {
 }{}
 
 var suspendCommand = &cobra.Command{
-	Use: "suspend [recipe] [cloud] [deployment name]",
+	Use: "suspend [deployment name]",
 
 	Short: "Suspends a running target.",
 	Long: `
@@ -35,9 +35,9 @@ suspend a specific instance provide the instance name via the
 	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
-		SuspendTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(suspendFlags.commonFlags)))
+		SuspendTarget(getTargetKeyFromArgs(args[0], &(suspendFlags.commonFlags)))
 	},
-	Args: cobra.ExactArgs(3),
+	Args: cobra.ExactArgs(1),
 }
 
 func SuspendTarget(targetKey string) {

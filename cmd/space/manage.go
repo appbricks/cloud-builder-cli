@@ -17,8 +17,6 @@ import (
 )
 
 var manageFlags = struct {
-	commonFlags
-
 	action string
 	user   string
 	device string
@@ -121,7 +119,7 @@ var userSelector = cbcli_utils.OptionSelector{
 // }
 
 var manageCommand = &cobra.Command{
-	Use: "manage [recipe] [cloud] [deployment name]",
+	Use: "manage [deployment name]",
 
 	Short: "Manages a quick launch target deployment.",
 	Long: `
@@ -153,12 +151,12 @@ The following manage actions (flag -a/--action) are supported:
 // - disableDevice: disable a user's device
 // `,
 
-	PreRun: authorizeSpaceNode(auth.NewRoleMask(auth.Admin, auth.Manager), &(manageFlags.commonFlags)),
+	PreRun: authorizeSpaceNode(auth.NewRoleMask(auth.Admin, auth.Manager)),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		ManageSpace(spaceNode)
 	},
-	Args: cobra.ExactArgs(3),
+	Args: cobra.ExactArgs(1),
 }
 
 func ManageSpace(space userspace.SpaceNode) {
@@ -429,7 +427,6 @@ func selectDeviceFromList(prompt string, deviceNames *[]string) string {
 func init() {
 	flags := manageCommand.Flags()
 	flags.SortFlags = false
-	bindCommonFlags(flags, &(manageFlags.commonFlags))
 
 	// manage recipe iaas name -r region --action enableAdmin --user john'
 	// manage recipe iaas name -r region --action disableAdmin --user john'

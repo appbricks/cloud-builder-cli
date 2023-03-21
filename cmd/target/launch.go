@@ -25,7 +25,7 @@ var launchFlags = struct {
 }{}
 
 var launchCommand = &cobra.Command{
-	Use: "launch [recipe] [cloud] [deployment name]",
+	Use: "launch [deployment name]",
 
 	Short: "Deploy a launch target to the cloud.",
 	Long: `
@@ -37,9 +37,9 @@ clean-rebuild takes precedence.
 	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
-		LaunchTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(launchFlags.commonFlags)))
+		LaunchTarget(getTargetKeyFromArgs(args[0], &(launchFlags.commonFlags)))
 	},
-	Args: cobra.ExactArgs(3),
+	Args: cobra.ExactArgs(1),
 }
 
 func LaunchTarget(targetKey string) {

@@ -4,10 +4,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 
 	"github.com/appbricks/cloud-builder/auth"
-	"github.com/appbricks/cloud-builder/target"
 	"github.com/appbricks/cloud-builder/userspace"
 
 	cbcli_auth "github.com/appbricks/cloud-builder-cli/auth"
@@ -33,20 +31,8 @@ func init() {
 	SpaceCommands.AddCommand(manageCommand)
 }
 
-type commonFlags struct {
-	region string
-}
-
-func bindCommonFlags(
-	flags *pflag.FlagSet, 
-	commonFlags *commonFlags,
-) {
-	flags.StringVarP(&commonFlags.region, "region", "r", "", 
-		"space target's region")
-}
-
 // authorizes the user to perform a command on the selected space target
-func authorizeSpaceNode(roleMask auth.RoleMask, commonFlags *commonFlags) func(cmd *cobra.Command, args []string) {
+func authorizeSpaceNode(roleMask auth.RoleMask) func(cmd *cobra.Command, args []string) {
 
 	return func(cmd *cobra.Command, args []string) {
 
@@ -56,16 +42,8 @@ func authorizeSpaceNode(roleMask auth.RoleMask, commonFlags *commonFlags) func(c
 
 		// ensure a user is logged in
 		cbcli_auth.AssertLoggedIn()(cmd, args)
-		
-		if len(commonFlags.region) == 0 {
-			cbcli_utils.ShowErrorAndExit("Please provide the region option for space lookup.")
-		}
-		targetKey = target.CreateKey(args[0], args[1], commonFlags.region, args[2])
 
-		spaceNode = cbcli_config.SpaceNodes.LookupSpace(targetKey, func(nodes []userspace.SpaceNode) userspace.SpaceNode {
-			fmt.Printf("Space Nodes to select: %# v\n\n", nodes)
-			return nodes[0]
-		})
+		spaceNode = cbcli_config.SpaceNodes.LookupSpace(args[0])
 		if spaceNode == nil {
 			cbcli_utils.ShowErrorAndExit(
 				fmt.Sprintf(

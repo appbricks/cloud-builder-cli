@@ -27,7 +27,7 @@ var deleteFlags = struct {
 }{}
 
 var deleteCommand = &cobra.Command{
-	Use: "delete [recipe] [cloud] [deployment name]",
+	Use: "delete [deployment name]",
 
 	Short: "Deletes a quick launch target deployment.",
 	Long: `
@@ -40,9 +40,9 @@ then provide the --keep flag.
 	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
-		DeleteTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(deleteFlags.commonFlags)))
+		DeleteTarget(getTargetKeyFromArgs(args[0], &(deleteFlags.commonFlags)))
 	},
-	Args: cobra.ExactArgs(3),
+	Args: cobra.ExactArgs(1),
 }
 
 func DeleteTarget(targetKey string) {

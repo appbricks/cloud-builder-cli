@@ -26,7 +26,7 @@ var configureFlags = struct {
 }{}
 
 var configureCommand = &cobra.Command{
-	Use: "configure [recipe] [cloud] [deployment name]",
+	Use: "configure [deployment name]",
 
 	Short: "Configure an existing target.",
 	Long: `
@@ -38,9 +38,9 @@ been launched.
 	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),
 
 	Run: func(cmd *cobra.Command, args []string) {
-		ConfigureTarget(getTargetKeyFromArgs(args[0], args[1], args[2], &(configureFlags.commonFlags)))
+		ConfigureTarget(getTargetKeyFromArgs(args[0], &(configureFlags.commonFlags)))
 	},
-	Args: cobra.ExactArgs(3),
+	Args: cobra.ExactArgs(1),
 }
 
 func ConfigureTarget(targetKey string) {

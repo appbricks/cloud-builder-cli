@@ -3,6 +3,7 @@ package target
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/gookit/color"
 	"github.com/spf13/cobra"
@@ -107,14 +108,19 @@ func ListTargets() {
 
 	var (
 		err error
+		ok  bool
 
 		response    string
 		targetIndex int
 
 		spacesRecipes,
 		appsRecipes []cookbook.CookbookRecipeInfo
+
+		targetKey  string
+		targetList []*target.Target
 	)
 	
+	// retrieve recipes grouped into spaces and apps for display
 	for _, r := range cbcli_config.Config.TargetContext().Cookbook().RecipeList() {
 		if r.IsBastion {
 			spacesRecipes = append(spacesRecipes, r)
@@ -123,11 +129,23 @@ func ListTargets() {
 		}
 	}
 
-	targetIndex = 0
-	targetList := []*target.Target{}
+	// group targets by recipe, iaas and region
+	targets := cbcli_config.Config.TargetContext().TargetSet().GetTargets()
+	targetMap := make(map[string][]*target.Target)
+	for _, tgt := range targets {
+		targetKey = createKey(tgt.Recipe.RecipeKey(), tgt.Recipe.RecipeIaaS(), tgt.GetRegion())
+		if targetList, ok = targetMap[targetKey]; !ok {
+			targetMap[targetKey] = []*target.Target{ tgt }
+		} else {
+			targetMap[targetKey] = append(targetList, tgt)
+		}
+	}
 
-	spacesTable := buildSpacesTable(spacesRecipes, &targetIndex, &targetList)
-	appsTable := buildAppsTable(appsRecipes, &targetIndex, &targetList)
+	targetIndex = 0
+	targetList = []*target.Target{}
+
+	spacesTable := buildSpacesTable(spacesRecipes, targetMap, &targetIndex, &targetList)
+	appsTable := buildAppsTable(appsRecipes, targetMap, &targetIndex, &targetList)
 
 	fmt.Println("\nThe following targets have been configured.")
 	fmt.Println(color.OpBold.Render("\nMy Cloud Spaces\n===============\n"))
@@ -166,9 +184,9 @@ func ListTargets() {
 
 		fmt.Println("\nSelect sub-command to execute on target.")
 		fmt.Print("\n  Recipe: ")
-		fmt.Println(color.OpBold.Render(tgt.RecipeName))
+		fmt.Println(color.OpBold.Render(tgt.Recipe.RecipeKey()))
 		fmt.Print("  Cloud:  ")
-		fmt.Println(color.OpBold.Render(tgt.RecipeIaas))
+		fmt.Println(color.OpBold.Render(tgt.Recipe.RecipeIaaS()))
 		fmt.Print("  Region: ")
 		fmt.Println(color.OpBold.Render(*tgt.Provider.Region()))
 		fmt.Print("  Name:   ")
@@ -183,6 +201,7 @@ func ListTargets() {
 
 func buildSpacesTable(
 	recipes []cookbook.CookbookRecipeInfo,
+	targetMap map[string][]*target.Target,
 	targetIndex *int,
 	targetList *[]*target.Target,
 ) *termtables.Table  {
@@ -208,8 +227,6 @@ func buildSpacesTable(
 		color.OpBold.Render("#"),
 	)
 
-	targets := cbcli_config.Config.TargetContext().TargetSet()
-
 	tableRow := make([]interface{}, 7)
 	for i, recipe := range recipes {
 		tableRow[0] = recipe.RecipeKey
@@ -225,7 +242,7 @@ func buildSpacesTable(
 
 			hasTargets = false
 			for _, region := range cloudProvider.GetRegions() {
-				targets := targets.Lookup(recipe.RecipeKey, cloudProvider.Name(), region.Name)
+				targets := targetMap[createKey(recipe.RecipeKey, cloudProvider.Name(), region.Name)]
 
 				if len(targets) > 0 {
 					tableRow[2] = region.Name
@@ -278,6 +295,7 @@ func buildSpacesTable(
 
 func buildAppsTable(
 	recipes []cookbook.CookbookRecipeInfo,
+	targetMap map[string][]*target.Target,
 	targetIndex *int,
 	targetList *[]*target.Target,
 ) *termtables.Table {
@@ -296,16 +314,15 @@ func buildAppsTable(
 	table.AddHeaders(
 		color.OpBold.Render("Name"),
 		color.OpBold.Render("Cloud"),
-		color.OpBold.Render("Attached to Target"),
+		color.OpBold.Render("Region"),
 		color.OpBold.Render("Deployed App Name"),
+		color.OpBold.Render("Attached to Targets"),
 		color.OpBold.Render("Version"),
 		color.OpBold.Render("Status"),
 		color.OpBold.Render("#"),
 	)
 
-	targets := cbcli_config.Config.TargetContext().TargetSet()
-
-	tableRow := make([]interface{}, 7)
+	tableRow := make([]interface{}, 8)
 	for i, recipe := range recipes {
 		tableRow[0] = recipe.RecipeKey
 
@@ -319,47 +336,54 @@ func buildAppsTable(
 			tableRow[1] = cloudProvider.Name()
 
 			hasTargets = false
-			targets := targets.Lookup(recipe.RecipeKey, cloudProvider.Name())
+			for _, region := range cloudProvider.GetRegions() {
+				targets := targetMap[createKey(recipe.RecipeKey, cloudProvider.Name(), region.Name)]
 
-			if len(targets) > 0 {
-				for _, tgt := range targets {
+				if len(targets) > 0 {
+					tableRow[2] = region.Name
 
-					if tgt.Error() != nil {						
-						tableRow[5] = "error!"
-						tableRow[6] = ""
+					for _, tgt := range targets {
 
-					} else {
-						*targetIndex++
+						if tgt.Error() != nil {						
+							tableRow[6] = "error!"
+							tableRow[7] = ""
 
-						tableRow[5] = getTargetStatusName(tgt)
-						tableRow[6] = strconv.Itoa(*targetIndex)
+						} else {
+							*targetIndex++
 
-						*targetList = append(*targetList, tgt)
+							tableRow[6] = getTargetStatusName(tgt)
+							tableRow[7] = strconv.Itoa(*targetIndex)
+
+							*targetList = append(*targetList, tgt)
+						}
+						tableRow[3] = tgt.DeploymentName()
+						tableRow[5] = tgt.Version()
+
+						// show target dependencies
+						for _, dtgt := range tgt.Dependencies() {
+							tableRow[4] = dtgt.Key()
+
+							table.AddRow(tableRow...)
+							tableRow[3] = ""
+							tableRow[5] = ""
+							tableRow[6] = ""
+							tableRow[7] = ""
+						}
+						tableRow[0] = ""
+						tableRow[1] = ""
+						tableRow[2] = ""
 					}
-					tableRow[3] = tgt.DeploymentName()
-					tableRow[4] = tgt.Version()
-
-					// show target dependencies
-					for _, dtgt := range tgt.Dependencies() {
-						tableRow[2] = dtgt.Key()
-
-						table.AddRow(tableRow...)
-						tableRow[4] = ""
-						tableRow[5] = ""
-						tableRow[6] = ""
-					}
-					tableRow[0] = ""
-					tableRow[1] = ""
+					hasTargets = true
 				}
-				hasTargets = true
 			}			
 			if !hasTargets {
 				tableRow[1] = color.OpFuzzy.Render(tableRow[1].(string))
 				tableRow[2] = ""
 				tableRow[3] = ""
 				tableRow[4] = ""
-				tableRow[5] = color.OpFuzzy.Render("not configured")
-				tableRow[6] = ""
+				tableRow[5] = ""
+				tableRow[6] = color.OpFuzzy.Render("not configured")
+				tableRow[7] = ""
 				table.AddRow(tableRow...)
 			}
 
@@ -370,6 +394,10 @@ func buildAppsTable(
 		}
 	}
 	return table
+}
+
+func createKey(keyFields... string) string {
+	return strings.Join(keyFields, "/")
 }
 
 func getTargetStatusName(tgt *target.Target) string {
