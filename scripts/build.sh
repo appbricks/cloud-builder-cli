@@ -27,6 +27,8 @@ fi
 release_dir=${build_dir}/releases
 mkdir -p ${release_dir}
 
+build_os=$(go env GOOS)
+
 WINTUN_VER=0.14.1
 
 MYCS_NODE_IMAGE=null
@@ -128,7 +130,17 @@ function build() {
   if [[ $action == *:dev:* ]]; then
     GOOS=$os GOARCH=$arch go build -ldflags "$versionFlags" ${root_dir}/cmd/cb
   else
-    GOOS=$os GOARCH=$arch CGO_LDFLAGS="-static" go build -ldflags "-s -w $versionFlags" ${root_dir}/cmd/cb
+    if [[ $build_os == linux ]]; then
+      if [[ $arch == arm64 ]]; then
+        GOOS=$os GOARCH=$arch CC=aarch64-linux-gnu-gcc CGO_ENABLED=1 \
+          go build -ldflags "-s -w $versionFlags" ${root_dir}/cmd/cb
+      else
+        GOOS=$os GOARCH=$arch CGO_ENABLED=1 \
+          go build -ldflags "-s -w $versionFlags" ${root_dir}/cmd/cb
+      fi
+    else
+      GOOS=$os GOARCH=$arch go build -ldflags "-s -w $versionFlags" ${root_dir}/cmd/cb
+    fi
   fi
   if [[ $os == windows ]]; then
     curl -OL https://www.wintun.net/builds/wintun-${WINTUN_VER}.zip
