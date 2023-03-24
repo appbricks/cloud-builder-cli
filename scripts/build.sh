@@ -139,10 +139,10 @@ function build() {
         $run_sudo apt update  
         $run_sudo apt install -y gcc-aarch64-linux-gnu # for arm8/64 devices (i.e. AWS ARM instances)
 
-        GOOS=$os GOARCH=$arch CC=aarch64-linux-gnu-gcc CGO_ENABLED=1 CGO_LDFLAGS="-static" \
+        GOOS=$os GOARCH=$arch CC=aarch64-linux-gnu-gcc CGO_ENABLED=1 \
           go build -ldflags "-s -w $versionFlags" ${root_dir}/cmd/cb
       else
-        GOOS=$os GOARCH=$arch CGO_ENABLED=1 CGO_LDFLAGS="-static" \
+        GOOS=$os GOARCH=$arch CGO_ENABLED=1 \
           go build -ldflags "-s -w $versionFlags" ${root_dir}/cmd/cb
       fi
     else
