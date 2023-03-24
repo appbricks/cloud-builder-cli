@@ -8,19 +8,8 @@ set -xeuo pipefail
 
 root_dir=$(cd $(dirname $BASH_SOURCE)/.. && pwd)
 
-build_os=$(go env GOOS)
-
 run_sudo=''
 [[ -z `which sudo` ]] || run_sudo=sudo
-
-if [[ $build_os == linux ]]; then
-  $run_sudo hwclock --hctosys 
-
-  # add arm gcc compilers
-  $run_sudo apt update  
-  $run_sudo apt install -y gcc-arm-linux-gnueabihf # for arm6+ devices (i.e. Rasberry Pi)
-  $run_sudo apt install -y gcc-aarch64-linux-gnu # for arm8/64 devices (i.e. AWS ARM instances)
-fi
 
 build_cookbook=../cloud-builder/scripts/build-cookbook.sh
 if [[ ! -e $build_cookbook ]]; then
@@ -49,6 +38,8 @@ function build() {
 
   local os=$1
   local arch=$2
+
+  local build_os=$(go env GOOS)
 
   [[ -n $MYCS_NODE_IMAGE && $MYCS_NODE_IMAGE != null ]] || ( \
     echo "ERROR! Invalid MyCS node image name.";
@@ -115,10 +106,9 @@ function build() {
       set -e
     fi
     
-    local current_os=$(go env GOOS)
-    if [[ $current_os == linux ]]; then
+    if [[ $build_os == linux ]]; then
       stat -t -c "%Y" cookbook/dist/cookbook.zip > cookbook/dist/cookbook-mod-time
-    elif [[ $current_os == darwin ]]; then
+    elif [[ $build_os == darwin ]]; then
       stat -t "%s" -f "%Sm" cookbook/dist/cookbook.zip > cookbook/dist/cookbook-mod-time
     else
       echo -e "\nERROR! Unable to get the modification timestamp of 'cookbook/dist/cookbook.zip'.\n"
@@ -144,6 +134,11 @@ function build() {
   else
     if [[ $build_os == linux ]]; then
       if [[ $arch == arm64 ]]; then
+        # add arm gcc compilers
+        $run_sudo hwclock --hctosys 
+        $run_sudo apt update  
+        $run_sudo apt install -y gcc-aarch64-linux-gnu # for arm8/64 devices (i.e. AWS ARM instances)
+        
         GOOS=$os GOARCH=$arch CC=aarch64-linux-gnu-gcc CGO_ENABLED=1 \
           go build -ldflags "-s -w $versionFlags" ${root_dir}/cmd/cb
       else
