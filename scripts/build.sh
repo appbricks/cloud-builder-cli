@@ -8,6 +8,18 @@ set -xeuo pipefail
 
 root_dir=$(cd $(dirname $BASH_SOURCE)/.. && pwd)
 
+run_sudo=''
+[[ -z `which sudo` ]] || run_sudo=sudo
+
+if [[ $build_os == linux ]]; then
+  $run_sudo hwclock --hctosys 
+
+  # add arm gcc compilers
+  $run_sudo apt update  
+  $run_sudo apt install -y gcc-arm-linux-gnueabihf # for arm6+ devices (i.e. Rasberry Pi)
+  $run_sudo apt install -y gcc-aarch64-linux-gnu # for arm8/64 devices (i.e. AWS ARM instances)
+fi
+
 build_cookbook=../cloud-builder/scripts/build-cookbook.sh
 if [[ ! -e $build_cookbook ]]; then
   echo -e "ERROR! Unable to find cookbook build and compilation script."
