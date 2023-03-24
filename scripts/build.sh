@@ -8,6 +8,8 @@ set -xeuo pipefail
 
 root_dir=$(cd $(dirname $BASH_SOURCE)/.. && pwd)
 
+build_os=$(go env GOOS)
+
 run_sudo=''
 [[ -z `which sudo` ]] || run_sudo=sudo
 
@@ -38,8 +40,6 @@ if [[ $action == *:clean-all:* ]]; then
 fi
 release_dir=${build_dir}/releases
 mkdir -p ${release_dir}
-
-build_os=$(go env GOOS)
 
 WINTUN_VER=0.14.1
 
