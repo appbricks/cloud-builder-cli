@@ -8,9 +8,6 @@ set -xeuo pipefail
 
 root_dir=$(cd $(dirname $BASH_SOURCE)/.. && pwd)
 
-run_sudo=''
-[[ -z `which sudo` ]] || run_sudo=sudo
-
 build_cookbook=../cloud-builder/scripts/build-cookbook.sh
 if [[ ! -e $build_cookbook ]]; then
   echo -e "ERROR! Unable to find cookbook build and compilation script."
@@ -132,19 +129,6 @@ function build() {
   if [[ $action == *:dev:* ]]; then
     GOOS=$os GOARCH=$arch go build -ldflags "$versionFlags" ${root_dir}/cmd/cb
   else
-    # if [[ $build_os == linux && $os == linux ]]; then
-    #   if [[ $arch == arm64 ]]; then
-    #     # add arm gcc compilers
-    #     $run_sudo hwclock --hctosys 
-    #     $run_sudo apt update  
-    #     $run_sudo apt install -y gcc-aarch64-linux-gnu # for arm8/64 devices (i.e. AWS ARM instances)
-
-    #     GOOS=$os GOARCH=$arch CC=aarch64-linux-gnu-gcc CGO_ENABLED=1 \
-    #       go build -ldflags "-s -w $versionFlags" ${root_dir}/cmd/cb
-    #   else
-    #     GOOS=$os GOARCH=$arch CGO_ENABLED=1 \
-    #       go build -ldflags "-s -w $versionFlags" ${root_dir}/cmd/cb
-    #   fi
     if [[ $build_os == linux ]]; then
       GOOS=$os GOARCH=$arch CGO_ENABLED=0 go build -ldflags "-s -w $versionFlags" ${root_dir}/cmd/cb
     else
