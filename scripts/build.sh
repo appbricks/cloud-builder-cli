@@ -126,7 +126,7 @@ function build() {
   versionFlags="-X \"github.com/appbricks/cloud-builder-cli/config.Version=$build_version\" -X \"github.com/appbricks/cloud-builder-cli/config.BuildTimestamp=$build_timestamp\""
   
   if [[ $action == *:dev:* ]]; then
-    GOOS=$os GOARCH=$arch CGO_LDFLAGS="-static" go build -ldflags "$versionFlags" ${root_dir}/cmd/cb
+    GOOS=$os GOARCH=$arch go build -ldflags "$versionFlags" ${root_dir}/cmd/cb
   else
     GOOS=$os GOARCH=$arch CGO_LDFLAGS="-static" go build -ldflags "-s -w $versionFlags" ${root_dir}/cmd/cb
   fi
