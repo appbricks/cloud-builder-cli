@@ -168,13 +168,13 @@ func ListTargets() {
 	if len(spacesRecipes) > 0 {
 		fmt.Println(spacesTable.Render())
 	} else {
-		cbcli_utils.ShowInfoMessage("No space recipes found...")
+		cbcli_utils.ShowInfoMessage("No space recipes found...\n")
 	}
 	fmt.Println(color.OpBold.Render("My Applications\n===============\n"))
 	if len(appsRecipes) > 0 {
 		fmt.Println(appsTable.Render())
 	} else {
-		cbcli_utils.ShowInfoMessage("No application recipes found...")
+		cbcli_utils.ShowInfoMessage("No application recipes found...\n")
 	}
 
 	numTargets := len(targetList)
