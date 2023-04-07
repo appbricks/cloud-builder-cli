@@ -147,8 +147,23 @@ func ListTargets() {
 
 	spacesTable := buildSpacesTable(spacesRecipes, targetMap, &targetIndex, &targetList)
 	appsTable := buildAppsTable(appsRecipes, targetMap, &targetIndex, &targetList)
+	disabledTargetRecipes := ts.GetDisabledTargetRecipes()
 
-	fmt.Println("\nThe following targets have been configured.")
+	if len(disabledTargetRecipes) > 0 {
+		cbcli_utils.ShowWarningMessage(
+			"\nThere are configured targets which do not have a " + 
+			"corresponding cookbook:recipe in the cookbook repo. " +
+			"You need to import the cookbooks below to view and "+
+			"manage these missing targets.\n",
+		)
+		disableTargetRecipeTable := buildDisabledTargetRecipeTable(disabledTargetRecipes)
+		fmt.Println(disableTargetRecipeTable.Render())
+
+	} else {
+		fmt.Println()
+	}
+
+	fmt.Println("The following targets have been configured.")
 	fmt.Println(color.OpBold.Render("\nMy Cloud Spaces\n===============\n"))
 	if len(spacesRecipes) > 0 {
 		fmt.Println(spacesTable.Render())
@@ -160,19 +175,6 @@ func ListTargets() {
 		fmt.Println(appsTable.Render())
 	} else {
 		cbcli_utils.ShowInfoMessage("No application recipes found...")
-	}
-
-	disabledTargetRecipes := ts.GetDisabledTargetRecipes()
-	if len(disabledTargetRecipes) > 0 {
-		cbcli_utils.ShowWarningMessage(
-			"\nThere are configured targets which do not have a " + 
-			"corresponding cookbook:recipe in the cookbook repo. " +
-			"You need to import the cookbooks below to view and "+
-			"manage these missing targets.\n",
-		)
-
-		disableTargetRecipeTable := buildDisabledTargetRecipeTable(disabledTargetRecipes)
-		fmt.Println(disableTargetRecipeTable.Render())
 	}
 
 	numTargets := len(targetList)
