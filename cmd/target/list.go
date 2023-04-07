@@ -130,7 +130,8 @@ func ListTargets() {
 	}
 
 	// group targets by recipe, iaas and region
-	targets := cbcli_config.Config.TargetContext().TargetSet().GetTargets()
+	ts := cbcli_config.Config.TargetContext().TargetSet()
+	targets := ts.GetTargets()
 	targetMap := make(map[string][]*target.Target)
 	for _, tgt := range targets {
 		targetKey = createKey(tgt.Recipe.RecipeKey(), tgt.Recipe.RecipeIaaS(), tgt.GetRegion())
@@ -159,6 +160,19 @@ func ListTargets() {
 		fmt.Println(appsTable.Render())
 	} else {
 		cbcli_utils.ShowInfoMessage("No application recipes found...")
+	}
+
+	disabledTargetRecipes := ts.GetDisabledTargetRecipes()
+	if len(disabledTargetRecipes) > 0 {
+		cbcli_utils.ShowWarningMessage(
+			"\nThere are configured targets which do not have a " + 
+			"corresponding cookbook:recipe in the cookbook repo. " +
+			"You need to import the cookbooks below to view and "+
+			"manage these missing targets.\n",
+		)
+
+		disableTargetRecipeTable := buildDisabledTargetRecipeTable(disabledTargetRecipes)
+		fmt.Println(disableTargetRecipeTable.Render())
 	}
 
 	numTargets := len(targetList)
@@ -312,7 +326,7 @@ func buildAppsTable(
 
 	table := termtables.CreateTable()
 	table.AddHeaders(
-		color.OpBold.Render("Name"),
+		color.OpBold.Render("Recipe"),
 		color.OpBold.Render("Cloud"),
 		color.OpBold.Render("Region"),
 		color.OpBold.Render("Deployed App Name"),
@@ -393,6 +407,47 @@ func buildAppsTable(
 			tableRow[0] = ""
 		}
 	}
+	return table
+}
+
+func buildDisabledTargetRecipeTable(
+	disabledTargetRecipes []cookbook.CookbookRecipeInfo,
+) *termtables.Table {
+
+	var (
+		lastRecipe *cookbook.CookbookRecipeInfo
+	)
+
+	table := termtables.CreateTable()
+	table.AddHeaders(
+		color.OpBold.Render("Cookook"),
+		color.OpBold.Render("Version"),
+		color.OpBold.Render("Recipe"),
+	)
+
+	tableRow := make([]interface{}, 3)
+	for _, recipe := range disabledTargetRecipes {
+		
+		if lastRecipe == nil || lastRecipe.CookbookName != recipe.CookbookName {
+			if lastRecipe != nil {
+				table.AddSeparator()
+			}
+			tableRow[0] = recipe.CookbookName
+		} else {
+			tableRow[0] = ""
+		}
+		if lastRecipe == nil || lastRecipe.CookbookVersion != recipe.CookbookVersion {
+			tableRow[1] = recipe.CookbookVersion
+		} else {
+			tableRow[1] = ""
+		}
+		
+		tableRow[2] = recipe.RecipeName
+		table.AddRow(tableRow...)
+
+		lastRecipe = &recipe
+	}
+
 	return table
 }
 
