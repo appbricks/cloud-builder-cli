@@ -141,11 +141,15 @@ func configureTarget(tgt *target.Target, tags ...string) {
 			cbcli_utils.ShowErrorAndExit(err.Error())
 		}
 		if len(backendInputForm.EnabledInputs(true, "target-undeployed")) > 0 {
-	
+
+			storagePrefix := strings.Join(
+				append([]string{ tgt.DeploymentName() }, tgt.DependentTargets...), "-")
+
 			if !tgt.Backend.IsValid() {
 				if err = tgt.Backend.Configure(
 					tgt.Provider,
-					tgt.DeploymentName(), tgt.RecipeName,
+					storagePrefix,
+					tgt.RecipeName,
 				); err != nil {
 					cbcli_utils.ShowErrorAndExit(err.Error())
 				}
