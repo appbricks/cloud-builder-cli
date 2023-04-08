@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -eo pipefail
+
+scripts_dir=$(dirname $BASH_SOURCE)
+home_dir=$(cd ${scripts_dir}/.. && pwd)
+
+[[ -n $CBRUN_USER ]] || (
+  echo -e "\nUSAGE: CBRUN_USER=<user name> bin/cbrun <cb sub-command + options>\n"
+  exit 1
+)
+
+mkdir -p ${home_dir}/.cbrun
+if [[ -n $LOGIN ]]; then
+  docker run --privileged --rm --name ${CBRUN_USER} -v ${home_dir}/.cbrun/${CBRUN_USER}:/root -p 9080:9080 -it cbrun $@
+else
+  docker run --privileged --rm --name ${CBRUN_USER} -v ${home_dir}/.cbrun/${CBRUN_USER}:/root -it cbrun $@
+fi
