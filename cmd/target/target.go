@@ -55,7 +55,7 @@ func getTargetKeyFromArgs(
 	)
 	
 	if len(commonFlags.space) > 0 {
-		targetKey = target.CreateKey(deploymentName, "<"+commonFlags.space)
+		targetKey = target.CreateKey(deploymentName, commonFlags.space)
 	} else {
 		targetKey = target.CreateKey(deploymentName)
 	}
