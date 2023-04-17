@@ -105,7 +105,7 @@ func ConnectTarget(targetKey string) {
 			// load target and retrieve vpn config
 			vpnConfigData, vpnConfig = getVPNConfig(apiClient, tgt)
 			// save retrieved config
-			if configInstructions, err = vpnConfig.Save(downloadDir); err != nil {
+			if configInstructions, err = vpnConfig.Save(downloadDir, ""); err != nil {
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
 			fmt.Println()
