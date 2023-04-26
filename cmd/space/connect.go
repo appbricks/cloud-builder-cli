@@ -205,11 +205,14 @@ func connectToSpaceNetwork(space userspace.SpaceNode) {
 			fmt.Sprintf("Error starting space network mesh connection daemon: %s", err.Error()))
 	}
 	// tailscale client to issue commands to the background service
-	tsc = network.NewTailscaleClient(
+	if tsc, err = network.NewTailscaleClient(
 		tsd.TunnelDeviceName(),
 		deviceContext.GetDevice().Name,
 		cbcli_config.SpaceNodes,
-	)
+	); err != nil {
+		cbcli_utils.ShowErrorAndExit(
+			fmt.Sprintf("Error starting space network mesh connection daemon: %s", err.Error()))
+	}
 	tsc.AddSplitDestinations(cachedIPs)
 	
 	// cleanup on exit

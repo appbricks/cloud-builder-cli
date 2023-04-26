@@ -5,6 +5,7 @@ import (
 	"os"
 	"runtime/debug"
 	"strings"
+	"time"
 
 	"github.com/gookit/color"
 	"github.com/mevansam/goutils/utils"
@@ -130,4 +131,15 @@ func ShowWarningMessage(message string, args ...interface{}) {
 			),
 		),
 	)
+}
+
+func LogStartTime(message string, args ...interface{}) time.Time {
+	start := time.Now()
+	ShowInfoMessage(fmt.Sprintf("%s: ", start.Format(time.RFC3339)) + message, args...)
+	return start
+}
+
+func LogEndTime(startTime time.Time, message string, args ...interface{}) {
+	end := time.Now()
+	ShowInfoMessage(fmt.Sprintf("%s (%d ms): ", end.Format(time.RFC3339), end.Sub(startTime) / time.Microsecond) + message, args...)
 }
