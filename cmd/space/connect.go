@@ -404,7 +404,7 @@ func downloadConnectConfig(space userspace.SpaceNode) {
 	}
 
 	// save retrieved config to local file system
-	if configInstructions, err = vpnConfig.Save(downloadDir, managedDeviceUser.Name); err != nil {
+	if configInstructions, err = vpnConfig.Save(downloadDir, managedDeviceUser.Name + "-"); err != nil {
 		cbcli_utils.ShowErrorAndExit(err.Error())
 	}
 	fmt.Println()
