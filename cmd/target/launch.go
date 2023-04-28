@@ -123,9 +123,7 @@ func LaunchTarget(targetKey string) {
 			output := bldr.Output()
 			logger.TraceMessage("Launch output: %# v", output)
 
-			tgt.Output = output
-			tgt.RepoTimestamp = tgt.Recipe.RepoTimestamp()
-			tgt.CookbookVersion = tgt.Recipe.CookbookVersion()
+			tgt.SetOutput(output)
 			context.SaveTarget(tgt.Key(), tgt)
 
 			showNodeInfo(tgt)
