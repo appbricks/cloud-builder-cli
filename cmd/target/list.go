@@ -264,21 +264,24 @@ func buildSpacesTable(
 					tableRow[2] = region.Name
 
 					for _, tgt := range targets {
+						
+						hasError := tgt.Error() != nil
+						enabled := tgt.CanUpdate() && !hasError
 
-						if tgt.Error() != nil {
-							tableRow[5] = "error!"
-							tableRow[6] = ""
-
+						if hasError {
+							tableRow[5] = applyFormat("error!", enabled)
 						} else {
-							*targetIndex++
-
-							tableRow[5] = getTargetStatusName(tgt)
-							tableRow[6] = strconv.Itoa(*targetIndex)
-
-							*targetList = append(*targetList, tgt)
+							tableRow[5] = applyFormat(getTargetStatusName(tgt), enabled)
 						}
-						tableRow[3] = tgt.DeploymentName()
-						tableRow[4] = tgt.Version()
+						if enabled {
+							*targetIndex++
+							*targetList = append(*targetList, tgt)
+							tableRow[6] = strconv.Itoa(*targetIndex)
+						} else {
+							tableRow[6] = ""
+						}
+						tableRow[3] = applyFormat(tgt.DeploymentName(), enabled)
+						tableRow[4] = applyFormat(tgt.Version(), enabled)
 
 						table.AddRow(tableRow...)
 						tableRow[0] = ""
@@ -360,17 +363,20 @@ func buildAppsTable(
 
 					for _, tgt := range targets {
 
-						if tgt.Error() != nil {						
-							tableRow[6] = "error!"
-							tableRow[7] = ""
+						hasError := tgt.Error() != nil
+						enabled := tgt.CanUpdate() && !hasError
 
+						if hasError {
+							tableRow[6] = applyFormat("error!", enabled)
 						} else {
+							tableRow[6] = applyFormat(getTargetStatusName(tgt), enabled)
+						}
+						if enabled {
 							*targetIndex++
-
-							tableRow[6] = getTargetStatusName(tgt)
-							tableRow[7] = strconv.Itoa(*targetIndex)
-
 							*targetList = append(*targetList, tgt)
+							tableRow[7] = strconv.Itoa(*targetIndex)
+						} else {
+							tableRow[7] = ""
 						}
 						tableRow[3] = tgt.DeploymentName()
 						tableRow[5] = tgt.Version()
@@ -410,6 +416,14 @@ func buildAppsTable(
 		}
 	}
 	return table
+}
+
+func applyFormat(text string, enabled bool) string {
+	if enabled {
+		return text
+	} else {
+		return color.OpFuzzy.Render(text)
+	}
 }
 
 func buildDisabledTargetRecipeTable(

@@ -60,6 +60,15 @@ func DeleteTarget(targetKey string) {
 
 	if tgt, err = context.GetTarget(targetKey); err == nil && tgt != nil {
 
+		if !tgt.CanUpdate() {
+			cbcli_utils.ShowErrorAndExit(
+				fmt.Sprintf(
+					"Target '%s' has been deployed with local state on another host and cannot be deleted via this host.",
+					tgt.DeploymentName(),
+				),
+			)
+		}
+
 		if tgt.HasDependents() {
 			cbcli_utils.ShowErrorAndExit(
 				fmt.Sprintf(
@@ -85,10 +94,12 @@ func DeleteTarget(targetKey string) {
 		)
 
 		if response == tgt.DeploymentName() {
-			if deleteFlags.force || tgt.Status() != target.Undeployed {
-				if bldr, err = tgt.NewBuilder(config.ContextVars(), os.Stdout, os.Stderr); err != nil {
-					cbcli_utils.ShowErrorAndExit(err.Error())
-				}
+			if bldr, err = tgt.NewBuilder(config.ContextVars(), os.Stdout, os.Stderr); err != nil {
+				cbcli_utils.ShowErrorAndExit(err.Error())
+			}
+			runStateExists, _ := bldr.GetLocalBuildState()
+
+			if deleteFlags.force || runStateExists || tgt.Status() != target.Undeployed {
 				if tgt.CookbookVersion != tgt.Recipe.CookbookVersion() {
 					// force re-initializing
 					if err = bldr.Initialize(); err != nil {
