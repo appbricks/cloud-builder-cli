@@ -32,7 +32,8 @@ var configureCommand = &cobra.Command{
 	Long: `
 Use this command to configure an existing target. You will need to
 re-apply this changes to the deployment if the target has already
-been launched.
+been launched. For application targets you will need to provide
+the its space target via the --space flag.
 `,
 
 	PreRun: cbcli_auth.AssertAuthorized(auth.NewRoleMask(auth.Admin), nil),

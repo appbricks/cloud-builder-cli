@@ -42,7 +42,7 @@ func bindCommonFlags(
 	commonFlags *commonFlags,
 ) {
 	flags.StringVarP(&commonFlags.space, "space", "s", "", 
-		"application's attached space target\n(format <recipe>/<cloud>/<region>/<name>)")	
+		"application's attached space target name")	
 }
 
 func getTargetKeyFromArgs(
