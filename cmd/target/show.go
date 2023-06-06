@@ -65,10 +65,12 @@ func ShowTarget(targetKey string) {
 				// error and it is most likely a bug
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
-			showInputFormData(
-				fmt.Sprintf("Provider Configuration for Target \"%s\"", tgt.DeploymentName()),
-				inputForm,
-			)
+			if inputForm != nil {
+				showInputFormData(
+					fmt.Sprintf("Provider Configuration for Target \"%s\"", tgt.DeploymentName()),
+					inputForm,
+				)	
+			}
 			if inputForm, err = tgt.Recipe.InputForm(); err != nil {
 				// if this happens there is an internal
 				// error and it is most likely a bug
@@ -83,10 +85,12 @@ func ShowTarget(targetKey string) {
 				// error and it is most likely a bug
 				cbcli_utils.ShowErrorAndExit(err.Error())
 			}
-			showInputFormData(
-				fmt.Sprintf("Backend Configuration for Target \"%s\"", tgt.DeploymentName()),
-				inputForm,
-			)
+			if inputForm != nil {
+				showInputFormData(
+					fmt.Sprintf("Backend Configuration for Target \"%s\"", tgt.DeploymentName()),
+					inputForm,
+				)
+			}
 		}
 
 		return
