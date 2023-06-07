@@ -89,19 +89,21 @@ func LaunchTarget(targetKey string) {
 			}
 		}
 
-		if launchFlags.cleanRebuild {
-			// mark target instance resource data to be
-			// rebuilt on next launch
-			if err = bldr.SetRebuildInstanceData(); err != nil {
-				cbcli_utils.ShowErrorAndExit(err.Error())
+		if tgt.Status() != target.Undeployed {
+			if launchFlags.cleanRebuild {
+				// mark target instance resource data to be
+				// rebuilt on next launch
+				if err = bldr.SetRebuildInstanceData(); err != nil {
+					cbcli_utils.ShowErrorAndExit(err.Error())
+				}
 			}
-		}
-		if launchFlags.cleanRebuild || launchFlags.rebuild {
-			// mark target instance resources to be
-			// rebuilt on next launch
-			if err = bldr.SetRebuildInstances(); err != nil {
-				cbcli_utils.ShowErrorAndExit(err.Error())
-			}
+			if launchFlags.cleanRebuild || launchFlags.rebuild {
+				// mark target instance resources to be
+				// rebuilt on next launch
+				if err = bldr.SetRebuildInstances(); err != nil {
+					cbcli_utils.ShowErrorAndExit(err.Error())
+				}
+			}	
 		}
 
 		if launchFlags.plan {
