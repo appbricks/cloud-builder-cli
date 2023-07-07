@@ -46,7 +46,7 @@ function build() {
   # build cookbook and binary package for given os and arch
   if [[ ! -e ${build_dir}/cookbook/dist/cookbook-${os}_${arch}.zip || $action == *:cookbook:* ]]; then
 
-    local cookbook_repo_path=${COOKBOOK_REPO_PATH:-https://github.com/appbricks/vpn-server/cloud/recipes}
+    local cookbook_repo_path=${COOKBOOK_REPO_PATH:-https://github.com/appbricks/spacenode-cookbook/cloud/recipes}
     local cookbook_version=${COOKBOOK_VERSION:-dev}
 
     # clean packr boxes of cookbook
