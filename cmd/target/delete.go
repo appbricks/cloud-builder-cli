@@ -69,25 +69,34 @@ func DeleteTarget(targetKey string) {
 			)
 		}
 
-		hasDeployedDeps := false
-		if deleteFlags.keep {
-			// allow deletion only if target config will be kept
-			// and any dependent targets are also undeployed
-			for _, t := range tgt.Dependencies() {
-				if t.Output != nil {
-					hasDeployedDeps = true
+		if tgt.HasDependents() {
+			if deleteFlags.keep {
+				fmt.Println()
+				cbcli_utils.ShowWarningMessage(
+					fmt.Sprintf(
+						"Target '%s' has dependent targets. Although you chose to keep the given target's configuration this " + 
+						"may have an adverse effect if the these have already been deployed. It is recommended you delete " + 
+						"the resources of the dependent targets before proceeding.",
+						tgt.DeploymentName(),
+					),
+				)	
+				fmt.Println()
+				if !cbcli_utils.GetYesNoUserInput(
+					"Do you wish to proceed (yes/no): ",
+					true,
+				) {
+					fmt.Println()
+					return
 				}
+
+			} else {
+				cbcli_utils.ShowErrorAndExit(
+					fmt.Sprintf(
+						"Target '%s' has dependent targets. Please delete all dependent targets before deleting this target.",
+						tgt.DeploymentName(),
+					),
+				)	
 			}	
-		} else {
-			hasDeployedDeps = tgt.HasDependents()
-		}
-		if hasDeployedDeps {
-			cbcli_utils.ShowErrorAndExit(
-				fmt.Sprintf(
-					"Target '%s' has dependent targets. Please delete all dependent targets before deleting this target.",
-					tgt.DeploymentName(),
-				),
-			)	
 		}
 
 		fmt.Println()
