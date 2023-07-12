@@ -69,13 +69,25 @@ func DeleteTarget(targetKey string) {
 			)
 		}
 
-		if tgt.HasDependents() {
+		hasDeployedDeps := false
+		if deleteFlags.keep {
+			// allow deletion only if target config will be kept
+			// and any dependent targets are also undeployed
+			for _, t := range tgt.Dependencies() {
+				if t.Output != nil {
+					hasDeployedDeps = true
+				}
+			}	
+		} else {
+			hasDeployedDeps = tgt.HasDependents()
+		}
+		if hasDeployedDeps {
 			cbcli_utils.ShowErrorAndExit(
 				fmt.Sprintf(
 					"Target '%s' has dependent targets. Please delete all dependent targets before deleting this target.",
 					tgt.DeploymentName(),
 				),
-			)
+			)	
 		}
 
 		fmt.Println()
