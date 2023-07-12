@@ -161,17 +161,17 @@ if [[ $action == *:dev:* ]]; then
   dev_images=$(echo "$mycs_node_images" | jq '[.Images[] | select(.Name|test("appbricks-bastion_D.*"))]')
   MYCS_NODE_IMAGE_NAME=$(echo "$dev_images" | jq -r 'sort_by(.Name | split("_D.")[1] | split(".") | map(tonumber))[-1] | .Name')
 
-  # set version
+  # build binary for a dev environment
   build_version=dev
   build_timestamp=$(date +'%B %d, %Y at %H:%M %Z')
 
-  # build binary for a dev environment
-  rm -f $GOPATH/bin/cb
-
-  os=$(go env GOOS)
-  arch=$(go env GOARCH)
-  build "$os" "$arch"
-  ln -s ${release_dir}/${os}_${arch}/cb $GOPATH/bin/cb
+  curr_os=$(go env GOOS)
+  curr_arch=$(go env GOARCH)
+  build "${os:-$curr_os}" "${arch:-$curr_arch}"
+  if [[ -z $os && -z $arch ]]; then
+    rm -f $GOPATH/bin/cb
+    ln -s ${release_dir}/${curr_os}_${curr_arch}/cb $GOPATH/bin/cb
+  fi
 
 elif [[ $action == *:release:* ]]; then
 
