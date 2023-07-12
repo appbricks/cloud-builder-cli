@@ -75,7 +75,7 @@ func DeleteTarget(targetKey string) {
 				cbcli_utils.ShowWarningMessage(
 					fmt.Sprintf(
 						"Target '%s' has dependent targets. Although you chose to keep the given target's configuration this " + 
-						"may have an adverse effect if the these have already been deployed. It is recommended you delete " + 
+						"may have an adverse effect if the they have already been deployed. It is recommended you delete " + 
 						"the resources of the dependent targets before proceeding.",
 						tgt.DeploymentName(),
 					),
