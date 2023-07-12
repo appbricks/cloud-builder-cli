@@ -29,7 +29,8 @@ mkdir -p ${release_dir}
 
 WINTUN_VER=0.14.1
 
-MYCS_NODE_IMAGE=null
+MYCS_NODE_VERSION=${MYCS_NODE_VERSION:-dev}
+MYCS_NODE_IMAGE_NAME=null
 
 function build() {
 
@@ -38,7 +39,7 @@ function build() {
 
   local build_os=$(go env GOOS)
 
-  [[ -n $MYCS_NODE_IMAGE && $MYCS_NODE_IMAGE != null ]] || ( \
+  [[ -n $MYCS_NODE_IMAGE_NAME && $MYCS_NODE_IMAGE_NAME != null ]] || ( \
     echo "ERROR! Invalid MyCS node image name.";
     exit 1;
   )
@@ -69,7 +70,8 @@ function build() {
         --cookbook-name spacenode \
         --cookbook-desc "$cookbook_desc" \
         --cookbook-version $cookbook_version \
-        --env-arg "bastion_image_name=${MYCS_NODE_IMAGE}" \
+        --env-arg "bastion_image_name=${MYCS_NODE_IMAGE_NAME}" \
+        --env-arg "mycs_node_version=${MYCS_NODE_VERSION}" \
         --os-name $os \
         --os-arch $arch \
         --clean --verbose
@@ -80,7 +82,8 @@ function build() {
         --cookbook-name spacenode \
         --cookbook-desc "$cookbook_desc" \
         --cookbook-version $cookbook_version \
-        --env-arg "bastion_image_name=${MYCS_NODE_IMAGE}" \
+        --env-arg "bastion_image_name=${MYCS_NODE_IMAGE_NAME}" \
+        --env-arg "mycs_node_version=${MYCS_NODE_VERSION}" \
         --os-name $os \
         --os-arch $arch \
         --verbose
@@ -156,7 +159,7 @@ if [[ $action == *:dev:* ]]; then
 
   # Determine MyCS bastion image for dev environment
   dev_images=$(echo "$mycs_node_images" | jq '[.Images[] | select(.Name|test("appbricks-bastion_D.*"))]')
-  MYCS_NODE_IMAGE=$(echo "$dev_images" | jq -r 'sort_by(.Name | split("_D.")[1] | split(".") | map(tonumber))[-1] | .Name')
+  MYCS_NODE_IMAGE_NAME=$(echo "$dev_images" | jq -r 'sort_by(.Name | split("_D.")[1] | split(".") | map(tonumber))[-1] | .Name')
 
   # set version
   build_version=dev
@@ -174,7 +177,7 @@ elif [[ $action == *:release:* ]]; then
 
   # Determine MyCS bastion image for prod environment
   prod_images=$(echo "$mycs_node_images" | jq '[.Images[] | select(.Name|test("appbricks-bastion_\\d+\\.\\d+\\.\\d+"))'])
-  MYCS_NODE_IMAGE=$(echo "$prod_images" | jq -r 'sort_by(.Name | split("_")[1] | split(".") | map(tonumber))[-1] | .Name')
+  MYCS_NODE_IMAGE_NAME=$(echo "$prod_images" | jq -r 'sort_by(.Name | split("_")[1] | split(".") | map(tonumber))[-1] | .Name')
 
   # set version
   tag=${GITHUB_REF/refs\/tags\//}
