@@ -412,7 +412,7 @@ func downloadConnectConfig(space userspace.SpaceNode) {
 
 	// save retrieved config data to MyCS cloud 
 	// so it can be shared with the device user
-	mycsAPIClient := api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config)
+	mycsAPIClient := api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config.AuthContext())
 	deviceAPI := mycscloud.NewDeviceAPI(mycsAPIClient)
 	if err = deviceAPI.SetDeviceWireguardConfig(
 		managedDeviceUser.UserID,

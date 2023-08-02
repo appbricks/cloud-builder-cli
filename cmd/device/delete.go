@@ -46,7 +46,7 @@ func DeleteDevice(deviceName string) {
 		)
 	}
 
-	apiClient := api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config)
+	apiClient := api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config.AuthContext())
 	deviceAPI := mycscloud.NewDeviceAPI(apiClient)
 	if _, err = deviceAPI.UnRegisterDevice(device.DeviceID); err != nil {
 		cbcli_utils.ShowErrorAndExit("Failed to unregister managed device.")

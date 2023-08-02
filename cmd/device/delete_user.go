@@ -58,7 +58,7 @@ func DeleteUser(deviceName string, userName string) {
 		cbcli_utils.ShowErrorAndExit("Not a valid device user.")
 	}
 
-	apiClient := api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config)
+	apiClient := api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config.AuthContext())
 	userAPI := mycscloud.NewUserAPI(apiClient)
 
 	if users, err = userAPI.UserSearch(userName); err != nil {

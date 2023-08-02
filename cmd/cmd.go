@@ -96,7 +96,7 @@ anonymized as it traverses the public provider networks.
 				"the agreement can be found at the following link.",
 			)
 			fmt.Println()
-			fmt.Println(color.FgBlue.Render(`https://appbricks.io/legal/`))
+			fmt.Println(color.FgBlue.Render(`https://appbricks.io/eula/`))
 
 			response := cbcli_utils.GetUserInputFromList(
 				"Do you agree to the terms: ",
@@ -363,7 +363,7 @@ func uploadConfig(key string, configData []byte, asOf int64) (int64, error) {
 		logger.TraceMessage("uploadConfig(): Uploading encrypted config data for key '%s'.", key)
 
 		user := cbcli_config.Config.DeviceContext().GetOwner()
-		userAPI := mycscloud.NewUserAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config))
+		userAPI := mycscloud.NewUserAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config.AuthContext()))
 		
 		return userAPI.UpdateUserConfig(user, configData, asOf)
 

@@ -59,7 +59,7 @@ func AddUser(deviceName string, userName string) {
 		deviceUsers[u.Name] = true
 	}
 
-	apiClient := api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config)
+	apiClient := api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config.AuthContext())
 	userAPI := mycscloud.NewUserAPI(apiClient)
 
 	if users, err = userAPI.UserSearch(userName); err != nil {

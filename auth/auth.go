@@ -2,6 +2,7 @@ package auth
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"fmt"
 	"net/http"
@@ -41,6 +42,7 @@ func Authenticate(config config.Config, loginMessages ...string) error {
 	)
 
 	authn := auth.NewAuthenticator(
+		context.Background(),
 		config.AuthContext(),
 		&oauth2.Config{
 			ClientID:     cbcli_config.CLIENT_ID,
@@ -102,8 +104,8 @@ func Authenticate(config config.Config, loginMessages ...string) error {
 			return err
 		}
 		// update app config with cloud properties
-		cloudAPI := mycscloud.NewCloudAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
-		if err = cloudAPI.UpdateProperties(config); err != nil {
+		cloudAPI := mycscloud.NewCloudAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config.AuthContext()))
+		if err = cloudAPI.UpdateProperties(config.AuthContext()); err != nil {
 			return err
 		}
 		s.Stop()
@@ -197,7 +199,7 @@ func AuthorizeDeviceAndUser(config config.Config) error {
 		requestAccess bool
 	)
 
-	deviceAPI := mycscloud.NewDeviceAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
+	deviceAPI := mycscloud.NewDeviceAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config.AuthContext()))
 	deviceContext := config.DeviceContext()
 
 	// validate and parse JWT token
@@ -277,7 +279,7 @@ func AuthorizeDeviceAndUser(config config.Config) error {
 			}		
 		}
 		if config.GetConfigAsOf() < awsAuth.ConfigTimestamp() {
-			userAPI := mycscloud.NewUserAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
+			userAPI := mycscloud.NewUserAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config.AuthContext()))
 	
 			if ownerConfig, err = userAPI.GetUserConfig(owner); err != nil {
 				return err

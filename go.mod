@@ -24,7 +24,7 @@ require (
 	github.com/appbricks/cloud-builder v0.0.4
 	github.com/appbricks/mycloudspace-client v0.0.3
 	github.com/appbricks/mycloudspace-common v0.0.3
-	github.com/briandowns/spinner v1.12.0
+	github.com/briandowns/spinner v1.23.0
 	github.com/eiannone/keyboard v0.0.0-20200508000154-caf4b762e807
 	github.com/gobuffalo/logger v1.0.6 // indirect
 	github.com/gobuffalo/packr/v2 v2.8.3

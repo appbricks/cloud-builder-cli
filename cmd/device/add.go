@@ -43,7 +43,7 @@ func AddDevice(deviceName string, deviceType string) {
 		device *userspace.Device
 	)
 
-	apiClient := api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config)
+	apiClient := api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config.AuthContext())
 	deviceAPI := mycscloud.NewDeviceAPI(apiClient)
 
 	deviceContext := cbcli_config.Config.DeviceContext()

@@ -151,14 +151,14 @@ func DeleteTarget(targetKey string) {
 				if tgt.Recipe.IsBastion() {
 					// only recipes with a bastion instance is considered
 					// a space. TBD: this criteria should be revisited
-					spaceAPI := mycscloud.NewSpaceAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
+					spaceAPI := mycscloud.NewSpaceAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config.AuthContext()))
 					if _, err = spaceAPI.DeleteSpace(tgt); err != nil {
 						logger.ErrorMessage("DeleteTarget(): Error attempting to delete space registration: %s", err.Error())
 						cbcli_utils.ShowNoteMessage("\nDeleting space registration failed. You may need to manually delete the space from the MyCS cloud dashboard.")
 					}
 
 				} else {
-					appAPI := mycscloud.NewAppAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config))
+					appAPI := mycscloud.NewAppAPI(api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", config.AuthContext()))
 					if _, err = appAPI.DeleteApp(tgt); err != nil {
 						logger.ErrorMessage("DeleteTarget(): Error attempting to delete app registration: %s", err.Error())
 						cbcli_utils.ShowNoteMessage("\nDeleting app registration failed. You may need to manually delete the app from the MyCS cloud dashboard.")

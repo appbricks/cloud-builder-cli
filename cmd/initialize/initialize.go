@@ -142,7 +142,7 @@ func initialize() {
 			oldDeviceID = deviceContext.GetDevice().DeviceID
 			// api client for current owner which will be
 			// used to unregister this device with that user
-			prevOwnerAPIClient = api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config)
+			prevOwnerAPIClient = api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config.AuthContext())
 
 			// reset config context clearing all of current owner's 
 			// context data in preparation for a new owner
@@ -286,7 +286,7 @@ func initialize() {
 
 		// api client for new owner used owner's 
 		// user public key and user config
-		newOwnerAPIClient = api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config)
+		newOwnerAPIClient = api.NewGraphQLClient(cbcli_config.AWS_USERSPACE_API_URL, "", cbcli_config.Config.AuthContext())
 		userAPI := mycscloud.NewUserAPI(newOwnerAPIClient)
 
 		if needNewKey {
