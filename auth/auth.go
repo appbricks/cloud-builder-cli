@@ -41,7 +41,7 @@ func Authenticate(config config.Config, loginMessages ...string) error {
 		authUrl string
 	)
 
-	authn := auth.NewAuthenticator(
+	authn, _ := auth.NewAuthenticator(
 		context.Background(),
 		config.AuthContext(),
 		&oauth2.Config{
@@ -274,7 +274,7 @@ func AuthorizeDeviceAndUser(config config.Config) error {
 					fmt.Sprintf("User's private key import failed with error: %s", err.Error()),
 				)
 			}
-			if err = owner.SetKey(ownerKey); err != nil {
+			if err = owner.SetKey(ownerKey, false); err != nil {
 				cbcli_utils.ShowErrorAndExit("Failed to validate provided private key with user's known public key.")
 			}		
 		}

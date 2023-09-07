@@ -126,7 +126,7 @@ func initialize() {
 			cbcli_utils.ShowDangerMessage(
 				"Resetting the primary user will also reset any saved configurations. If the current " +
 				"primary user has deployed cloud spaces and applications their configurations will be " +
-				"lost and may not be able to be recovered. Before proceding please ensure that you have " +
+				"lost and may not be able to be recovered. Before proceeding please ensure that you have " +
 				"exported the current configuration, in case you need to recover deployments associated " +
 				"with the current configuration.",
 			)
@@ -291,7 +291,7 @@ func initialize() {
 
 		if needNewKey {
 			// save new key
-			if err = owner.SetKey(ownerKey); err != nil {
+			if err = owner.SetKey(ownerKey, true); err != nil {
 				panic(err)
 			}
 			if err = userAPI.UpdateUserKey(owner); err != nil {
@@ -305,8 +305,7 @@ func initialize() {
 			if _, err = userAPI.GetUser(owner); err != nil {
 				panic(err)
 			}
-			// save imported key
-			if err = owner.SetKey(ownerKey); err != nil {
+			if err = owner.SetKey(ownerKey, false); err != nil {
 				cbcli_utils.ShowErrorAndExit("Failed to validate provided private key with user's known public key.")
 			}
 			// load saved configuration
