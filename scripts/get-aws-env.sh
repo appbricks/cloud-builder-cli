@@ -47,8 +47,10 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-env_name="mycs${env}"
 aws_region=${AWS_DEFAULT_REGION:-us-east-1}
+
+region_short_name=$(echo $aws_region | tr -d '-')
+env_name="mycs${env}-${region_short_name}"
 
 identity_outputs=$(aws --region ${aws_region} \
   cloudformation describe-stacks \
