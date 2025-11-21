@@ -19,16 +19,22 @@ home_dir=$(cd ${scripts_dir}/.. && pwd)
 
 function usage() {
   echo -e "\nUSAGE: configure.sh [options]\n"
-  echo -e "  -e|--env [ENV]  the deployment environment"
-  echo -e "  -d|--debug      enable trace output"
-  echo -e "  -h|--help       show this help"
+  echo -e "  -e|--env [ENV]            the deployment environment"
+  echo -e "  -s|--cli-secret [SECRET]  the CLI client secret"
+  echo -e "  -d|--debug                enable trace output"
+  echo -e "  -h|--help                 show this help"
 }
 
 env=dev
+cli_secret=
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -e|--env)
       env=$2
+      shift
+      ;;
+    -s|--cli-secret)
+      cli_secret=$2
       shift
       ;;
     -d|--debug)
@@ -47,6 +53,12 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
+[[ -n $cli_secret ]] || ( \
+  echo "ERROR! CLI client secret is required.\n";
+  usage;
+  exit 1;
+)
+
 aws_region=${AWS_DEFAULT_REGION:-us-east-1}
 
 region_short_name=$(echo $aws_region | tr -d '-')
@@ -58,9 +70,15 @@ identity_outputs=$(aws --region ${aws_region} \
   | jq '.Stacks[0].Outputs[]' \
   | sed 's|\\n|\\\\n|g')
 
-api_outputs=$(aws --region ${aws_region} \
+api_gql_outputs=$(aws --region ${aws_region} \
   cloudformation describe-stacks \
-  --stack-name ${env_name}-api \
+  --stack-name ${env_name}-api-gql \
+  | jq '.Stacks[0].Outputs[]' \
+  | sed 's|\\n|\\\\n|g')
+
+api_rest_outputs=$(aws --region ${aws_region} \
+  cloudformation describe-stacks \
+  --stack-name ${env_name}-api-rest \
   | jq '.Stacks[0].Outputs[]' \
   | sed 's|\\n|\\\\n|g')
 
@@ -68,9 +86,8 @@ api_outputs=$(aws --region ${aws_region} \
 cognitoRegion=$(echo "$identity_outputs" | jq -r 'select(.OutputKey=="Region") | .OutputValue')
 userPoolId=$(echo "$identity_outputs" | jq -r 'select(.OutputKey=="UserPoolId") | .OutputValue')
 cliClientID=$(echo "$identity_outputs" | jq -r 'select(.OutputKey=="UserPoolCLIClientId") | .OutputValue')
-cliClientSecret=$(echo "$identity_outputs" | jq -r 'select(.OutputKey=="UserPoolCLIClientSecret") | .OutputValue')
-appsyncRegion=$(echo "$api_outputs" | jq -r 'select(.OutputKey=="Region") | .OutputValue')
-userSpaceApiUrl=$(echo "$api_outputs" | jq -r 'select(.OutputKey=="UserSpaceApiUrl") | .OutputValue')
+appsyncRegion=$(echo "$api_gql_outputs" | jq -r 'select(.OutputKey=="Region") | .OutputValue')
+userSpaceApiUrl=$(echo "$api_gql_outputs" | jq -r 'select(.OutputKey=="UserSpaceApiUrl") | .OutputValue')
 
 # aws config for cloudbuilder cli
 cat << ---EOF > ${home_dir}/config/aws.go
@@ -84,7 +101,7 @@ const AWS_COGNITO_REGION = "${cognitoRegion}"
 const AWS_COGNITO_USER_POOL_ID = "${userPoolId}"
 
 const CLIENT_ID = "${cliClientID}"
-const CLIENT_SECRET = "${cliClientSecret}"
+const CLIENT_SECRET = "${cli_secret}"
 const AUTH_URL = "https://${env_name}.auth.us-east-1.amazoncognito.com/login"
 const TOKEN_URL = "https://${env_name}.auth.us-east-1.amazoncognito.com/oauth2/token"
 const USER_INFO_URL = "https://${env_name}.auth.us-east-1.amazoncognito.com/oauth2/userInfo"
