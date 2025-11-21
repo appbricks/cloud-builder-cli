@@ -38,22 +38,22 @@ type commonFlags struct {
 }
 
 func bindCommonFlags(
-	flags *pflag.FlagSet, 
+	flags *pflag.FlagSet,
 	commonFlags *commonFlags,
 ) {
-	flags.StringVarP(&commonFlags.space, "space", "s", "", 
-		"application's attached space target name")	
+	flags.StringVarP(&commonFlags.space, "space", "s", "",
+		"application's attached space target name (application targets only)")
 }
 
 func getTargetKeyFromArgs(
-	deploymentName string, 
+	deploymentName string,
 	commonFlags *commonFlags,
 ) string {
 
 	var (
 		targetKey string
 	)
-	
+
 	if len(commonFlags.space) > 0 {
 		targetKey = target.CreateKey(deploymentName, commonFlags.space)
 	} else {
